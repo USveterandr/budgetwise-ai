@@ -22,8 +22,9 @@ body {
   font-family: var(--font-family-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, var(--luxury-white) 0%, var(--luxury-gold-light) 100%);
-  color: var(--luxury-black);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%);
+  background-attachment: fixed;
+  color: var(--luxury-white);
   line-height: 1.6;
   min-height: 100vh;
 }
