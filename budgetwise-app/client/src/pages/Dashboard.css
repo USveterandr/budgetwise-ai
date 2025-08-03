@@ -1,0 +1,524 @@
+.dashboard-container {
+  font-family: var(--font-family-sans);
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+.dashboard-header {
+  background-color: var(--primary-color); /* Using new deep navy */
+  color: white; /* Light text for contrast */
+  padding: var(--spacing-xl) var(--spacing-2xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-lg);
+  border-bottom: 1px solid var(--primary-light); /* Subtle border */
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+.dashboard-header p {
+  margin: var(--spacing-xs) 0 0 0;
+  opacity: 0.85;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-normal);
+}
+
+.header-right {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.nav-button {
+  background-color: rgba(255, 255, 255, 0.08); /* Slightly more subtle */
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-fast);
+}
+
+.nav-button:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.logout-button {
+  background-color: var(--expense-color); /* Using new warm red */
+  border-color: var(--expense-color);
+}
+
+.logout-button:hover {
+  background-color: #b91c1c; /* Darker shade of expense color */
+  border-color: #b91c1c;
+}
+
+.dashboard-main {
+  padding: var(--spacing-2xl);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--spacing-2xl); /* Increased gap for more white space */
+}
+
+/* General Card Styles */
+.dashboard-grid > div {
+  background: var(--card-bg-color);
+  border-radius: var(--border-radius-xl); /* Larger border radius */
+  padding: var(--spacing-2xl); /* More padding inside cards */
+  box-shadow: var(--shadow-md); /* Consistent shadow */
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  border: 1px solid var(--border-color); /* Subtle border */
+}
+
+.dashboard-grid > div:hover {
+  transform: translateY(-4px); /* Slightly less lift */
+  box-shadow: var(--shadow-lg);
+}
+
+.dashboard-grid h3 {
+  margin-top: 0;
+  color: var(--text-primary); /* Darker text for headings */
+  border-bottom: 1px solid var(--border-color); /* Lighter border */
+  padding-bottom: var(--spacing-md);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+}
+
+/* Cash Flow & Net Worth Styles */
+.cash-flow-summary, .net-worth-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--font-size-lg);
+}
+
+.cash-flow-summary p span, .net-worth-summary p span {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.positive {
+  color: var(--gain-color); /* Using new emerald green */
+}
+
+.negative {
+  color: var(--expense-color); /* Using new warm red */
+}
+
+.net-flow.positive {
+  color: var(--gain-color);
+}
+
+.net-flow.negative {
+  color: var(--expense-color);
+}
+
+/* Financial Health Score Styles */
+.score-display {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.score-number {
+  font-size: var(--font-size-4xl); /* Adjusted to be less extreme */
+  font-weight: var(--font-weight-bold);
+  color: var(--primary-color);
+  line-height: var(--line-height-tight);
+}
+
+.score-max {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  margin-left: var(--spacing-xs);
+}
+
+.score-factors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.factor-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background-color: var(--bg-secondary); /* Using new secondary bg */
+  border-radius: var(--border-radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.factor-item:hover {
+  background-color: var(--border-color); /* Slightly darker on hover */
+}
+
+.factor-status {
+  font-weight: var(--font-weight-semibold);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  text-transform: capitalize;
+  font-size: var(--font-size-sm);
+}
+
+.factor-status.good {
+  background-color: #d1fae5;
+  color: var(--gain-color);
+}
+
+.factor-status.fair {
+  background-color: #fed7aa;
+  color: #ea580c;
+}
+
+.factor-status.excellent {
+  background-color: #cffafe;
+  color: #0891b2;
+}
+
+/* Budget Management Styles */
+.budget-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--font-size-lg);
+}
+
+.budget-summary p span {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary); /* Changed to primary text color */
+}
+
+.category-breakdown {
+  margin-top: var(--spacing-xl);
+}
+
+.category-item {
+  margin-bottom: var(--spacing-lg);
+}
+
+.category-item span:first-child {
+  display: block;
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.category-bar {
+  width: 100%;
+  height: 12px; /* Slightly thicker bar */
+  background-color: var(--border-color);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  margin: var(--spacing-sm) 0;
+}
+
+.category-spent {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gain-color), var(--gain-light)); /* Using new gain colors */
+  border-radius: var(--border-radius-md);
+  transition: width var(--transition-normal); /* Smooth animation for bar fill */
+}
+
+.category-item span:last-child {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* Investment Tracking Styles */
+.portfolio-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--font-size-lg);
+}
+
+.portfolio-summary p span {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.investments-list {
+  max-height: 300px; /* Increased height */
+  overflow-y: auto;
+  padding-right: var(--spacing-xs); /* Prevents scrollbar overlap */
+}
+
+.investment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg) 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.investment-item:last-child {
+  border-bottom: none;
+}
+
+.investment-name {
+  font-weight: var(--font-weight-medium);
+  flex-grow: 1;
+  color: var(--text-primary);
+}
+
+.investment-details {
+  text-align: right;
+}
+
+.investment-value {
+  font-weight: var(--font-weight-semibold);
+  display: block;
+  color: var(--text-primary);
+  font-size: var(--font-size-lg); /* Larger value text */
+}
+
+.investment-change {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium); /* Medium weight for change */
+}
+
+.investment-change.positive {
+  color: var(--gain-color);
+}
+.investment-change.negative {
+  color: var(--expense-color);
+}
+
+
+/* Subscription Manager Styles */
+.subscription-summary {
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--font-size-lg);
+}
+
+.subscriptions-list {
+  max-height: 300px; /* Increased height */
+  overflow-y: auto;
+  padding-right: var(--spacing-xs);
+}
+
+.subscription-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg) 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.subscription-item:last-child {
+  border-bottom: none;
+}
+
+.subscription-details {
+  flex-grow: 1;
+}
+
+.subscription-name {
+  font-weight: var(--font-weight-medium);
+  display: block;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.subscription-category {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.subscription-price-date {
+  text-align: right;
+}
+
+.subscription-price {
+  font-weight: var(--font-weight-semibold);
+  color: var(--expense-color);
+  display: block;
+  font-size: var(--font-size-lg); /* Larger price text */
+}
+
+.subscription-date {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+/* Account Integration Styles */
+.accounts-list {
+  max-height: 300px; /* Increased height */
+  overflow-y: auto;
+  padding-right: var(--spacing-xs);
+}
+
+.account-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg) 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.account-item:last-child {
+  border-bottom: none;
+}
+
+.account-item.action-item {
+  cursor: pointer;
+  background-color: var(--bg-secondary); /* Using secondary bg */
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-sm);
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.account-item.action-item:hover {
+  background-color: var(--border-color);
+  transform: translateX(4px); /* Slight slide effect */
+}
+
+.account-details {
+  flex-grow: 1;
+}
+
+.account-name {
+  font-weight: var(--font-weight-medium);
+  display: block;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.account-type {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.account-status-balance {
+  text-align: right;
+}
+
+.account-balance {
+  font-weight: var(--font-weight-semibold);
+  display: block;
+  color: var(--text-primary);
+  font-size: var(--font-size-lg); /* Larger balance text */
+}
+
+.account-status {
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  text-transform: capitalize;
+  font-weight: var(--font-weight-medium);
+}
+
+.account-status.connected {
+  background-color: #d1fae5;
+  color: var(--gain-color);
+}
+
+.account-status.partially-connected {
+  background-color: #fed7aa;
+  color: #ea580c;
+}
+
+.account-status.connect {
+  background-color: #dbeafe;
+  color: var(--info-color); /* Using new info color */
+}
+
+/* Business Tools (Pro Feature) Styles */
+.pro-feature-card {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); /* Using new primary shades */
+  color: white;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
+}
+
+.pro-feature-card h3 {
+  color: white;
+  border-bottom-color: rgba(255, 255, 255, 0.2);
+  font-size: var(--font-size-xl);
+}
+
+.pro-feature-card p {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: var(--spacing-xl);
+}
+
+.upgrade-btn {
+  background-color: white;
+  color: var(--primary-color);
+  border: none;
+  padding: var(--spacing-md) var(--spacing-2xl); /* More padding */
+  border-radius: var(--border-radius-lg);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-md); /* Initial shadow */
+}
+
+.upgrade-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    text-align: center;
+    padding: var(--spacing-lg);
+  }
+
+  .header-right {
+    margin-top: var(--spacing-lg);
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap; /* Allow buttons to wrap if needed */
+  }
+
+  .dashboard-main {
+    padding: var(--spacing-lg);
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xl); /* Slightly smaller gap on mobile */
+  }
+
+  .dashboard-grid > div {
+    padding: var(--spacing-lg); /* Less padding inside cards on mobile */
+  }
+
+  .dashboard-grid h3 {
+    font-size: var(--font-size-lg); /* Smaller headings on mobile */
+  }
+
+  .cash-flow-summary, .net-worth-summary,
+  .budget-summary, .portfolio-summary, .subscription-summary {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+
+  .investment-item, .subscription-item, .account-item {
+    padding: var(--spacing-md) 0;
+  }
+
+  .investment-value, .subscription-price, .account-balance {
+    font-size: var(--font-size-base); /* Reset value size on mobile */
+  }
+}

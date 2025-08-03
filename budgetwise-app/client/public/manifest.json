@@ -1,0 +1,19 @@
+{
+  "short_name": "BudgetWise",
+  "name": "BudgetWise: The Ultimate All-in-One Financial App",
+  "icons": [
+    {
+      "src": "assets/budgetwiseai-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/budgetwiseai-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
