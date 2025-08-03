@@ -17,10 +17,10 @@ BudgetWise AI is an AI-powered personal finance tracker that serves as an AI Fin
 - **GoogleService-Info.plist**: iOS Firebase configuration file
 
 ## Language & Runtime
-**Language**: JavaScript (Node.js for backend, React for frontend)
-**Version**: Node.js (implied latest stable)
-**Build System**: npm
-**Package Manager**: npm
+- **Language**: JavaScript (Node.js for backend, React for frontend)
+- **Version**: Node.js (implied latest stable)
+- **Build System**: npm
+- **Package Manager**: npm
 
 ## Dependencies
 
@@ -40,7 +40,7 @@ BudgetWise AI is an AI-powered personal finance tracker that serves as an AI Fin
 **Main Dependencies**:
 - react: ^18.2.0 (UI library)
 - react-dom: ^18.2.0 (DOM rendering)
-- react-router-dom: ^7.7.1 (Routing)
+- react-router-dom: ^6.8.0 (Routing)
 - react-scripts: 5.0.1 (Build scripts)
 
 **Development Dependencies**:
@@ -74,10 +74,10 @@ npm run build
 The application uses Firebase for authentication and data storage, as evidenced by the firebase directory structure and GoogleService-Info.plist file.
 
 ## Testing
-**Framework**: Jest with React Testing Library
-**Test Location**: Client-side tests in respective component directories
-**Configuration**: setupTests.js imports Jest DOM extensions
-**Run Command**:
+- **Framework**: Jest with React Testing Library
+- **Test Location**: Client-side tests in respective component directories
+- **Configuration**: setupTests.js imports Jest DOM extensions
+- **Run Command**:
 ```bash
 # Run client tests
 cd budgetwise-app/client
