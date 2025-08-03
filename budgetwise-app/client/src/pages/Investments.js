@@ -18,11 +18,6 @@ function Investments() {
   }, []);
 
   // Mock data for investments
-  const portfolioSummary = {
-    totalValue: 25000.75,
-    totalGainLoss: 3250.50,
-    totalGainLossPercentage: 14.9,
-  };
 
   const investmentHoldings = [
     { name: 'Apple Inc. (AAPL)', shares: 10, avgCost: 150.00, currentPrice: 175.25, value: 1752.50, gainLoss: 252.50, gainLossPercentage: 16.67, type: 'Stock', icon: '🍎' },
