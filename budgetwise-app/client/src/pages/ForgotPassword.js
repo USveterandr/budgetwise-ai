@@ -1,48 +1,36 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import './Login.css';
 
 function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setMessage('');
-
-    if (!email) {
-      setMessage('Please enter your email address.');
-      return;
-    }
-
-    // Simulate API call to send password reset link
-    console.log('Sending password reset link to:', email);
-    setMessage(`If an account with the email ${email} exists, a password reset link has been sent.`);
+    setMessage('Password reset link sent to your email!');
   };
 
   return (
-    <div className="login-container">
-      <div className="login-form-wrapper">
-        <h2>Forgot Password</h2>
-        <p>Enter your email address below and we'll send you a link to reset your password.</p>
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-          {message && <p className="message">{message}</p>}
-          <button type="submit" className="login-button">Send Reset Link</button>
+    <div className="landing-container fade-in-up" style={{minHeight: '100vh', padding: '4rem 2rem'}}>
+      <div className="text-center p-4">
+        <h1>Reset Password</h1>
+        <p className="mb-4">Enter your email to receive a reset link</p>
+        <form onSubmit={handleSubmit} className="card" style={{maxWidth: '400px', margin: '0 auto'}}>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your email"
+            required
+          />
+          <button type="submit" className="btn-primary mt-4">
+            Send Reset Link
+          </button>
+          {message && <p className="mt-4">{message}</p>}
         </form>
-        <div className="login-footer">
-          <p>Remember your password? <Link to="/login">Sign in</Link></p>
-        </div>
+        <Link to="/login" className="btn-secondary mt-4">
+          Back to Login
+        </Link>
       </div>
     </div>
   );

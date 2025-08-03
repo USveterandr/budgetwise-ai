@@ -15,7 +15,8 @@ import English from './pages/English';
 import Spanish from './pages/Spanish';
 import French from './pages/French';
 import German from './pages/German';
-import './App.css'; // We will create this CSS file next
+import ForgotPassword from './pages/ForgotPassword';
+import './App.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
