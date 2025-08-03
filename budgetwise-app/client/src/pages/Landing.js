@@ -32,13 +32,13 @@ function Landing() {
             <img src={`${process.env.PUBLIC_URL}/assets/budgetwiseai-logo.png`} alt="BudgetWise AI App Preview" className="app-preview-image" />
           </div>
           <div className="cta-buttons">
-            <a href="https://apple.com" target="_blank" rel="noopener noreferrer" className="cta-button download-button">
+            <a href="https://apple.com" target="_blank" rel="noopener noreferrer" className="btn-primary">
               Download for iOS
             </a>
-            <a href="https://play.google.com" target="_blank" rel="noopener noreferrer" className="cta-button download-button">
+            <a href="https://play.google.com" target="_blank" rel="noopener noreferrer" className="btn-primary">
               Get it on Android
             </a>
-            <button className="cta-button buy-button">
+            <button className="btn-secondary">
               Buy Premium Now - Unlock All Features!
             </button>
           </div>
