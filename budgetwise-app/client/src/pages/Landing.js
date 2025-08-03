@@ -18,7 +18,7 @@ function Landing() {
   }, []);
 
   return (
-    <div className="landing-container">
+    <div className="landing-container fade-in-up">
       {isNewUser ? (
         <div className="new-user-landing">
           <h1 className="hypnotic-title">BudgetWise: The Ultimate All-in-One Financial App</h1>
@@ -47,7 +47,7 @@ function Landing() {
           </p>
           <div className="subscription-tiers">
             <h2>Choose Your Plan</h2>
-            <div className="tier-cards">
+            <div className="tier-cards grid grid-cols-4">
               <div className="tier-card free-tier">
                 <h3>Free Tier</h3>
                 <p className="price">$0</p>

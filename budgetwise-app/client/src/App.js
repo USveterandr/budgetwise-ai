@@ -31,20 +31,22 @@ function App() {
   return (
     <div className="App">
       {showSidebar && <Sidebar />}
-      <header className="App-header">
-        <h1>BudgetWise</h1>
-        <nav>
-          <ul>
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/login">Login</Link></li>
-            <li><Link to="/dashboard">Dashboard</Link></li>
-            <li><Link to="/onboarding">Onboarding</Link></li>
-            <li><Link to="/budget">Budget</Link></li>
-            <li><Link to="/investments">Investments</Link></li>
-            <li><Link to="/subscriptions">Subscriptions</Link></li>
-            <li><Link to="/business">Business</Link></li>
-          </ul>
-        </nav>
+      <header className="nav">
+        <div className="container">
+          <h1>BudgetWise</h1>
+          <nav>
+            <ul>
+              <li><Link to="/" className="nav-link">Home</Link></li>
+              <li><Link to="/login" className="nav-link">Login</Link></li>
+              <li><Link to="/dashboard" className="nav-link">Dashboard</Link></li>
+              <li><Link to="/onboarding" className="nav-link">Onboarding</Link></li>
+              <li><Link to="/budget" className="nav-link">Budget</Link></li>
+              <li><Link to="/investments" className="nav-link">Investments</Link></li>
+              <li><Link to="/subscriptions" className="nav-link">Subscriptions</Link></li>
+              <li><Link to="/business" className="nav-link">Business</Link></li>
+            </ul>
+          </nav>
+        </div>
         <div className="language-switcher-container">
           <LanguageSwitcher />
         </div>
