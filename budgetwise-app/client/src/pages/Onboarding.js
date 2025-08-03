@@ -85,7 +85,7 @@ function Onboarding() {
     console.log(credentialResponse);
     // In a real app, you would verify the credential with your backend
     localStorage.setItem('userToken', 'google-auth-token');
-    navigate('/account-linking');
+    setCurrentStep(1);
   };
 
   const handleGoogleError = () => {

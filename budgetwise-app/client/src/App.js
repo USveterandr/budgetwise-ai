@@ -66,6 +66,7 @@ function App() {
           <Route path="/es" element={<Spanish />} />
           <Route path="/fr" element={<French />} />
           <Route path="/de" element={<German />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
         </Routes>
       </main>
     </div>
