@@ -1,0 +1,445 @@
+.dashboard-container {
+  font-family: 'Arial', sans-serif;
+  background-color: #f4f7f6;
+  color: #333;
+  min-height: 100vh;
+}
+
+.dashboard-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.dashboard-header p {
+  margin: 5px 0 0 0;
+  opacity: 0.9;
+}
+
+.header-right {
+  display: flex;
+  gap: 15px;
+}
+
+.nav-button {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.nav-button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.logout-button {
+  background-color: #e74c3c;
+  border-color: #e74c3c;
+}
+
+.logout-button:hover {
+  background-color: #c0392b;
+  border-color: #c0392b;
+}
+
+.dashboard-main {
+  padding: 30px 40px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+}
+
+/* General Card Styles */
+.dashboard-grid > div {
+  background: white;
+  border-radius: 10px;
+  padding: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dashboard-grid > div:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.dashboard-grid h3 {
+  margin-top: 0;
+  color: #333;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 10px;
+  font-size: 1.4rem;
+}
+
+/* Cash Flow & Net Worth Styles */
+.cash-flow-summary, .net-worth-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.cash-flow-summary p span, .net-worth-summary p span {
+  font-weight: bold;
+}
+
+.positive {
+  color: #28a745;
+}
+
+.negative {
+  color: #e74c3c;
+}
+
+.net-flow.positive {
+  color: #28a745;
+}
+
+.net-flow.negative {
+  color: #e74c3c;
+}
+
+/* Financial Health Score Styles */
+.score-display {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.score-number {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.score-max {
+  font-size: 1.5rem;
+  color: #999;
+  margin-left: 5px;
+}
+
+.score-factors {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.factor-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+}
+
+.factor-status {
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 3px;
+  text-transform: capitalize;
+}
+
+.factor-status.good {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.factor-status.fair {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.factor-status.excellent {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+/* Budget Management Styles (from previous) */
+.budget-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+}
+
+.budget-summary p span {
+  font-weight: bold;
+  color: #667eea;
+}
+
+.category-breakdown {
+  margin-top: 20px;
+}
+
+.category-item {
+  margin-bottom: 15px;
+}
+
+.category-item span:first-child {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.category-bar {
+  width: 100%;
+  height: 10px;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  overflow: hidden;
+  margin: 5px 0;
+}
+
+.category-spent {
+  height: 100%;
+  background: linear-gradient(90deg, #28a745, #20c997);
+  border-radius: 5px;
+}
+
+.category-item span:last-child {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Investment Tracking Styles */
+.portfolio-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+}
+
+.portfolio-summary p span {
+  font-weight: bold;
+}
+
+.investments-list {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.investment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.investment-item:last-child {
+  border-bottom: none;
+}
+
+.investment-name {
+  font-weight: bold;
+  flex-grow: 1;
+}
+
+.investment-details {
+  text-align: right;
+}
+
+.investment-value {
+  font-weight: bold;
+  display: block;
+}
+
+.investment-change {
+  font-size: 0.9rem;
+}
+
+/* Subscription Manager Styles */
+.subscription-summary {
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+}
+
+.subscriptions-list {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.subscription-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.subscription-item:last-child {
+  border-bottom: none;
+}
+
+.subscription-details {
+  flex-grow: 1;
+}
+
+.subscription-name {
+  font-weight: bold;
+  display: block;
+}
+
+.subscription-category {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.subscription-price-date {
+  text-align: right;
+}
+
+.subscription-price {
+  font-weight: bold;
+  color: #e74c3c;
+  display: block;
+}
+
+.subscription-date {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+/* Account Integration Styles */
+.accounts-list {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.account-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.account-item:last-child {
+  border-bottom: none;
+}
+
+.account-item.action-item {
+  cursor: pointer;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.account-item.action-item:hover {
+  background-color: #e9ecef;
+}
+
+.account-details {
+  flex-grow: 1;
+}
+
+.account-name {
+  font-weight: bold;
+  display: block;
+}
+
+.account-type {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.account-status-balance {
+  text-align: right;
+}
+
+.account-balance {
+  font-weight: bold;
+  display: block;
+}
+
+.account-status {
+  font-size: 0.8rem;
+  padding: 3px 8px;
+  border-radius: 3px;
+  text-transform: capitalize;
+}
+
+.account-status.connected {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.account-status.partially-connected {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.account-status.connect {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+/* Business Tools (Pro Feature) Styles */
+.pro-feature-card {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  text-align: center;
+}
+
+.pro-feature-card h3 {
+  color: white;
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+}
+
+.pro-feature-card p {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.upgrade-btn {
+  background-color: white;
+  color: #f5576c;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 50px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.upgrade-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    text-align: center;
+    padding: 15px 20px;
+  }
+
+  .header-right {
+    margin-top: 15px;
+  }
+
+  .dashboard-main {
+    padding: 20px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}

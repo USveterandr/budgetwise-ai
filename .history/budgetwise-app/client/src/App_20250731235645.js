@@ -1,0 +1,58 @@
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import Landing from './pages/Landing';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Onboarding from './pages/Onboarding';
+import Budget from './pages/Budget';
+import Investments from './pages/Investments';
+import Subscriptions from './pages/Subscriptions';
+import Business from './pages/Business';
+import Sidebar from './components/shared/Sidebar';
+import './App.css'; // We will create this CSS file next
+
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    const token = localStorage.getItem('userToken');
+    setIsAuthenticated(!!token);
+  }, [location.pathname]); // Re-check on path change (e.g., after login)
+
+  const showSidebar = isAuthenticated && !['/', '/login', '/onboarding', '/subscription-selection'].includes(location.pathname);
+
+  return (
+    <Router>
+      <div className="App">
+        {showSidebar && <Sidebar />}
+        <main className={`main-content ${showSidebar ? 'with-sidebar' : ''}`}>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Landing />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/budget" element={isAuthenticated ? <Budget /> : <Landing />} />
+            <Route path="/investments" element={isAuthenticated ? <Investments /> : <Landing />} />
+            <Route path="/subscriptions" element={isAuthenticated ? <Subscriptions /> : <Landing />} />
+            <Route path="/business" element={isAuthenticated ? <Business /> : <Landing />} />
+            <Route path="/subscription-selection" element={<SubscriptionSelection />} /> {/* Placeholder for now */}
+          </Routes>
+        </main>
+      </div>
+    </Router>
+  );
+}
+
+// Placeholder component for subscription selection page
+function SubscriptionSelection() {
+  return (
+    <div className="subscription-selection-container">
+      <h1>Choose Your Plan</h1>
+      <p>Subscription selection page coming soon!</p>
+      <Link to="/dashboard">Back to Dashboard</Link>
+    </div>
+  );
+}
+
+export default App;

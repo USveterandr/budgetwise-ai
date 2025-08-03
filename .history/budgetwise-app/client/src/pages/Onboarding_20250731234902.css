@@ -1,0 +1,115 @@
+.onboarding-container {
+  font-family: var(--font-family-sans);
+  text-align: center;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+}
+
+.onboarding-form-wrapper {
+  background: white;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px; /* Slightly wider for the form-row */
+  text-align: center;
+}
+
+.onboarding-form-wrapper h2 {
+  margin-bottom: 10px;
+  color: #333;
+  font-size: 2rem;
+}
+
+.onboarding-form-wrapper p {
+  margin-bottom: 30px;
+  color: #666;
+  font-size: 1rem;
+}
+
+.onboarding-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-row {
+  display: flex;
+  gap: 15px; /* Space between first and last name */
+}
+
+.form-row .form-group {
+  flex: 1; /* Make both fields in the row take equal space */
+}
+
+.form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #555;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  box-sizing: border-box; /* Important for padding and width */
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-group input:focus {
+  border-color: #667eea;
+  outline: none;
+  box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
+}
+
+.error-message {
+  color: #e74c3c;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+}
+
+.signup-button {
+  background: linear-gradient(45deg, #28a745 0%, #20c997 100%); /* Green gradient for signup */
+  color: white;
+  border: none;
+  padding: 15px;
+  border-radius: 5px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
+  margin-top: 10px;
+}
+
+.signup-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+}
+
+.onboarding-footer {
+  margin-top: 30px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.onboarding-footer a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+.onboarding-footer a:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}

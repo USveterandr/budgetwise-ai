@@ -1,0 +1,206 @@
+.investments-container {
+  font-family: var(--font-family-sans);
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  padding: var(--spacing-2xl);
+  min-height: 100vh;
+}
+
+.investments-header {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.investments-header h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-sm);
+}
+
+.investments-header p {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xl);
+}
+
+.portfolio-summary-card {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+  background-color: var(--card-bg-color);
+  padding: var(--spacing-xl);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.summary-item {
+  text-align: center;
+}
+
+.summary-item h3 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.summary-item .amount {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.summary-item .amount.positive {
+  color: var(--gain-color);
+}
+
+.summary-item .amount.negative {
+  color: var(--expense-color);
+}
+
+.holdings-section h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-lg);
+}
+
+.holdings-table-container {
+  background-color: var(--card-bg-color);
+  padding: var(--spacing-xl);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow);
+  overflow-x: auto; /* For horizontal scrolling on small screens */
+}
+
+.holdings-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.holdings-table th,
+.holdings-table td {
+  padding: var(--spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.holdings-table th {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  background-color: var(--bg-color);
+  position: sticky;
+  top: 0; /* Make header sticky on scroll */
+}
+
+.holdings-table tbody tr:hover {
+  background-color: var(--bg-color);
+}
+
+.asset-info {
+  display: flex;
+  align-items: center;
+}
+
+.asset-icon {
+  font-size: var(--font-size-xl);
+  margin-right: var(--spacing-sm);
+}
+
+.asset-name {
+  font-weight: var(--font-weight-medium);
+}
+
+.asset-type {
+  text-transform: capitalize;
+  color: var(--text-secondary);
+}
+
+.value {
+  font-weight: var(--font-weight-semibold);
+}
+
+.gain-loss.positive {
+  color: var(--gain-color);
+  font-weight: var(--font-weight-semibold);
+}
+
+.gain-loss.negative {
+  color: var(--expense-color);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Pro Features Section */
+.pro-features-investments {
+  margin-top: var(--spacing-2xl);
+  padding-top: var(--spacing-2xl);
+  border-top: 1px solid var(--border-color);
+}
+
+.pro-features-investments h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-lg);
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.insight-card {
+  background-color: var(--card-bg-color);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary-color);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.insight-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.insight-card h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-sm);
+}
+
+.insight-card p {
+  font-size: var(--font-size-base);
+  color: var(--text-secondary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .investments-container {
+    padding: var(--spacing-lg);
+  }
+
+  .portfolio-summary-card {
+    grid-template-columns: 1fr;
+  }
+
+  .holdings-table-container {
+    padding: var(--spacing-lg);
+  }
+
+  .holdings-table th,
+  .holdings-table td {
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+
+  .asset-icon {
+    font-size: var(--font-size-lg);
+  }
+
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,281 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 250px;
+  height: 100vh;
+  background-color: var(--primary-dark); /* Using the new deep navy */
+  color: #e2e8f0; /* Light text for contrast */
+  transition: width var(--transition-normal);
+  overflow: hidden;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  box-shadow: var(--shadow-lg); /* Using new shadow */
+}
+
+.sidebar.collapsed {
+  width: 70px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xl);
+  border-bottom: 1px solid var(--primary-light); /* Using new lighter shade of primary */
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  overflow: hidden;
+}
+
+.app-logo {
+  font-size: var(--font-size-2xl);
+  flex-shrink: 0;
+}
+
+.app-name {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity var(--transition-normal);
+}
+
+.sidebar.collapsed .app-name {
+  opacity: 0;
+  width: 0;
+}
+
+.collapse-toggle {
+  background: none;
+  border: none;
+  color: #cbd5e1; /* Slightly lighter text for the toggle */
+  font-size: var(--font-size-xl);
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.collapse-toggle:hover {
+  background-color: var(--primary-light);
+  color: #f1f5f9;
+}
+
+.sidebar-nav {
+  flex-grow: 1;
+  padding: var(--spacing-lg) 0;
+  overflow-y: auto;
+}
+
+.sidebar-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-nav li {
+  margin-bottom: var(--spacing-xs);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-xl);
+  color: #cbd5e1;
+  text-decoration: none;
+  border-radius: var(--border-radius-md);
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+  margin: 0 var(--spacing-md) var(--spacing-xs);
+}
+
+.nav-item:hover {
+  background-color: var(--primary-light);
+  color: #f1f5f9;
+}
+
+.nav-item.active {
+  background-color: var(--primary-color); /* Using the new primary color */
+  color: white;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background-color: var(--gain-color); /* Emerald green accent for active state */
+}
+
+.nav-icon {
+  font-size: var(--font-size-xl);
+  margin-right: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+.nav-text {
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity var(--transition-normal);
+}
+
+.sidebar.collapsed .nav-text {
+  opacity: 0;
+  width: 0;
+}
+
+.pro-badge {
+  margin-left: auto;
+  background-color: var(--warning-color); /* Using new warning color */
+  color: white;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity var(--transition-normal);
+}
+
+.sidebar.collapsed .pro-badge {
+  opacity: 0;
+  width: 0;
+}
+
+.sidebar-footer {
+  padding: var(--spacing-xl);
+  border-top: 1px solid var(--primary-light);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, var(--gain-color), var(--primary-color)); /* Emerald to navy gradient */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-weight-bold);
+  color: white;
+  flex-shrink: 0;
+}
+
+.user-info {
+  overflow: hidden;
+}
+
+.user-name {
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity var(--transition-normal);
+}
+
+.user-tier {
+  font-size: var(--font-size-xs);
+  opacity: 0.8;
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity var(--transition-normal);
+}
+
+.sidebar.collapsed .user-name,
+.sidebar.collapsed .user-tier {
+  opacity: 0;
+  width: 0;
+}
+
+.user-tier.free {
+  color: var(--text-tertiary); /* Using new tertiary text color */
+}
+
+.user-tier.pro {
+  color: var(--warning-color); /* Using new warning color */
+}
+
+.upgrade-cta {
+  opacity: 1;
+  transition: opacity var(--transition-normal);
+}
+
+.sidebar.collapsed .upgrade-cta {
+  opacity: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.upgrade-button {
+  display: inline-block;
+  width: 100%;
+  padding: var(--spacing-md);
+  background: linear-gradient(45deg, var(--gain-color), var(--gain-light)); /* Emerald green gradient */
+  color: white;
+  text-decoration: none;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.upgrade-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4); /* Shadow matching emerald green */
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 70px; /* Start collapsed on mobile */
+  }
+  
+  .sidebar:not(.collapsed) .app-name,
+  .sidebar:not(.collapsed) .nav-text,
+  .sidebar:not(.collapsed) .pro-badge,
+  .sidebar:not(.collapsed) .user-name,
+  .sidebar:not(.collapsed) .user-tier,
+  .sidebar:not(.collapsed) .upgrade-cta {
+    opacity: 0;
+    width: 0;
+  }
+
+  .sidebar:not(.collapsed) .collapse-toggle {
+    transform: rotate(180deg); /* Arrow points left when expanded */
+  }
+  
+  .sidebar.expanded-on-mobile { /* A class we might add programmatically */
+    width: 250px;
+  }
+  
+  .sidebar.expanded-on-mobile .app-name,
+  .sidebar.expanded-on-mobile .nav-text,
+  .sidebar.expanded-on-mobile .pro-badge,
+  .sidebar.expanded-on-mobile .user-name,
+  .sidebar.expanded-on-mobile .user-tier,
+  .sidebar.expanded-on-mobile .upgrade-cta {
+    opacity: 1;
+    width: auto;
+  }
+  
+  .sidebar.expanded-on-mobile .collapse-toggle {
+    transform: rotate(0deg); /* Arrow points right when collapsed */
+  }
+}

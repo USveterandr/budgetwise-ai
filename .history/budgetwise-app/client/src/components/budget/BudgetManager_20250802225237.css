@@ -1,0 +1,30 @@
+.budget-manager {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.budget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.budget-header h2 {
+  color: #2d3748;
+  font-size: 1.75rem;
+}
+
+.category-filter select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background-color: white;
+  font-size: 1rem;
+}
+
+.budget-form {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;

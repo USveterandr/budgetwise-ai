@@ -1,0 +1,173 @@
+{
+  "name": "budgetwise-app",
+  "type": "directory",
+  "children": [
+    {
+      "name": "client",
+      "type": "directory",
+      "children": [
+        {
+          "name": "public",
+          "type": "directory",
+          "children": [
+            {"name": "index.html", "type": "file"},
+            {"name": "manifest.json", "type": "file"},
+            {"name": "service-worker.js", "type": "file"},
+            {"name": "assets", "type": "directory"}
+          ]
+        },
+        {
+          "name": "src",
+          "type": "directory",
+          "children": [
+            {"name": "App.js", "type": "file"},
+            {"name": "index.js", "type": "file"},
+            {"name": "serviceWorkerRegistration.js", "type": "file"},
+            {
+              "name": "components",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "admin",
+                  "type": "directory",
+                  "children": [
+                    {"name": "AdminDashboard.js", "type": "file"},
+                    {"name": "UserManagement.js", "type": "file"},
+                    {"name": "SubscriptionManager.js", "type": "file"}
+                  ]
+                },
+                {
+                  "name": "dashboard",
+                  "type": "directory",
+                  "children": [
+                    {"name": "BudgetOverview.js", "type": "file"},
+                    {"name": "ExpenseTracker.js", "type": "file"},
+                    {"name": "FinancialReports.js", "type": "file"}
+                  ]
+                },
+                {
+                  "name": "subscriptions",
+                  "type": "directory",
+                  "children": [
+                    {"name": "SubscriptionForm.js", "type": "file"},
+                    {"name": "ReceiptScanner.js", "type": "file"},
+                    {"name": "OCRProcessor.js", "type": "file"}
+                  ]
+                },
+                {
+                  "name": "shared",
+                  "type": "directory",
+                  "children": [
+                    {"name": "CurrencySelector.js", "type": "file"},
+                    {"name": "LanguageSwitcher.js", "type": "file"},
+                    {"name": "PWAInstaller.js", "type": "file"},
+                    {"name": "ImageEditor.js", "type": "file"}
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "pages",
+              "type": "directory",
+              "children": [
+                {"name": "Login.js", "type": "file"},
+                {"name": "Onboarding.js", "type": "file"},
+                {"name": "SubscriptionSelection.js", "type": "file"},
+                {"name": "Dashboard.js", "type": "file"},
+                {"name": "Admin.js", "type": "file"}
+              ]
+            },
+            {
+              "name": "services",
+              "type": "directory",
+              "children": [
+                {"name": "api.js", "type": "file"},
+                {"name": "auth.js", "type": "file"},
+                {"name": "stripe.js", "type": "file"},
+                {"name": "currencyService.js", "type": "file"}
+              ]
+            },
+            {
+              "name": "context",
+              "type": "directory",
+              "children": [
+                {"name": "AuthContext.js", "type": "file"},
+                {"name": "CurrencyContext.js", "type": "file"},
+                {"name": "SubscriptionContext.js", "type": "file"}
+              ]
+            },
+            {
+              "name": "utils",
+              "type": "directory",
+              "children": [
+                {"name": "helpers.js", "type": "file"},
+                {"name": "currencyFormatter.js", "type": "file"},
+                {"name": "ocrUtils.js", "type": "file"}
+              ]
+            }
+          ]
+        },
+        {"name": "package.json", "type": "file"},
+        {"name": ".env", "type": "file"}
+      ]
+    },
+    {
+      "name": "server",
+      "type": "directory",
+      "children": [
+        {
+          "name": "controllers",
+          "type": "directory",
+          "children": [
+            {"name": "authController.js", "type": "file"},
+            {"name": "subscriptionController.js", "type": "file"},
+            {"name": "adminController.js", "type": "file"}
+          ]
+        },
+        {
+          "name": "models",
+          "type": "directory",
+          "children": [
+            {"name": "User.js", "type": "file"},
+            {"name": "Subscription.js", "type": "file"},
+            {"name": "Transaction.js", "type": "file"}
+          ]
+        },
+        {
+          "name": "routes",
+          "type": "directory",
+          "children": [
+            {"name": "authRoutes.js", "type": "file"},
+            {"name": "apiRoutes.js", "type": "file"},
+            {"name": "adminRoutes.js", "type": "file"}
+          ]
+        },
+        {
+          "name": "services",
+          "type": "directory",
+          "children": [
+            {"name": "stripeService.js", "type": "file"},
+            {"name": "currencyService.js", "type": "file"},
+            {"name": "ocrService.js", "type": "file"}
+          ]
+        },
+        {"name": "server.js", "type": "file"},
+        {"name": "package.json", "type": "file"},
+        {"name": ".env", "type": "file"}
+      ]
+    },
+    {
+      "name": "firebase",
+      "type": "directory",
+      "children": [
+        {"name": "firebase.js", "type": "file"},
+        {"name": "firestore.rules", "type": "file"},
+        {"name": "storage.rules", "type": "file"}
+      ]
+    },
+    {"name": ".gitignore", "type": "file"},
+    {"name": "package.json", "type": "file"},
+    {"name": "README.md", "type": "file"},
+    {"name": "deploy-scripts.sh", "type": "file"}
+  ]
+}

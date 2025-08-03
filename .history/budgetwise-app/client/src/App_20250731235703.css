@@ -1,0 +1,83 @@
+/* Main App Layout */
+.App {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: var(--font-family-sans);
+}
+
+/* Main Content Area */
+.main-content {
+  flex-grow: 1;
+  padding: var(--spacing-2xl);
+  margin-left: 0; /* Default for no sidebar */
+  transition: margin-left var(--transition-normal);
+  min-height: 100vh;
+}
+
+.main-content.with-sidebar {
+  margin-left: 250px; /* Width of the sidebar */
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+  .main-content {
+    padding: var(--spacing-lg);
+  }
+
+  .main-content.with-sidebar {
+    margin-left: 70px; /* Width of collapsed sidebar */
+  }
+}
+
+/* Placeholder for SubscriptionSelection page styling */
+.subscription-selection-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  padding: var(--spacing-2xl);
+}
+
+.subscription-selection-container h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-lg);
+}
+
+.subscription-selection-container p {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.subscription-selection-container a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: var(--font-weight-semibold);
+  padding: var(--spacing-md) var(--spacing-2xl);
+  border: 1px solid var(--primary-color);
+  border-radius: var(--border-radius-lg);
+  transition: all var(--transition-fast);
+}
+
+.subscription-selection-container a:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+/* Ensure body has no margin */
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Ensure html takes full height */
+html {
+  height: 100%;
+}

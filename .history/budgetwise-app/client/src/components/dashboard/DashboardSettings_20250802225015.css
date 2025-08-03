@@ -1,0 +1,141 @@
+.dashboard-settings {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.settings-tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+}
+
+.settings-tabs button {
+  padding: 0.75rem 1.5rem;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-weight: 500;
+  color: #718096;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.settings-tabs button.active {
+  color: #4299e1;
+  border-bottom-color: #4299e1;
+}
+
+.view-options h3,
+.widget-options h3 {
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+}
+
+.view-options p,
+.widget-options p {
+  color: #718096;
+  margin-bottom: 1.5rem;
+}
+
+.view-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.view-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-card:hover {
+  border-color: #4299e1;
+}
+
+.view-card.selected {
+  border-color: #4299e1;
+  background-color: #ebf8ff;
+}
+
+.view-card h4 {
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+}
+
+.view-card p {
+  color: #718096;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.view-preview {
+  height: 100px;
+  background-color: #f7fafc;
+  border-radius: 4px;
+  margin-top: 1rem;
+}
+
+.widget-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.widget-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 6px;
+  background-color: #f7fafc;
+}
+
+.widget-item label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.widget-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #4299e1;
+}
+
+.default-tag {
+  background-color: #e6fffa;
+  color: #38b2ac;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-left: auto;
+}
+
+/* Preview styles for different views */
+.preview-cashflow {
+  height: 100%;
+  background: linear-gradient(145deg, #ebf8ff, #bee3f8);
+}
+
+.preview-networth {
+  height: 100%;
+  background: linear-gradient(145deg, #f0fff4, #c6f6d5);
+}
+
+.preview-sankey {
+  height: 100%;
+  background: linear-gradient(145deg, #fffaf0, #feebc8);
+}
+
+.preview-hybrid {
+  height: 100%;
+  background: linear-gradient(145deg, #faf5ff, #e9d8fd);
+}
