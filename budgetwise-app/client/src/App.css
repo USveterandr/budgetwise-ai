@@ -3,6 +3,14 @@
   background: linear-gradient(135deg, var(--luxury-white) 0%, var(--luxury-gold-light) 50%, var(--luxury-blue-light) 100%);
 }
 
+.landing-container {
+  background: linear-gradient(135deg, var(--luxury-white) 0%, var(--luxury-gold-light) 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .nav {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);

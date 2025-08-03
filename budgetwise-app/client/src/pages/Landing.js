@@ -14,7 +14,7 @@ function Landing() {
   }, []);
 
   return (
-    <div className="landing-container fade-in-up">
+    <div className="landing-container fade-in-up" style={{minHeight: '100vh', padding: '4rem 2rem'}}>
       {isNewUser ? (
         <div className="new-user-landing text-center p-4">
           <h1>BudgetWise AI</h1>
@@ -27,9 +27,9 @@ function Landing() {
               Get it on Android
             </a>
           </div>
-          <Link to="/onboarding" className="btn-secondary">
+          <button className="btn-secondary" onClick={() => setIsNewUser(false)}>
             Register Now
-          </Link>
+          </button>
         </div>
       ) : (
         <div className="returning-user-landing text-center p-4">
