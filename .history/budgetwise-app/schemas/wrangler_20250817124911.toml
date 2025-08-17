@@ -1,0 +1,32 @@
+name = "budgetwise"
+compatibility_date = "2025-08-16"
+
+[build]
+command = "npm run build"
+deploy_config = "production"
+
+[observability]
+enabled = true
+
+[[ai.datasets]]
+binding = "RECEIPT_PROCESSOR"
+model_name = "@cf/llm-api"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "budgetwise_prod"
+database_id = "your-d1-id"
+
+[r2_buckets]
+binding = "R2_BUCKET"
+bucket_name = "budgetwise-receipts"
+
+[ai]
+binding = "AI"
+model_name = "@cf/llm-api"
+[[d1_databases]]
+binding = "D1_DATABASE"
+database_name = "budgetwise-db"
+database_id = "your-db-id[r2_buckets]
+binding = "R2_BUCKET"
+bucket_name = "your-bucket-name""

@@ -1,0 +1,6 @@
+[[d1_databases]]
+binding = "D1_DATABASE"
+database_name = "budgetwise-db"
+database_id = "your-db-id[r2_buckets]
+binding = "R2_BUCKET"
+bucket_name = "your-bucket-name""
