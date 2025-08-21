@@ -1,0 +1,27 @@
+name = "budgetwise-api"
+compatibility_date = "2025-08-16"
+
+[build]
+command = "npm run build"
+
+[assets]
+directory = "./budgetwise-app/client/build"
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[env.staging]
+vars = { ENVIRONMENT = "staging" }
+
+[observability]
+enabled = true
+
+
+[[d1_databases]]
+binding = "DB"
+database_name = "budgetwise_prod"
+database_id = "your-d1-id"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "budgetwise-receipts"
