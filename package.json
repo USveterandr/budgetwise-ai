@@ -1,0 +1,13 @@
+{
+  "name": "budgetwise-client",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd budgetwise-app/client && npm run build",
+    "start": "cd budgetwise-app/client && npm start",
+    "test": "cd budgetwise-app/client && npm test"
+  },
+  "devDependencies": {
+    "wrangler": "^3.57.0"
+  }
+}
