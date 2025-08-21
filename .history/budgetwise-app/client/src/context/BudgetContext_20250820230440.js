@@ -23,7 +23,7 @@ export const BudgetProvider = ({ children }) => {
     try {
       setLoading(true);
       // In a real app, this would fetch from your API
-      // const response = await fetch('/api/budgets');
+      // const response = await api.get('/budgets');
       // For now, we'll use mock data
       const mockBudgets = [
         { id: 1, category: 'Housing', amount: 1200, spent: 1150 },
@@ -49,11 +49,7 @@ export const BudgetProvider = ({ children }) => {
   const addBudget = async (budgetData) => {
     try {
       // In a real app, this would POST to your API
-      // const response = await fetch('/api/budgets', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(budgetData)
-      // });
+      // const response = await api.post('/budgets', budgetData);
       // For now, we'll simulate adding to the list
       const newBudget = {
         id: budgets.length + 1,
@@ -71,11 +67,7 @@ export const BudgetProvider = ({ children }) => {
   const updateBudget = async (budgetId, updateData) => {
     try {
       // In a real app, this would PUT to your API
-      // const response = await fetch(`/api/budgets/${budgetId}`, {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(updateData)
-      // });
+      // const response = await api.put(`/budgets/${budgetId}`, updateData);
       // For now, we'll simulate updating in the list
       setBudgets(prev => 
         prev.map(b => b.id === budgetId ? { ...b, ...updateData } : b)
@@ -90,7 +82,7 @@ export const BudgetProvider = ({ children }) => {
   const deleteBudget = async (budgetId) => {
     try {
       // In a real app, this would DELETE from your API
-      // await fetch(`/api/budgets/${budgetId}`, { method: 'DELETE' });
+      // await api.delete(`/budgets/${budgetId}`);
       // For now, we'll simulate deleting from the list
       setBudgets(prev => prev.filter(b => b.id !== budgetId));
     } catch (err) {

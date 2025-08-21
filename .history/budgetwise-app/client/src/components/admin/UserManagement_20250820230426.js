@@ -23,7 +23,7 @@ const UserManagement = () => {
       setUsers(mockUsers);
       setLoading(false);
     }, 500);
-  }, []); // Empty dependency array is fine since mockUsers is static
+  }, [mockUsers]);
 
   const filteredUsers = users.filter(user =>
     user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||

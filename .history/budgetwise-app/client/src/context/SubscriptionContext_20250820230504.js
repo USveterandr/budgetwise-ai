@@ -23,7 +23,7 @@ export const SubscriptionProvider = ({ children }) => {
     try {
       setLoading(true);
       // In a real app, this would fetch from your API
-      // const response = await fetch('/api/subscriptions');
+      // const response = await api.get('/subscriptions');
       // For now, we'll use mock data
       const mockSubscriptions = [
         { id: 1, name: 'Netflix', category: 'Entertainment', price: 15.99, nextBillingDate: '2024-02-15', icon: '🎬', status: 'Active' },
@@ -45,11 +45,7 @@ export const SubscriptionProvider = ({ children }) => {
   const addSubscription = async (subscriptionData) => {
     try {
       // In a real app, this would POST to your API
-      // const response = await fetch('/api/subscriptions', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(subscriptionData)
-      // });
+      // const response = await api.post('/subscriptions', subscriptionData);
       // For now, we'll simulate adding to the list
       const newSubscription = {
         id: subscriptions.length + 1,
@@ -67,11 +63,7 @@ export const SubscriptionProvider = ({ children }) => {
   const updateSubscription = async (subscriptionId, updateData) => {
     try {
       // In a real app, this would PUT to your API
-      // const response = await fetch(`/api/subscriptions/${subscriptionId}`, {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(updateData)
-      // });
+      // const response = await api.put(`/subscriptions/${subscriptionId}`, updateData);
       // For now, we'll simulate updating in the list
       setSubscriptions(prev => 
         prev.map(s => s.id === subscriptionId ? { ...s, ...updateData } : s)
@@ -86,7 +78,7 @@ export const SubscriptionProvider = ({ children }) => {
   const deleteSubscription = async (subscriptionId) => {
     try {
       // In a real app, this would DELETE from your API
-      // await fetch(`/api/subscriptions/${subscriptionId}`, { method: 'DELETE' });
+      // await api.delete(`/subscriptions/${subscriptionId}`);
       // For now, we'll simulate deleting from the list
       setSubscriptions(prev => prev.filter(s => s.id !== subscriptionId));
     } catch (err) {
@@ -99,7 +91,7 @@ export const SubscriptionProvider = ({ children }) => {
   const cancelSubscription = async (subscriptionId) => {
     try {
       // In a real app, this would PATCH to your API
-      // await fetch(`/api/subscriptions/${subscriptionId}/cancel`, { method: 'PATCH' });
+      // await api.patch(`/subscriptions/${subscriptionId}/cancel`);
       // For now, we'll simulate updating the status
       setSubscriptions(prev => 
         prev.map(s => s.id === subscriptionId ? { ...s, status: 'Cancelled' } : s)

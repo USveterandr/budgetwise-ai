@@ -33,7 +33,7 @@ export const CurrencyProvider = ({ children }) => {
     
     // Set default exchange rates
     setExchangeRates(defaultExchangeRates);
-  }, []); // Empty dependency array is fine since defaultExchangeRates is static
+  }, [defaultExchangeRates]);
 
   const updateCurrency = (newCurrency) => {
     setCurrency(newCurrency);
@@ -69,7 +69,8 @@ export const CurrencyProvider = ({ children }) => {
     exchangeRates,
     updateCurrency,
     convertAmount,
-    formatCurrency
+    formatCurrency,
+    loading
   };
 
   return (

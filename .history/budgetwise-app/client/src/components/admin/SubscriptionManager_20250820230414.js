@@ -24,7 +24,7 @@ const SubscriptionManager = () => {
       setSubscriptions(mockSubscriptions);
       setLoading(false);
     }, 500);
-  }, []); // Empty dependency array is fine since mockSubscriptions is static
+  }, [mockSubscriptions]);
 
   const filteredSubscriptions = subscriptions.filter(sub => {
     const matchesSearch = sub.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||

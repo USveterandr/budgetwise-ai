@@ -23,7 +23,7 @@ export const TransactionProvider = ({ children }) => {
     try {
       setLoading(true);
       // In a real app, this would fetch from your API
-      // const response = await fetch('/api/transactions');
+      // const response = await api.get('/transactions');
       // For now, we'll use mock data
       const mockTransactions = [
         { id: 1, description: 'Grocery Store', amount: 85.32, date: '2023-06-15', category: 'Food & Dining', type: 'expense' },
@@ -44,11 +44,7 @@ export const TransactionProvider = ({ children }) => {
   const addTransaction = async (transactionData) => {
     try {
       // In a real app, this would POST to your API
-      // const response = await fetch('/api/transactions', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(transactionData)
-      // });
+      // const response = await api.post('/transactions', transactionData);
       // For now, we'll simulate adding to the list
       const newTransaction = {
         id: transactions.length + 1,
@@ -67,7 +63,7 @@ export const TransactionProvider = ({ children }) => {
   const deleteTransaction = async (transactionId) => {
     try {
       // In a real app, this would DELETE from your API
-      // await fetch(`/api/transactions/${transactionId}`, { method: 'DELETE' });
+      // await api.delete(`/transactions/${transactionId}`);
       // For now, we'll simulate deleting from the list
       setTransactions(prev => prev.filter(t => t.id !== transactionId));
     } catch (err) {
@@ -80,11 +76,7 @@ export const TransactionProvider = ({ children }) => {
   const updateTransaction = async (transactionId, updateData) => {
     try {
       // In a real app, this would PUT to your API
-      // const response = await fetch(`/api/transactions/${transactionId}`, {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(updateData)
-      // });
+      // const response = await api.put(`/transactions/${transactionId}`, updateData);
       // For now, we'll simulate updating in the list
       setTransactions(prev => 
         prev.map(t => t.id === transactionId ? { ...t, ...updateData } : t)
