@@ -4,6 +4,9 @@ compatibility_date = "2025-08-16"
 [build]
 command = "npm run build"
 
+[assets]
+directory = "./budgetwise-app/client/build"
+
 [env.production]
 vars = { ENVIRONMENT = "production" }
 
