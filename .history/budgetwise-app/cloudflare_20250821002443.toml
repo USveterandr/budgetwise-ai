@@ -1,0 +1,17 @@
+# cloudflare.toml
+name = "budgetwise"
+compatibility_date = "2025-08-16"
+
+[build]
+command = "npm run build"
+deploy_config = "production"
+
+[observability]
+enabled = true
+
+[assets]
+directory = "./client/build"
+
+[ai]
+binding = "BUDGETWISE_AI"
+model_name = "@cf/llm-api"
