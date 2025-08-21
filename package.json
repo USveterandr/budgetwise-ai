@@ -3,11 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd budgetwise-app/client && npm run build",
+    "build": "cd budgetwise-app/client && npm ci && npm run build",
     "start": "cd budgetwise-app/client && npm start",
     "test": "cd budgetwise-app/client && npm test"
   },
   "devDependencies": {
     "wrangler": "^3.57.0"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1"
   }
 }
