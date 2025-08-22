@@ -1,0 +1,217 @@
+[assets]
+directory = "./client/build"
+
+[build]
+upload
+  format = "modules"
+  main = "./client/build/index.html"
+  rules = [
+    { glob = "*.js", type = "Module" },
+    { glob = "*.css", type = "Text" },
+    { glob = "*.html", type = "Text" },
+    { glob = "*.json", type = "Text" },
+    { glob = "*.png", type = "Image" },
+    { glob = "*.jpg", type = "Image" },
+    { glob = "*.jpeg", type = "Image" },
+    { glob = "*.svg", type = "Image" },
+    { glob = "*.webp", type = "Image" },
+    { glob = "*.gif", type = "Image" },
+    { glob = "*.ico", type = "Image" },
+    { glob = "*.webmanifest", type = "Text" },
+    { glob = "*.xml", type = "Text" },
+    { glob = "*.txt", type = "Text" },
+    { glob = "*.md", type = "Text" },
+    { glob = "*.csv", type = "Text" },
+    { glob = "*.ts", type = "Module" },
+    { glob = "*.tsx", type = "Module" },
+    { glob = "*.jsx", type = "Module" },
+type = "Image"
+[build.upload.rules."*.svg"]
+type = "Image"
+[build.upload.rules."*.webp"]
+type = "Image"
+[build.upload.rules."*.gif"]
+type = "Image"
+[build.upload.rules."*.ico"]
+type = "Image"
+[build.upload.rules."*.webmanifest"]
+type = "Text"
+[build.upload.rules."*.xml"]
+type = "Text"
+[build.upload.rules."*.txt"]
+type = "Text"
+[build.upload.rules."*.md"]
+type = "Text"
+[build.upload.rules."*.csv"]
+type = "Text"
+[build.upload.rules."*.ts"]
+type = "Module"
+[build.upload.rules."*.tsx"]
+type = "Module"
+[build.upload.rules."*.jsx"]
+type = "Module"
+[build.upload.rules."*.js"]
+type = "Module"
+[build.upload.rules."*.mjs"]
+type = "Module"
+[build.upload.rules."*.cjs"]
+type = "Module"
+[build.upload.rules."*.wasm"]
+type = "Wasm"
+[build.upload.rules."*.js"]
+type = "Module"
+[build.upload.rules."*.css"]
+type = "Text"
+[build.upload.rules."*.html"]
+type = "Text"
+[build.upload.rules."*.json"]
+type = "Text"
+[build.upload.rules."*.png"]
+type = "Image"
+[build.upload.rules."*.jpg"]
+type = "Image"
+[build.upload.rules."*.jpeg"]
+type = "Image"
+[build.upload.rules."*.svg"]
+type = "Image"
+[build.upload.rules."*.webp"]
+type = "Image"
+[build.upload.rules."*.gif"]
+type = "Image"
+[build.upload.rules."*.ico"]
+type = "Image"
+[build.upload.rules."*.webmanifest"]
+type = "Text"
+[build.upload.rules."*.xml"]
+type = "Text"
+[build.upload.rules."*.txt"]
+type = "Text"
+[build.upload.rules."*.md"]
+type = "Text"
+[build.upload.rules."*.csv"]
+type = "Text"
+[build.upload.rules."*.ts"]
+type = "Module"
+[build.upload.rules."*.tsx"]
+type = "Module"
+[build.upload.rules."*.jsx"]
+type = "Module"
+[build.upload.rules."*.js"]
+type = "Module"
+[build.upload.rules."*.mjs"]
+type = "Module"
+[build.upload.rules."*.cjs"]
+type = "Module"
+[build.upload.rules."*.wasm"]
+type = "Wasm"
+[build.upload.rules."*.js"]
+type = "Module"
+[build.upload.rules."*.css"]
+type = "Text"
+[build.upload.rules."*.html"]
+type = "Text"
+[build.upload.rules."*.json"]
+type = "Text"
+[build.upload.rules."*.png"]
+type = "Image"
+[build.upload.rules."*.jpg"]
+type = "Image"
+[build.upload.rules."*.jpeg"]
+type = "Image"
+[build.upload.rules."*.svg"]
+type = "Image"
+[build.upload.rules."*.webp"]
+type = "Image"
+[build.upload.rules."*.gif"]
+type = "Image"
+[build.upload.rules."*.ico"]
+type = "Image"
+[build.upload.rules."*.webmanifest"]
+type = "Text"
+[build.upload.rules."*.xml"]
+type = "Text"
+[build.upload.rules."*.txt"]
+type = "Text"
+[build.upload.rules."*.md"]
+type = "Text"
+[build.upload.rules."*.csv"]
+type = "Text"
+[build.upload.rules."*.ts"]
+type = "Module"
+[build.upload.rules."*.tsx"]
+type = "Module"
+[build.upload.rules."*.jsx"]
+type = "Module"
+[build.upload.rules."*.js"]
+type = "Module"
+[build.upload.rules."*.mjs"]
+type = "Module"
+[build.upload.rules."*.cjs"]
+type = "Module"
+[build.upload.rules."*.wasm"]
+type = "Wasm"
+[build.upload.rules."*.js"]
+type = "Module"
+[build.upload.rules."*.css"]
+type = "Text"
+[build.upload.rules."*.html"]
+type = "Text"
+[build.upload.rules."*.json"]
+type = "Text"
+[build.upload.rules."*.png"]
+type = "Image"
+[build.upload.rules."*.jpg"]
+type = "Image"
+[build.upload.rules."*.jpeg"]
+type = "Image"
+[build.upload.rules."*.svg"]
+type = "Image"
+[build.upload.rules."*.webp"]
+type = "Image"
+[build.upload.rules."*.gif"]
+type = "Image"
+[build.upload.rules."*.ico"]
+type = "Image"
+[build.upload.rules."*.webmanifest"]
+type = "Text"
+[build.upload.rules."*.xml"]
+type = "Text"
+[build.upload.rules."*.txt"]
+type = "Text"
+[build.upload.rules."*.md"]
+type = "Text"
+[build.upload.rules."*.csv"]
+type = "Text"
+[build.upload.rules."*.ts"]
+type = "Module"
+[build.upload.rules."*.tsx"]
+type = "Module"
+[build.upload.rules."*.jsx"]
+type = "Module"
+[build.upload.rules."*.js"]
+type = "Module"
+[build.upload.rules."*.mjs"]
+type = "Module"
+[build.upload.rules."*.cjs"]
+type = "Module"
+[build.upload.rules."*.wasm"]
+type = "Wasm"
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[env.staging]
+vars = { ENVIRONMENT = "staging" }
+
+[observability]
+enabled = true
+
+
+[[d1_databases]]
+binding = "DB"
+database_name = "budgetwise_prod"
+database_id = "your-d1-id"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "budgetwise-receipts"

@@ -1,0 +1,30 @@
+[assets]
+directory = "./client/build"
+
+[build.upload]
+format = "modules"
+main = "./client/build/index.html"
+rules = [
+    { glob = "*.js", type = "Module" },
+    { glob = "*.css", type = "Text" },
+    { glob = "*.html", type = "Text" },
+    { glob = "*.json", type = "Text" },
+    { glob = "*.png", type = "Image" },
+    { glob = "*.jpg", type = "Image" },
+    { glob = "*.jpeg", type = "Image" },
+    { glob = "*.svg", type = "Image" },
+    { glob = "*.webp", type = "Image" },
+    { glob = "*.gif", type = "Image" },
+    { glob = "*.ico", type = "Image" },
+    { glob = "*.webmanifest", type = "Text" },
+    { glob = "*.xml", type = "Text" },
+    { glob = "*.txt", type = "Text" },
+    { glob = "*.md", type = "Text" },
+    { glob = "*.csv", type = "Text" },
+    { glob = "*.ts", type = "Module" },
+    { glob = "*.tsx", type = "Module" },
+    { glob = "*.jsx", type = "Module" },
+    { glob = "*.mjs", type = "Module" },
+    { glob = "*.cjs", type = "Module" },
+    { glob = "*.wasm", type = "Wasm" }
+  ]

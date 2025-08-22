@@ -1,0 +1,125 @@
+name = "budgetwise-api"
+compatibility_date = "2025-08-16"
+
+[build]
+command = "npm run build"
+
+[assets]
+directory = "./client/build"
+[build.upload]
+format = "modules"
+main = "./client/build/index.html"
+[build.upload.rules]
+[build.upload.rules."*"]
+type = "Text"
+[build.upload.rules."*.js"]
+type = "Module"
+[build.upload.rules."*.css"]
+type = "Text"
+[build.upload.rules."*.html"]
+type = "Text"
+[build.upload.rules."*.json"]
+type = "Text"
+[build.upload.rules."*.png"]
+type = "Image"
+[build.upload.rules."*.jpg"]
+type = "Image"
+[build.upload.rules."*.jpeg"]
+type = "Image"
+[build.upload.rules."*.svg"]
+type = "Image"
+[build.upload.rules."*.webp"]
+type = "Image"
+[build.upload.rules."*.gif"]
+type = "Image"
+[build.upload.rules."*.ico"]
+type = "Image"
+[build.upload.rules."*.webmanifest"]
+type = "Text"
+[build.upload.rules."*.xml"]
+type = "Text"
+[build.upload.rules."*.txt"]
+type = "Text"
+[build.upload.rules."*.md"]
+type = "Text"
+[build.upload.rules."*.csv"]
+type = "Text"
+[build.upload.rules."*.ts"]
+type = "Module"
+[build.upload.rules."*.tsx"]
+type = "Module"
+[build.upload.rules."*.jsx"]
+type = "Module"
+[build.upload.rules."*.js"]
+type = "Module"
+[build.upload.rules."*.mjs"]
+type = "Module"
+[build.upload.rules."*.cjs"]
+type = "Module"
+[build.upload.rules."*.wasm"]
+type = "Wasm"
+[build.upload.rules."*.js"]
+type = "Module"
+[build.upload.rules."*.css"]
+type = "Text"
+[build.upload.rules."*.html"]
+type = "Text"
+[build.upload.rules."*.json"]
+type = "Text"
+[build.upload.rules."*.png"]
+type = "Image"
+[build.upload.rules."*.jpg"]
+type = "Image"
+[build.upload.rules."*.jpeg"]
+type = "Image"
+[build.upload.rules."*.svg"]
+type = "Image"
+[build.upload.rules."*.webp"]
+type = "Image"
+[build.upload.rules."*.gif"]
+type = "Image"
+[build.upload.rules."*.ico"]
+type = "Image"
+[build.upload.rules."*.webmanifest"]
+type = "Text"
+[build.upload.rules."*.xml"]
+type = "Text"
+[build.upload.rules."*.txt"]
+type = "Text"
+[build.upload.rules."*.md"]
+type = "Text"
+[build.upload.rules."*.csv"]
+type = "Text"
+[build.upload.rules."*.ts"]
+type = "Module"
+[build.upload.rules."*.tsx"]
+type = "Module"
+[build.upload.rules."*.jsx"]
+type = "Module"
+[build.upload.rules."*.js"]
+type = "Module"
+[build.upload.rules."*.mjs"]
+type = "Module"
+[build.upload.rules."*.cjs"]
+type = "Module"
+[build.upload.rules."*.wasm"]
+type = "Wasm"
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[env.staging]
+vars = { ENVIRONMENT = "staging" }
+
+[observability]
+enabled = true
+
+
+[[d1_databases]]
+binding = "DB"
+database_name = "budgetwise_prod"
+database_id = "your-d1-id"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "budgetwise-receipts"
