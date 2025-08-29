@@ -219,9 +219,13 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
 # Expense routes
 @api_router.post("/expenses", response_model=Expense)
 async def create_expense(expense_data: ExpenseCreate, current_user: User = Depends(get_current_user)):
+    expense_dict = expense_data.dict()
+    if expense_dict.get('date') is None:
+        expense_dict['date'] = datetime.now(timezone.utc)
+    
     expense = Expense(
         user_id=current_user.id,
-        **expense_data.dict()
+        **expense_dict
     )
     
     expense_dict = prepare_for_mongo(expense.dict())
