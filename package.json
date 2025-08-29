@@ -4,10 +4,13 @@
   "description": "BudgetWise - AI-powered financial management SaaS platform",
   "private": true,
   "scripts": {
-    "build": "cd frontend && npm run build",
+    "preinstall": "cd frontend && npm install",
+    "build": "cd frontend && npm run build && cp ../_headers ../frontend/build/ && cp ../_redirects ../frontend/build/",
     "start": "cd frontend && npm start",
+    "dev": "cd frontend && npm start",
     "install:frontend": "cd frontend && npm install",
-    "install:all": "npm run install:frontend"
+    "install:all": "npm run install:frontend",
+    "postbuild": "echo 'Build completed successfully! Deploy the frontend/build directory to Cloudflare Pages.'"
   },
   "repository": {
     "type": "git",
@@ -15,5 +18,9 @@
   },
   "keywords": ["budgeting", "finance", "saas", "react", "fastapi"],
   "author": "BudgetWise Team",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
 }
