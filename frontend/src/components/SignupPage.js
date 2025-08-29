@@ -101,10 +101,44 @@ const SignupPage = ({ setUser }) => {
 
   const handlePlanSelect = (planId) => {
     setSelectedPlan(planId);
+    const plan = plans.find(p => p.id === planId);
+    setSelectedPlanData(plan);
     setFormData({
       ...formData,
       subscription_plan: planId
     });
+  };
+
+  const handleNextStep = () => {
+    if (currentStep === 1 && formData.email && formData.password && formData.full_name) {
+      setCurrentStep(2);
+    } else if (currentStep === 2 && selectedPlan) {
+      if (selectedPlan === "free") {
+        handleSubmit();
+      } else {
+        setCurrentStep(3);
+      }
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handlePaymentSuccess = async (paymentData) => {
+    try {
+      // Create account after successful payment
+      await handleSubmit();
+    } catch (error) {
+      toast.error("Failed to create account after payment");
+    }
+  };
+
+  const handlePaymentError = (error) => {
+    toast.error("Payment failed. Please try again.");
+    console.error("Payment error:", error);
   };
 
   const handleSubmit = async (e) => {
