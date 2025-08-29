@@ -1,0 +1,24 @@
+# Cloudflare Pages Headers Configuration
+/*
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Cache static assets
+/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cache service worker
+/service-worker.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Cache fonts
+*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+
+# SPA Configuration - serve index.html for all routes
+/*
+  X-Frame-Options: DENY
+  Cache-Control: public, max-age=0, must-revalidate
