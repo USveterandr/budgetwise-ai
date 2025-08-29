@@ -1,0 +1,19 @@
+{
+  "name": "budgetwise-app",
+  "version": "1.0.0",
+  "description": "BudgetWise - AI-powered financial management SaaS platform",
+  "private": true,
+  "scripts": {
+    "build": "cd frontend && npm run build",
+    "start": "cd frontend && npm start",
+    "install:frontend": "cd frontend && npm install",
+    "install:all": "npm run install:frontend"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/USveterandr/budgetwise-ai"
+  },
+  "keywords": ["budgeting", "finance", "saas", "react", "fastapi"],
+  "author": "BudgetWise Team",
+  "license": "MIT"
+}
