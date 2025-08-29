@@ -1,19 +1,13 @@
 # Cloudflare Pages Redirects Configuration for SPA
 
-# Handle SPA routing - serve index.html for all non-asset routes
-/*    /index.html   200
+# Handle app routes (specific routes first)
+/dashboard    /index.html   200
+/expenses     /index.html   200  
+/budget       /index.html   200
+/investments  /index.html   200
+/achievements /index.html   200
+/signup       /index.html   200
+/login        /index.html   200
 
-# API routes - redirect to your backend service
-/api/*  https://your-backend-api.com/api/:splat  200
-
-# Handle authentication redirects
-/auth/*  /index.html  200
-
-# Handle app routes
-/dashboard  /index.html  200
-/expenses   /index.html  200
-/budget     /index.html  200
-/investments /index.html  200
-/achievements /index.html  200
-/signup     /index.html  200
-/login      /index.html  200
+# Handle SPA routing - serve index.html for all non-asset routes (must be last)
+/*            /index.html   200
