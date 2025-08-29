@@ -28,6 +28,19 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# PayPal Configuration
+paypal_client_id = os.environ.get('PAYPAL_CLIENT_ID')
+paypal_client_secret = os.environ.get('PAYPAL_CLIENT_SECRET')
+paypal_mode = os.environ.get('PAYPAL_MODE', 'sandbox')
+
+# Initialize PayPal client
+if paypal_mode == 'live':
+    paypal_environment = LiveEnvironment(client_id=paypal_client_id, client_secret=paypal_client_secret)
+else:
+    paypal_environment = SandboxEnvironment(client_id=paypal_client_id, client_secret=paypal_client_secret)
+
+paypal_client = PayPalHttpClient(paypal_environment)
+
 # Create the main app without a prefix
 app = FastAPI(title="BudgetWise API", version="1.0.0")
 
