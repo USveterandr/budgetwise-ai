@@ -345,8 +345,191 @@ async def get_investments(current_user: User = Depends(get_current_user)):
     investments = await db.investments.find({"user_id": current_user.id}).to_list(length=1000)
     return [Investment(**parse_from_mongo(investment)) for investment in investments]
 
-# Dashboard data
-@api_router.get("/dashboard")
+# PayPal Payment Routes
+@api_router.post("/payments/create-order")
+async def create_payment_order(payment_data: PaymentIntent, current_user: User = Depends(get_current_user)):
+    try:
+        request = OrdersCreateRequest()
+        request.prefer('return=representation')
+        
+        # Plan pricing mapping
+        plan_pricing = {
+            "free": 0,
+            "personal-plus": 9.99,
+            "investor": 19.99,
+            "business-pro-elite": 49.99
+        }
+        
+        amount = plan_pricing.get(payment_data.plan_id, payment_data.amount)
+        
+        request.request_body = {
+            "intent": "CAPTURE",
+            "application_context": {
+                "brand_name": "BudgetWise",
+                "landing_page": "BILLING",
+                "shipping_preference": "NO_SHIPPING",
+                "user_action": "PAY_NOW",
+                "return_url": f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/payment/success",
+                "cancel_url": f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/payment/cancel"
+            },
+            "purchase_units": [{
+                "reference_id": f"user_{current_user.id}_plan_{payment_data.plan_id}",
+                "amount": {
+                    "currency_code": payment_data.currency,
+                    "value": f"{amount:.2f}"
+                },
+                "description": f"BudgetWise {payment_data.plan_id.replace('-', ' ').title()} Subscription"
+            }]
+        }
+        
+        response = paypal_client.execute(request)
+        
+        # Store pending payment in database
+        payment_record = {
+            "id": str(uuid.uuid4()),
+            "user_id": current_user.id,
+            "paypal_order_id": response.result.id,
+            "plan_id": payment_data.plan_id,
+            "amount": amount,
+            "currency": payment_data.currency,
+            "status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.payments.insert_one(prepare_for_mongo(payment_record))
+        
+        return {
+            "order_id": response.result.id,
+            "status": response.result.status,
+            "links": [{"href": link.href, "rel": link.rel, "method": link.method} for link in response.result.links]
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Payment order creation failed: {str(e)}")
+
+@api_router.post("/payments/capture-order")
+async def capture_payment_order(capture_data: PaymentCapture, current_user: User = Depends(get_current_user)):
+    try:
+        request = OrdersCaptureRequest(capture_data.order_id)
+        response = paypal_client.execute(request)
+        
+        if response.result.status == "COMPLETED":
+            # Update payment record
+            await db.payments.update_one(
+                {"paypal_order_id": capture_data.order_id},
+                {"$set": {
+                    "status": "completed",
+                    "captured_at": datetime.now(timezone.utc).isoformat(),
+                    "paypal_capture_id": response.result.purchase_units[0].payments.captures[0].id
+                }}
+            )
+            
+            # Get payment record to update user subscription
+            payment_record = await db.payments.find_one({"paypal_order_id": capture_data.order_id})
+            
+            if payment_record:
+                # Update user's subscription plan
+                await db.users.update_one(
+                    {"id": current_user.id},
+                    {"$set": {"subscription_plan": payment_record["plan_id"]}}
+                )
+                
+                # Create subscription record
+                subscription = {
+                    "id": str(uuid.uuid4()),
+                    "user_id": current_user.id,
+                    "plan_id": payment_record["plan_id"],
+                    "status": "active",
+                    "amount": payment_record["amount"],
+                    "currency": payment_record["currency"],
+                    "billing_cycle": "monthly",
+                    "next_billing_date": (datetime.now(timezone.utc) + timezone.timedelta(days=30)).isoformat(),
+                    "paypal_order_id": capture_data.order_id,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+                
+                await db.subscriptions.insert_one(prepare_for_mongo(subscription))
+        
+        return {
+            "capture_id": response.result.purchase_units[0].payments.captures[0].id,
+            "status": response.result.status,
+            "amount": response.result.purchase_units[0].payments.captures[0].amount
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Payment capture failed: {str(e)}")
+
+@api_router.get("/payments/plans")
+async def get_subscription_plans():
+    return {
+        "plans": [
+            {
+                "id": "free",
+                "name": "Free",
+                "price": 0,
+                "currency": "USD",
+                "billing_cycle": "monthly",
+                "features": [
+                    "Basic expense tracking",
+                    "Simple budget creation",
+                    "Monthly reports",
+                    "Mobile app access"
+                ]
+            },
+            {
+                "id": "personal-plus",
+                "name": "Personal Plus",
+                "price": 9.99,
+                "currency": "USD",
+                "billing_cycle": "monthly",
+                "features": [
+                    "Advanced budgeting tools",
+                    "AI-powered insights",
+                    "Unlimited categories",
+                    "Goal tracking",
+                    "Achievement system",
+                    "Priority support"
+                ]
+            },
+            {
+                "id": "investor",
+                "name": "Investor",
+                "price": 19.99,
+                "currency": "USD",
+                "billing_cycle": "monthly",
+                "features": [
+                    "Everything in Personal Plus",
+                    "Investment portfolio tracking",
+                    "Retirement planning tools",
+                    "Advanced analytics",
+                    "Tax optimization tips",
+                    "Financial advisor consultation"
+                ]
+            },
+            {
+                "id": "business-pro-elite",
+                "name": "Business Pro Elite",
+                "price": 49.99,
+                "currency": "USD",
+                "billing_cycle": "monthly",
+                "features": [
+                    "Everything in Investor",
+                    "Team collaboration",
+                    "Business expense management",
+                    "Advanced reporting",
+                    "API access",
+                    "Dedicated account manager"
+                ]
+            }
+        ]
+    }
+
+@api_router.get("/payments/subscription")
+async def get_user_subscription(current_user: User = Depends(get_current_user)):
+    subscription = await db.subscriptions.find_one({"user_id": current_user.id, "status": "active"})
+    if subscription:
+        return Subscription(**parse_from_mongo(subscription))
+    return None
 async def get_dashboard_data(current_user: User = Depends(get_current_user)):
     # Get recent expenses
     recent_expenses = await db.expenses.find(
