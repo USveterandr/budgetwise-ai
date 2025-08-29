@@ -176,13 +176,22 @@ const SignupPage = ({ setUser }) => {
       <nav className="fixed top-0 w-full bg-white/90 backdrop-blur-md border-b border-gray-200 z-50">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <ArrowLeft className="h-5 w-5 text-gray-600" />
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-violet-500 to-purple-500 rounded-lg flex items-center justify-center">
-                <PiggyBank className="h-5 w-5 text-white" />
+            {currentStep > 1 ? (
+              <button onClick={handlePreviousStep} className="flex items-center gap-2">
+                <ArrowLeft className="h-5 w-5 text-gray-600" />
+                <span className="text-gray-600">Back</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <ArrowLeft className="h-5 w-5 text-gray-600" />
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-gradient-to-r from-violet-500 to-purple-500 rounded-lg flex items-center justify-center">
+                    <PiggyBank className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="text-xl font-bold text-gray-900">BudgetWise</span>
+                </div>
               </div>
-              <span className="text-xl font-bold text-gray-900">BudgetWise</span>
-            </div>
+            )}
           </Link>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">Already have an account?</span>
@@ -194,26 +203,125 @@ const SignupPage = ({ setUser }) => {
       </nav>
 
       <div className="pt-24 pb-12">
-        <div className="container mx-auto px-6 max-w-6xl">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              Start Your Financial Journey
-            </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Choose your plan and join thousands who've transformed their financial future with BudgetWise.
-            </p>
+        <div className="container mx-auto px-6 max-w-4xl">
+          {/* Progress Steps */}
+          <div className="mb-12">
+            <div className="flex items-center justify-center mb-8">
+              {[1, 2, 3].map((step) => (
+                <div key={step} className="flex items-center">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${
+                    currentStep >= step 
+                      ? 'bg-gradient-to-r from-violet-500 to-purple-500' 
+                      : 'bg-gray-300'
+                  }`}>
+                    {currentStep > step ? <Check className="h-5 w-5" /> : step}
+                  </div>
+                  {step < 3 && (
+                    <div className={`w-20 h-1 mx-2 ${
+                      currentStep > step ? 'bg-gradient-to-r from-violet-500 to-purple-500' : 'bg-gray-300'
+                    }`} />
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div className="text-center">
+              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                {currentStep === 1 && "Create Your Account"}
+                {currentStep === 2 && "Choose Your Plan"}
+                {currentStep === 3 && "Complete Payment"}
+              </h1>
+              <p className="text-gray-600">
+                {currentStep === 1 && "Enter your details to get started"}
+                {currentStep === 2 && "Select the plan that fits your needs"}
+                {currentStep === 3 && "Secure payment to activate your subscription"}
+              </p>
+            </div>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Plan Selection */}
-            <div className="lg:col-span-2">
-              <div className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Choose Your Plan</h2>
-                <p className="text-gray-600">Select the plan that best fits your financial goals</p>
-              </div>
+          {/* Step 1: Account Information */}
+          {currentStep === 1 && (
+            <Card className="max-w-2xl mx-auto">
+              <CardHeader>
+                <CardTitle>Account Information</CardTitle>
+                <CardDescription>
+                  Tell us a bit about yourself to create your BudgetWise account
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="full_name">Full Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="full_name"
+                        name="full_name"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={formData.full_name}
+                        onChange={handleInputChange}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="Enter your email address"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="password"
+                        name="password"
+                        type="password"
+                        placeholder="Create a strong password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className="pl-10"
+                        required
+                        minLength="6"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Password must be at least 6 characters long
+                    </p>
+                  </div>
+
+                  <Button 
+                    onClick={handleNextStep}
+                    disabled={!formData.email || !formData.password || !formData.full_name}
+                    className="w-full bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"
+                  >
+                    Continue to Plan Selection
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 2: Plan Selection */}
+          {currentStep === 2 && (
+            <div className="space-y-8">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {plans.map((plan) => (
                   <Card 
                     key={plan.id}
@@ -234,7 +342,7 @@ const SignupPage = ({ setUser }) => {
                     )}
                     <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl">{plan.name}</CardTitle>
+                        <CardTitle className="text-lg">{plan.name}</CardTitle>
                         <div className={`w-6 h-6 rounded-full border-2 ${
                           selectedPlan === plan.id 
                             ? 'bg-violet-500 border-violet-500' 
@@ -246,20 +354,20 @@ const SignupPage = ({ setUser }) => {
                         </div>
                       </div>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold text-gray-900">
+                        <span className="text-2xl font-bold text-gray-900">
                           ${plan.price}
                         </span>
                         <span className="text-gray-500">{plan.period}</span>
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <ul className="space-y-3">
-                        {plan.features.map((feature, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
-                              <Check className="h-3 w-3 text-green-600" />
+                      <ul className="space-y-2">
+                        {plan.features.slice(0, 4).map((feature, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <div className="w-4 h-4 bg-green-100 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
+                              <Check className="h-2 w-2 text-green-600" />
                             </div>
-                            <span className="text-sm text-gray-600">{feature}</span>
+                            <span className="text-xs text-gray-600">{feature}</span>
                           </li>
                         ))}
                       </ul>
@@ -267,119 +375,30 @@ const SignupPage = ({ setUser }) => {
                   </Card>
                 ))}
               </div>
+
+              <div className="text-center">
+                <Button 
+                  onClick={handleNextStep}
+                  disabled={!selectedPlan}
+                  className="bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"
+                >
+                  {selectedPlan === "free" ? "Create Free Account" : "Continue to Payment"}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
+          )}
 
-            {/* Signup Form */}
-            <div className="lg:col-span-1">
-              <Card className="sticky top-24">
-                <CardHeader>
-                  <CardTitle className="text-xl text-gray-900">Create Your Account</CardTitle>
-                  <CardDescription>
-                    Fill in your details to get started with BudgetWise
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="full_name">Full Name</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input
-                          id="full_name"
-                          name="full_name"
-                          type="text"
-                          placeholder="Enter your full name"
-                          value={formData.full_name}
-                          onChange={handleInputChange}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          placeholder="Enter your email"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input
-                          id="password"
-                          name="password"
-                          type="password"
-                          placeholder="Create a strong password"
-                          value={formData.password}
-                          onChange={handleInputChange}
-                          className="pl-10"
-                          required
-                          minLength="6"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Selected Plan Summary */}
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h3 className="font-semibold text-gray-900 mb-2">Selected Plan</h3>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">
-                          {plans.find(p => p.id === selectedPlan)?.name}
-                        </span>
-                        <span className="font-semibold text-gray-900">
-                          ${plans.find(p => p.id === selectedPlan)?.price}
-                          {plans.find(p => p.id === selectedPlan)?.period}
-                        </span>
-                      </div>
-                      {selectedPlan !== "free" && (
-                        <p className="text-sm text-violet-600 mt-2">
-                          7-day free trial included
-                        </p>
-                      )}
-                    </div>
-
-                    <Button
-                      type="submit"
-                      className="w-full bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        "Creating Account..."
-                      ) : selectedPlan === "free" ? (
-                        "Create Free Account"
-                      ) : (
-                        "Start Free Trial"
-                      )}
-                    </Button>
-
-                    <p className="text-xs text-gray-500 text-center">
-                      By signing up, you agree to our{" "}
-                      <a href="#" className="text-violet-600 hover:underline">
-                        Terms of Service
-                      </a>{" "}
-                      and{" "}
-                      <a href="#" className="text-violet-600 hover:underline">
-                        Privacy Policy
-                      </a>
-                    </p>
-                  </form>
-                </CardContent>
-              </Card>
+          {/* Step 3: Payment */}
+          {currentStep === 3 && (
+            <div className="max-w-2xl mx-auto">
+              <PaymentForm
+                selectedPlan={selectedPlanData}
+                onPaymentSuccess={handlePaymentSuccess}
+                onPaymentError={handlePaymentError}
+              />
             </div>
-          </div>
+          )}
 
           {/* Security & Trust Badges */}
           <div className="mt-16 text-center">
