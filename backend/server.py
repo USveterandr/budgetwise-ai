@@ -14,6 +14,12 @@ import bcrypt
 import jwt
 from decimal import Decimal
 
+# PayPal SDK imports
+from paypalcheckoutsdk.core import SandboxEnvironment, LiveEnvironment
+from paypalcheckoutsdk.core import PayPalHttpClient
+from paypalcheckoutsdk.orders import OrdersCreateRequest, OrdersCaptureRequest
+from paypalcheckoutsdk.payments import CapturesRefundRequest
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
