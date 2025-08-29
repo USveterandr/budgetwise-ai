@@ -16,6 +16,7 @@ const API = `${BACKEND_URL}/api`;
 
 const SignupPage = ({ setUser }) => {
   const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -24,6 +25,7 @@ const SignupPage = ({ setUser }) => {
   });
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState("free");
+  const [selectedPlanData, setSelectedPlanData] = useState(null);
 
   const plans = [
     {
