@@ -140,25 +140,23 @@ const SignupPage = ({ setUser }) => {
     console.error("Payment error:", error);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setLoading(true);
 
     try {
-      if (selectedPlan !== "free") {
-        // For paid plans, we'll integrate PayPal here
-        toast.success("Redirecting to PayPal for payment...");
-        // PayPal integration will be added next
-        return;
-      }
-
-      // For free plan, create account directly
+      // Create account for any plan (free or paid)
       const response = await axios.post(`${API}/auth/signup`, formData);
       
       if (response.data.access_token) {
         localStorage.setItem("token", response.data.access_token);
         setUser(response.data.user);
-        toast.success("Account created successfully! Welcome to BudgetWise!");
+        
+        if (selectedPlan === "free") {
+          toast.success("Free account created successfully! Welcome to BudgetWise!");
+        } else {
+          toast.success("Account created successfully! Welcome to " + selectedPlanData?.name + "!");
+        }
+        
         navigate("/dashboard");
       }
     } catch (error) {
