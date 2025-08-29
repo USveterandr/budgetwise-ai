@@ -18,7 +18,8 @@ import {
   ArrowDownRight,
   Wallet,
   CreditCard,
-  BarChart3
+  BarChart3,
+  Zap
 } from "lucide-react";
 import { toast } from "sonner";
 
