@@ -6,7 +6,9 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { PiggyBank, ArrowLeft, Check, Star, Mail, Lock, User } from "lucide-react";
+import { Steps } from "./ui/steps";
+import PaymentForm from "./PaymentForm";
+import { PiggyBank, ArrowLeft, Check, Star, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
