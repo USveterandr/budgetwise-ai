@@ -147,6 +147,31 @@ class InvestmentCreate(BaseModel):
     purchase_price: float
     purchase_date: datetime
 
+class PaymentIntent(BaseModel):
+    plan_id: str
+    amount: float
+    currency: str = "USD"
+
+class PaymentCapture(BaseModel):
+    order_id: str
+    user_id: str
+
+class Subscription(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    plan_id: str
+    status: str = "active"  # active, canceled, expired
+    paypal_subscription_id: Optional[str] = None
+    amount: float
+    currency: str = "USD"
+    billing_cycle: str = "monthly"
+    next_billing_date: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class SubscriptionCreate(BaseModel):
+    plan_id: str
+    payment_method: str = "paypal"
+
 # Authentication functions
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
