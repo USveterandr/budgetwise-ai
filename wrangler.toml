@@ -3,10 +3,17 @@ compatibility_date = "2024-08-29"
 pages_build_output_dir = "frontend/build"
 
 [env.production]
-vars = { NODE_ENV = "production" }
+vars = { 
+  NODE_ENV = "production",
+  GENERATE_SOURCEMAP = "false",
+  DISABLE_ESLINT_PLUGIN = "true"
+}
 
 [env.preview]
-vars = { NODE_ENV = "development" }
+vars = { 
+  NODE_ENV = "development",
+  GENERATE_SOURCEMAP = "false"
+}
 
 # Configuration for Cloudflare Pages
 # Build settings will be handled by Cloudflare Pages dashboard
