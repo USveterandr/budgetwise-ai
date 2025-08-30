@@ -72,16 +72,17 @@ class BudgetWiseAPITester:
         )
         return success
 
-    def test_signup(self):
-        """Test user signup"""
+    def test_signup_free_plan(self):
+        """Test user signup with free plan"""
         signup_data = {
-            "email": "test@example.com",
+            "email": "freeuser@example.com",
             "password": "testpass123",
-            "full_name": "Test User"
+            "full_name": "Free Plan User",
+            "subscription_plan": "free"
         }
         
         success, response = self.run_test(
-            "User Signup",
+            "User Signup - Free Plan",
             "POST",
             "auth/signup",
             200,
@@ -92,6 +93,69 @@ class BudgetWiseAPITester:
             self.token = response['access_token']
             if 'user' in response:
                 self.user_id = response['user']['id']
+                # Verify subscription plan is correctly set
+                if response['user'].get('subscription_plan') == 'free':
+                    print(f"   ✅ Subscription plan correctly set to 'free'")
+                else:
+                    print(f"   ❌ Subscription plan mismatch: expected 'free', got '{response['user'].get('subscription_plan')}'")
+                    return False
+            print(f"   Token obtained: {self.token[:20]}...")
+            return True
+        return False
+
+    def test_signup_paid_plan(self):
+        """Test user signup with paid plan"""
+        signup_data = {
+            "email": "paiduser@example.com",
+            "password": "testpass123",
+            "full_name": "Paid Plan User",
+            "subscription_plan": "personal-plus"
+        }
+        
+        success, response = self.run_test(
+            "User Signup - Personal Plus Plan",
+            "POST",
+            "auth/signup",
+            200,
+            data=signup_data
+        )
+        
+        if success and 'access_token' in response:
+            # Verify subscription plan is correctly set
+            if 'user' in response:
+                if response['user'].get('subscription_plan') == 'personal-plus':
+                    print(f"   ✅ Subscription plan correctly set to 'personal-plus'")
+                else:
+                    print(f"   ❌ Subscription plan mismatch: expected 'personal-plus', got '{response['user'].get('subscription_plan')}'")
+                    return False
+            return True
+        return False
+
+    def test_signup(self):
+        """Test basic user signup (for backward compatibility)"""
+        signup_data = {
+            "email": "test@example.com",
+            "password": "testpass123",
+            "full_name": "Test User"
+        }
+        
+        success, response = self.run_test(
+            "User Signup - Basic",
+            "POST",
+            "auth/signup",
+            200,
+            data=signup_data
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            if 'user' in response:
+                self.user_id = response['user']['id']
+                # Should default to free plan
+                if response['user'].get('subscription_plan') == 'free':
+                    print(f"   ✅ Default subscription plan correctly set to 'free'")
+                else:
+                    print(f"   ❌ Default subscription plan should be 'free', got '{response['user'].get('subscription_plan')}'")
             print(f"   Token obtained: {self.token[:20]}...")
             return True
         return False
