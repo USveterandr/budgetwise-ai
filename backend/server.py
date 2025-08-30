@@ -9,7 +9,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
 from decimal import Decimal
@@ -19,6 +19,9 @@ from paypalcheckoutsdk.core import SandboxEnvironment, LiveEnvironment
 from paypalcheckoutsdk.core import PayPalHttpClient
 from paypalcheckoutsdk.orders import OrdersCreateRequest, OrdersCaptureRequest
 from paypalcheckoutsdk.payments import CapturesRefundRequest
+
+# Email imports
+from emails import send_confirmation_email, send_welcome_email, send_password_reset_email, EmailDeliveryError
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
