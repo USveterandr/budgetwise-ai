@@ -217,7 +217,8 @@ async def signup(user_data: UserCreate):
     hashed_password = hash_password(user_data.password)
     user = User(
         email=user_data.email,
-        full_name=user_data.full_name
+        full_name=user_data.full_name,
+        subscription_plan=user_data.subscription_plan
     )
     
     user_dict = prepare_for_mongo(user.dict())
