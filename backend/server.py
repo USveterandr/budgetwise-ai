@@ -728,6 +728,10 @@ async def create_expense(expense_data: ExpenseCreate, current_user: User = Depen
             {"$inc": {"spent": expense.amount}}
         )
     
+    # Check for new achievements
+    await check_and_award_achievements(current_user.id)
+    await update_user_streak(current_user.id)
+    
     return expense
 
 @api_router.get("/expenses", response_model=List[Expense])
