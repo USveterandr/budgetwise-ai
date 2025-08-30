@@ -166,16 +166,19 @@
         - comment: "Full gamification system implemented with achievements, challenges, leaderboard, points, streaks, and automated achievement checking."
 
   - task: "Add file upload APIs for camera receipts and PDFs"
-    implemented: false
-    working: false
+    implemented: true
+    working: "needs_testing"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: false
         - agent: "main"
         - comment: "File upload functionality needs implementation"
+        - working: "needs_testing"
+        - agent: "main"
+        - comment: "Complete file upload system implemented with receipt uploads, budget document uploads, file validation, and expense creation from receipts."
 
 ## frontend:
   - task: "Fix free plan registration flow in SignupPage"
