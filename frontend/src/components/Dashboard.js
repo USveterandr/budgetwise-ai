@@ -125,6 +125,13 @@ const Dashboard = ({ user }) => {
       icon: <Award className="h-5 w-5" />,
       link: "/gamification",
       color: "from-pink-500 to-rose-500"
+    },
+    {
+      title: "Receipt Gallery",
+      description: "Manage uploaded files",
+      icon: <FileText className="h-5 w-5" />,
+      link: "/receipts",
+      color: "from-teal-500 to-cyan-500"
     }
   ];
 
