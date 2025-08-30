@@ -11,6 +11,7 @@ import AchievementsPage from "./components/AchievementsPage";
 import InvestmentTracker from "./components/InvestmentTracker";
 import EmailConfirmation from "./components/EmailConfirmation";
 import GamificationDashboard from "./components/GamificationDashboard";
+import ReceiptGallery from "./components/ReceiptGallery";
 import { Toaster } from "./components/ui/sonner";
 
 function App() {
