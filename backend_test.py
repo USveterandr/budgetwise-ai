@@ -381,8 +381,10 @@ def main():
     # Basic API test
     test_results.append(("Root Endpoint", tester.test_root_endpoint()))
     
-    # Authentication tests
-    test_results.append(("User Signup", tester.test_signup()))
+    # Authentication tests - Test subscription plan functionality
+    test_results.append(("User Signup - Free Plan", tester.test_signup_free_plan()))
+    test_results.append(("User Signup - Paid Plan", tester.test_signup_paid_plan()))
+    test_results.append(("User Signup - Basic", tester.test_signup()))
     test_results.append(("User Login", tester.test_login()))
     test_results.append(("Get Current User", tester.test_get_current_user()))
     
