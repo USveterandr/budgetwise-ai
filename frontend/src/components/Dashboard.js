@@ -76,6 +76,12 @@ const Dashboard = ({ user }) => {
 
   const totalBudgetAmount = budgets.reduce((sum, budget) => sum + budget.amount, 0);
   const budgetUtilization = totalBudgetAmount > 0 ? (totalSpentThisMonth / totalBudgetAmount) * 100 : 0;
+  
+  const handleExpenseCreated = (newExpense) => {
+    // Refresh dashboard data when new expense is created
+    fetchDashboardData();
+    setShowCameraCapture(false);
+  };
 
   const quickActions = [
     {
