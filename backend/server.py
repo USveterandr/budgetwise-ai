@@ -726,6 +726,247 @@ async def get_user_gamification_stats(current_user: User = Depends(get_current_u
         "points_to_next_level": 100 - (user_doc.get("points", 0) % 100)
     }
 
+# File upload routes
+@api_router.post("/uploads/receipt", response_model=FileUploadResponse)
+async def upload_receipt(
+    current_user: User = Depends(get_current_user),
+    file: UploadFile = File(...),
+    description: Optional[str] = Form(None)
+):
+    """Upload receipt image or PDF for expense tracking"""
+    
+    # Validate file type
+    allowed_extensions = {'.jpg', '.jpeg', '.png', '.pdf', '.heic', '.webp'}
+    file_extension = Path(file.filename).suffix.lower()
+    
+    if file_extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=400, 
+            detail="Invalid file type. Allowed: JPG, PNG, PDF, HEIC, WEBP"
+        )
+    
+    # Validate file size (max 10MB)
+    max_file_size = 10 * 1024 * 1024  # 10MB in bytes
+    file_content = await file.read()
+    if len(file_content) > max_file_size:
+        raise HTTPException(
+            status_code=400,
+            detail="File too large. Maximum size is 10MB"
+        )
+    
+    # Create uploads directory if it doesn't exist
+    upload_dir = Path("/app/uploads/receipts")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Generate unique filename
+    receipt_id = str(uuid.uuid4())
+    safe_filename = f"{receipt_id}_{file.filename}"
+    file_path = upload_dir / safe_filename
+    
+    # Save file
+    try:
+        async with aiofiles.open(file_path, 'wb') as f:
+            await f.write(file_content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+    
+    # Determine file type
+    file_type = "pdf" if file_extension == ".pdf" else "image"
+    
+    # Create receipt record
+    receipt = Receipt(
+        id=receipt_id,
+        user_id=current_user.id,
+        filename=file.filename,
+        file_path=str(file_path),
+        file_type=file_type,
+        file_size=len(file_content)
+    )
+    
+    receipt_dict = prepare_for_mongo(receipt.dict())
+    await db.receipts.insert_one(receipt_dict)
+    
+    return FileUploadResponse(
+        receipt_id=receipt_id,
+        filename=file.filename,
+        file_type=file_type,
+        file_size=len(file_content),
+        message="Receipt uploaded successfully! You can now create an expense from it."
+    )
+
+@api_router.get("/uploads/receipts")
+async def get_user_receipts(current_user: User = Depends(get_current_user)):
+    """Get all receipts uploaded by the user"""
+    receipts = await db.receipts.find({"user_id": current_user.id}).sort("uploaded_at", -1).to_list(length=1000)
+    return [Receipt(**parse_from_mongo(receipt)) for receipt in receipts]
+
+@api_router.get("/uploads/receipt/{receipt_id}/file")
+async def get_receipt_file(receipt_id: str, current_user: User = Depends(get_current_user)):
+    """Download receipt file"""
+    receipt_doc = await db.receipts.find_one({"id": receipt_id, "user_id": current_user.id})
+    if not receipt_doc:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    
+    file_path = Path(receipt_doc["file_path"])
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found on disk")
+    
+    return FileResponse(
+        path=str(file_path),
+        filename=receipt_doc["filename"],
+        media_type="application/octet-stream"
+    )
+
+@api_router.post("/uploads/receipt/{receipt_id}/create-expense")
+async def create_expense_from_receipt(
+    receipt_id: str,
+    expense_data: ExpenseCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create an expense from an uploaded receipt"""
+    # Verify receipt belongs to user
+    receipt_doc = await db.receipts.find_one({"id": receipt_id, "user_id": current_user.id})
+    if not receipt_doc:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    
+    # Create expense
+    expense = Expense(
+        user_id=current_user.id,
+        **expense_data.dict()
+    )
+    
+    expense_dict = prepare_for_mongo(expense.dict())
+    await db.expenses.insert_one(expense_dict)
+    
+    # Link receipt to expense
+    await db.receipts.update_one(
+        {"id": receipt_id},
+        {
+            "$set": {
+                "expense_id": expense.id,
+                "is_processed": True,
+                "amount_extracted": expense_data.amount
+            }
+        }
+    )
+    
+    # Update budget if exists
+    budget = await db.budgets.find_one({
+        "user_id": current_user.id,
+        "category": expense.category
+    })
+    if budget:
+        await db.budgets.update_one(
+            {"id": budget["id"]},
+            {"$inc": {"spent": expense.amount}}
+        )
+    
+    # Check achievements
+    await check_and_award_achievements(current_user.id)
+    
+    return {
+        "expense": expense,
+        "message": "Expense created successfully from receipt!"
+    }
+
+@api_router.delete("/uploads/receipt/{receipt_id}")
+async def delete_receipt(receipt_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a receipt and its file"""
+    receipt_doc = await db.receipts.find_one({"id": receipt_id, "user_id": current_user.id})
+    if not receipt_doc:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    
+    # Delete file from disk
+    file_path = Path(receipt_doc["file_path"])
+    try:
+        if file_path.exists():
+            file_path.unlink()
+    except Exception as e:
+        logger.error(f"Failed to delete file {file_path}: {str(e)}")
+    
+    # Delete from database
+    await db.receipts.delete_one({"id": receipt_id})
+    
+    return {"message": "Receipt deleted successfully"}
+
+# Budget document upload
+@api_router.post("/uploads/budget-document")
+async def upload_budget_document(
+    current_user: User = Depends(get_current_user),
+    file: UploadFile = File(...),
+    document_type: str = Form(...),  # bank_statement, budget_plan, financial_report
+    description: Optional[str] = Form(None)
+):
+    """Upload budget-related documents (PDFs, bank statements, etc.)"""
+    
+    # Validate file type - allow more document types
+    allowed_extensions = {'.pdf', '.xlsx', '.xls', '.csv', '.png', '.jpg', '.jpeg'}
+    file_extension = Path(file.filename).suffix.lower()
+    
+    if file_extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file type. Allowed: PDF, Excel, CSV, JPG, PNG"
+        )
+    
+    # Validate file size (max 20MB for documents)
+    max_file_size = 20 * 1024 * 1024  # 20MB
+    file_content = await file.read()
+    if len(file_content) > max_file_size:
+        raise HTTPException(
+            status_code=400,
+            detail="File too large. Maximum size is 20MB"
+        )
+    
+    # Create uploads directory
+    upload_dir = Path("/app/uploads/documents")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Generate unique filename
+    document_id = str(uuid.uuid4())
+    safe_filename = f"{document_id}_{file.filename}"
+    file_path = upload_dir / safe_filename
+    
+    # Save file
+    try:
+        async with aiofiles.open(file_path, 'wb') as f:
+            await f.write(file_content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+    
+    # Create document record
+    document = {
+        "id": document_id,
+        "user_id": current_user.id,
+        "filename": file.filename,
+        "file_path": str(file_path),
+        "file_type": file_extension.lstrip('.'),
+        "file_size": len(file_content),
+        "document_type": document_type,
+        "description": description,
+        "uploaded_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.budget_documents.insert_one(prepare_for_mongo(document))
+    
+    return {
+        "document_id": document_id,
+        "filename": file.filename,
+        "file_type": file_extension.lstrip('.'),
+        "file_size": len(file_content),
+        "document_type": document_type,
+        "message": "Document uploaded successfully!"
+    }
+
+@api_router.get("/uploads/budget-documents")
+async def get_budget_documents(current_user: User = Depends(get_current_user)):
+    """Get all budget documents uploaded by user"""
+    documents = await db.budget_documents.find(
+        {"user_id": current_user.id}
+    ).sort("uploaded_at", -1).to_list(length=1000)
+    
+    return documents
+
 # Expense routes
 @api_router.post("/expenses", response_model=Expense)
 async def create_expense(expense_data: ExpenseCreate, current_user: User = Depends(get_current_user)):
