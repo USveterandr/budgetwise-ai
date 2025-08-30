@@ -242,6 +242,179 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+# Gamification functions
+async def check_and_award_achievements(user_id: str):
+    """Check for new achievements and award them"""
+    user_doc = await db.users.find_one({"id": user_id})
+    if not user_doc:
+        return
+    
+    # Get user's existing achievements
+    existing_achievements = await db.achievements.find({"user_id": user_id}).to_list(length=1000)
+    existing_titles = {ach.get("title") for ach in existing_achievements}
+    
+    # Get user's stats for achievement checking
+    expenses_count = await db.expenses.count_documents({"user_id": user_id})
+    budgets_count = await db.budgets.count_documents({"user_id": user_id})
+    investments_count = await db.investments.count_documents({"user_id": user_id})
+    
+    # Define achievements to check
+    potential_achievements = [
+        {
+            "title": "First Steps",
+            "description": "Created your first expense",
+            "points": 10,
+            "icon": "👶",
+            "category": "expenses",
+            "condition": expenses_count >= 1
+        },
+        {
+            "title": "Expense Tracker",
+            "description": "Added 10 expenses",
+            "points": 50,
+            "icon": "📝",
+            "category": "expenses", 
+            "condition": expenses_count >= 10
+        },
+        {
+            "title": "Budget Master",
+            "description": "Created your first budget",
+            "points": 25,
+            "icon": "🎯",
+            "category": "budgeting",
+            "condition": budgets_count >= 1
+        },
+        {
+            "title": "Investment Guru",
+            "description": "Started tracking investments",
+            "points": 50,
+            "icon": "📈",
+            "category": "investments",
+            "condition": investments_count >= 1
+        },
+        {
+            "title": "Week Warrior",
+            "description": "Used BudgetWise for 7 days",
+            "points": 100,
+            "icon": "🔥",
+            "category": "general",
+            "condition": user_doc.get("streak_days", 0) >= 7
+        },
+        {
+            "title": "Month Champion",
+            "description": "Used BudgetWise for 30 days",
+            "points": 500,
+            "icon": "👑",
+            "category": "general",
+            "condition": user_doc.get("streak_days", 0) >= 30
+        }
+    ]
+    
+    # Award new achievements
+    points_awarded = 0
+    new_achievements = []
+    
+    for achievement_data in potential_achievements:
+        if achievement_data["condition"] and achievement_data["title"] not in existing_titles:
+            achievement = Achievement(
+                user_id=user_id,
+                title=achievement_data["title"],
+                description=achievement_data["description"],
+                points=achievement_data["points"],
+                icon=achievement_data["icon"],
+                category=achievement_data["category"],
+                is_unlocked=True
+            )
+            
+            achievement_dict = prepare_for_mongo(achievement.dict())
+            await db.achievements.insert_one(achievement_dict)
+            
+            points_awarded += achievement_data["points"]
+            new_achievements.append(achievement)
+    
+    # Update user points
+    if points_awarded > 0:
+        await db.users.update_one(
+            {"id": user_id},
+            {"$inc": {"points": points_awarded}}
+        )
+    
+    return new_achievements
+
+async def update_user_streak(user_id: str):
+    """Update user's daily streak"""
+    user_doc = await db.users.find_one({"id": user_id})
+    if not user_doc:
+        return
+    
+    last_login = user_doc.get("last_login")
+    current_date = datetime.now(timezone.utc).date()
+    
+    if last_login:
+        if isinstance(last_login, str):
+            last_login_date = datetime.fromisoformat(last_login.replace('Z', '+00:00')).date()
+        else:
+            last_login_date = last_login.date()
+        
+        if last_login_date == current_date:
+            # Already logged in today
+            return
+        elif last_login_date == current_date - timedelta(days=1):
+            # Consecutive day - increment streak
+            new_streak = user_doc.get("streak_days", 0) + 1
+        else:
+            # Streak broken - reset to 1
+            new_streak = 1
+    else:
+        # First login
+        new_streak = 1
+    
+    await db.users.update_one(
+        {"id": user_id},
+        {
+            "$set": {
+                "last_login": datetime.now(timezone.utc).isoformat(),
+                "streak_days": new_streak
+            }
+        }
+    )
+
+async def create_weekly_challenges():
+    """Create weekly challenges for all users"""
+    # Sample weekly challenges
+    weekly_challenges = [
+        {
+            "title": "Expense Tracker Champion",
+            "description": "Add 15 expenses this week",
+            "category": "expenses",
+            "target_value": 15,
+            "points_reward": 100,
+            "badge_icon": "🏆"
+        },
+        {
+            "title": "Budget Keeper",
+            "description": "Stay under budget in 3 categories", 
+            "category": "budgeting",
+            "target_value": 3,
+            "points_reward": 150,
+            "badge_icon": "💰"
+        },
+        {
+            "title": "Savings Goal",
+            "description": "Save $500 this week",
+            "category": "savings",
+            "target_value": 500,
+            "points_reward": 200,
+            "badge_icon": "🎯"
+        }
+    ]
+    
+    # Create challenges in database
+    for challenge_data in weekly_challenges:
+        challenge = Challenge(**challenge_data)
+        challenge_dict = prepare_for_mongo(challenge.dict())
+        await db.challenges.insert_one(challenge_dict)
+
 # Routes
 @api_router.get("/")
 async def root():
