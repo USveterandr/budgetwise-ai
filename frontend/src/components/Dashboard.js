@@ -24,7 +24,8 @@ import {
   Camera,
   Award,
   Star,
-  Flame
+  Flame,
+  FileText
 } from "lucide-react";
 import { toast } from "sonner";
 
