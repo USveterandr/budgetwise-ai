@@ -231,11 +231,16 @@ const Dashboard = ({ user }) => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Achievements</p>
-                  <p className="text-2xl font-bold text-gray-900">{achievementsCount}</p>
+                  <p className="text-sm font-medium text-gray-600">Points & Level</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {currentUser.points || 0} pts
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Level {Math.max(1, Math.floor((currentUser.points || 0) / 100))}
+                  </p>
                 </div>
                 <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <Trophy className="h-6 w-6 text-yellow-600" />
+                  <Star className="h-6 w-6 text-yellow-600" />
                 </div>
               </div>
             </CardContent>
