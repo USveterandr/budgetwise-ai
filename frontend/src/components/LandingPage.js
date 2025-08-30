@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 const LandingPage = () => {
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
   const features = [
     {
       icon: <PiggyBank className="h-8 w-8" />,
