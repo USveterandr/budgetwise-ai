@@ -233,16 +233,19 @@
         - comment: "Complete GamificationDashboard component created with achievements display, leaderboard, challenges progress, stats overview, and level progression."
 
   - task: "Add camera capture and file upload components"
-    implemented: false
-    working: false
-    file: "/app/frontend/src/components/"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/components/CameraCapture.js"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: false
         - agent: "main"
         - comment: "Camera and file upload components need implementation"
+        - working: "needs_testing"
+        - agent: "main"
+        - comment: "CameraCapture component created with camera access, file upload, receipt preview, and expense creation workflow. Integrated into main Dashboard."
 
 ## metadata:
   created_by: "main_agent"
