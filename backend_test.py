@@ -316,7 +316,7 @@ class BudgetWiseAPITester:
         return False
 
     def test_get_dashboard(self):
-        """Test getting dashboard data"""
+        """Test getting dashboard data with detailed validation"""
         success, response = self.run_test(
             "Get Dashboard Data",
             "GET",
@@ -328,9 +328,44 @@ class BudgetWiseAPITester:
             expected_keys = ['user', 'recent_expenses', 'budgets', 'total_spent_this_month', 'achievements_count']
             missing_keys = [key for key in expected_keys if key not in response]
             if missing_keys:
-                print(f"   Warning: Missing keys in dashboard response: {missing_keys}")
+                print(f"   ❌ Missing keys in dashboard response: {missing_keys}")
+                return False
             else:
-                print(f"   Dashboard data complete with all expected keys")
+                print(f"   ✅ Dashboard data complete with all expected keys")
+                
+            # Validate data types
+            if not isinstance(response.get('recent_expenses'), list):
+                print(f"   ❌ recent_expenses should be a list")
+                return False
+            
+            if not isinstance(response.get('budgets'), list):
+                print(f"   ❌ budgets should be a list")
+                return False
+                
+            if not isinstance(response.get('total_spent_this_month'), (int, float)):
+                print(f"   ❌ total_spent_this_month should be a number")
+                return False
+                
+            if not isinstance(response.get('achievements_count'), int):
+                print(f"   ❌ achievements_count should be an integer")
+                return False
+                
+            # Validate user object
+            user = response.get('user')
+            if not user or not isinstance(user, dict):
+                print(f"   ❌ user should be a valid object")
+                return False
+                
+            if 'subscription_plan' not in user:
+                print(f"   ❌ user object missing subscription_plan")
+                return False
+                
+            print(f"   ✅ User subscription plan: {user.get('subscription_plan')}")
+            print(f"   ✅ Recent expenses count: {len(response.get('recent_expenses', []))}")
+            print(f"   ✅ Budgets count: {len(response.get('budgets', []))}")
+            print(f"   ✅ Total spent this month: ${response.get('total_spent_this_month', 0)}")
+            print(f"   ✅ Achievements count: {response.get('achievements_count', 0)}")
+            
             return True
         return False
 
