@@ -1,0 +1,15 @@
+{
+  "build": {
+    "command": "npm run build",
+    "outputDirectory": "frontend/build",
+    "installCommand": "npm install",
+    "rootDirectory": "",
+    "environment": {
+      "NODE_VERSION": "18.20.4",
+      "NPM_VERSION": "10.2.5",
+      "NODE_ENV": "production",
+      "GENERATE_SOURCEMAP": "false",
+      "DISABLE_ESLINT_PLUGIN": "true"
+    }
+  }
+}
