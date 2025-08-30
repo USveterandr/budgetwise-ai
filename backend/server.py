@@ -229,12 +229,18 @@ async def signup(user_data: UserCreate):
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
+    # Generate email confirmation token
+    confirmation_token = str(uuid.uuid4())
+    
     # Hash password and create user
     hashed_password = hash_password(user_data.password)
     user = User(
         email=user_data.email,
         full_name=user_data.full_name,
-        subscription_plan=user_data.subscription_plan
+        subscription_plan=user_data.subscription_plan,
+        email_confirmed=False,
+        email_confirmation_token=confirmation_token,
+        email_confirmation_sent_at=datetime.now(timezone.utc)
     )
     
     user_dict = prepare_for_mongo(user.dict())
@@ -242,13 +248,21 @@ async def signup(user_data: UserCreate):
     
     await db.users.insert_one(user_dict)
     
-    # Create access token
+    # Send confirmation email
+    try:
+        send_confirmation_email(user.email, user.full_name, confirmation_token)
+    except EmailDeliveryError as e:
+        logger.error(f"Failed to send confirmation email to {user.email}: {str(e)}")
+        # Continue with registration even if email fails
+    
+    # Create access token (user can still use app but with limited features until confirmed)
     access_token = create_access_token(user.id)
     
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "user": user
+        "user": user,
+        "message": "Account created successfully! Please check your email to confirm your account."
     }
 
 @api_router.post("/auth/login")
