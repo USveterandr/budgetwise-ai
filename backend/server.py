@@ -86,6 +86,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     full_name: str
+    subscription_plan: str = "free"
 
 class UserLogin(BaseModel):
     email: EmailStr
