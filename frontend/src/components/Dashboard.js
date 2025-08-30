@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Progress } from "./ui/progress";
+import CameraCapture from "./CameraCapture";
 import { 
   PiggyBank, 
   TrendingUp, 
@@ -19,7 +20,11 @@ import {
   Wallet,
   CreditCard,
   BarChart3,
-  Zap
+  Zap,
+  Camera,
+  Award,
+  Star,
+  Flame
 } from "lucide-react";
 import { toast } from "sonner";
 
