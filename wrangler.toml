@@ -4,7 +4,7 @@ pages_build_output_dir = "frontend/build"
 
 # Force npm usage instead of yarn
 [build]
-command = "npm run build"
+command = "./build.sh"
 cwd = ""
 
 [env.production.vars]
