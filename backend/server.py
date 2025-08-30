@@ -179,6 +179,16 @@ class SubscriptionCreate(BaseModel):
     plan_id: str
     payment_method: str = "paypal"
 
+class EmailConfirmation(BaseModel):
+    token: str
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordReset(BaseModel):
+    token: str
+    new_password: str
+
 # Authentication functions
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
