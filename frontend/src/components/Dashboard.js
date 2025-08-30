@@ -146,8 +146,8 @@ const Dashboard = ({ user }) => {
                 <Link to="/expenses" className="text-gray-600 hover:text-gray-900">Expenses</Link>
                 <Link to="/budget" className="text-gray-600 hover:text-gray-900">Budgets</Link>
                 <Link to="/investments" className="text-gray-600 hover:text-gray-900">Investments</Link>
+                <Link to="/receipts" className="text-gray-600 hover:text-gray-900">Receipts</Link>
                 <Link to="/gamification" className="text-gray-600 hover:text-gray-900">Rewards</Link>
-                <Link to="/achievements" className="text-gray-600 hover:text-gray-900">Achievements</Link>
               </div>
             </div>
             <div className="flex items-center gap-4">
