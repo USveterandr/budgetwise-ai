@@ -27,6 +27,7 @@ function App() {
           <Route path="/budget" element={<BudgetManager user={user} />} />
           <Route path="/achievements" element={<AchievementsPage user={user} />} />
           <Route path="/investments" element={<InvestmentTracker user={user} />} />
+          <Route path="/confirm-email" element={<EmailConfirmation />} />
         </Routes>
         <Toaster />
       </BrowserRouter>
