@@ -613,6 +613,95 @@ async def reset_password(reset_data: PasswordReset):
     
     return {"message": "Password reset successfully!"}
 
+# Gamification routes
+@api_router.get("/gamification/achievements")
+async def get_user_achievements(current_user: User = Depends(get_current_user)):
+    """Get all user achievements"""
+    achievements = await db.achievements.find({"user_id": current_user.id}).to_list(length=1000)
+    return [Achievement(**parse_from_mongo(achievement)) for achievement in achievements]
+
+@api_router.get("/gamification/leaderboard")
+async def get_leaderboard(limit: int = 10):
+    """Get top users by points"""
+    pipeline = [
+        {"$sort": {"points": -1}},
+        {"$limit": limit},
+        {"$project": {"full_name": 1, "points": 1, "streak_days": 1}}
+    ]
+    leaderboard = await db.users.aggregate(pipeline).to_list(length=limit)
+    return leaderboard
+
+@api_router.get("/gamification/challenges")
+async def get_active_challenges(current_user: User = Depends(get_current_user)):
+    """Get active challenges for user"""
+    # Get active global challenges
+    active_challenges = await db.challenges.find({"is_active": True}).to_list(length=1000)
+    
+    # Get user's progress on challenges
+    user_challenges = await db.user_challenges.find({"user_id": current_user.id}).to_list(length=1000)
+    user_progress = {uc["challenge_id"]: uc for uc in user_challenges}
+    
+    # Combine challenge data with user progress
+    challenges_with_progress = []
+    for challenge in active_challenges:
+        challenge_data = Challenge(**parse_from_mongo(challenge))
+        progress = user_progress.get(challenge["id"], {"current_progress": 0.0, "is_completed": False})
+        
+        challenges_with_progress.append({
+            **challenge_data.dict(),
+            "user_progress": progress.get("current_progress", 0.0),
+            "is_completed": progress.get("is_completed", False)
+        })
+    
+    return challenges_with_progress
+
+@api_router.post("/gamification/check-achievements")
+async def check_achievements(current_user: User = Depends(get_current_user)):
+    """Manually check and award new achievements"""
+    new_achievements = await check_and_award_achievements(current_user.id)
+    await update_user_streak(current_user.id)
+    
+    return {
+        "new_achievements": new_achievements,
+        "message": f"Found {len(new_achievements)} new achievements!"
+    }
+
+@api_router.get("/gamification/stats")
+async def get_user_gamification_stats(current_user: User = Depends(get_current_user)):
+    """Get comprehensive gamification stats for user"""
+    # Get updated user data
+    user_doc = await db.users.find_one({"id": current_user.id})
+    
+    # Get achievement counts by category
+    achievements = await db.achievements.find({"user_id": current_user.id}).to_list(length=1000)
+    achievement_categories = {}
+    total_achievements = len(achievements)
+    
+    for achievement in achievements:
+        category = achievement.get("category", "general")
+        achievement_categories[category] = achievement_categories.get(category, 0) + 1
+    
+    # Get challenge completion stats
+    completed_challenges = await db.user_challenges.count_documents({
+        "user_id": current_user.id,
+        "is_completed": True
+    })
+    
+    # Calculate user rank
+    users_with_fewer_points = await db.users.count_documents({"points": {"$lt": user_doc.get("points", 0)}})
+    user_rank = users_with_fewer_points + 1
+    
+    return {
+        "points": user_doc.get("points", 0),
+        "streak_days": user_doc.get("streak_days", 0),
+        "total_achievements": total_achievements,
+        "achievement_categories": achievement_categories,
+        "completed_challenges": completed_challenges,
+        "user_rank": user_rank,
+        "level": max(1, user_doc.get("points", 0) // 100),  # Level up every 100 points
+        "points_to_next_level": 100 - (user_doc.get("points", 0) % 100)
+    }
+
 # Expense routes
 @api_router.post("/expenses", response_model=Expense)
 async def create_expense(expense_data: ExpenseCreate, current_user: User = Depends(get_current_user)):
