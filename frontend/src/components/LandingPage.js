@@ -360,7 +360,12 @@ const LandingPage = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-violet-600 text-lg px-8 py-4">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="border-white text-white hover:bg-white hover:text-violet-600 text-lg px-8 py-4"
+              onClick={() => setDemoModalOpen(true)}
+            >
               Schedule Demo
             </Button>
           </div>
