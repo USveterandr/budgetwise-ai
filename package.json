@@ -4,9 +4,9 @@
   "description": "BudgetWise - AI-powered financial management SaaS platform",
   "private": true,
   "scripts": {
-    "preinstall": "cd frontend && npm install --legacy-peer-deps",
+    "preinstall": "node preinstall.js && cd frontend && npm install --legacy-peer-deps",
     "build": "./build.sh",
-    "build-fallback": "cd frontend && npm install --legacy-peer-deps && npm run build && cp ../_headers build/ && cp ../_redirects build/",
+    "build-fallback": "rm -rf yarn.lock frontend/yarn.lock && npm install --legacy-peer-deps && cd frontend && npm install --legacy-peer-deps && npm run build && cp ../_headers build/ && cp ../_redirects build/",
     "start": "cd frontend && npm start",
     "dev": "cd frontend && npm start",
     "install:frontend": "cd frontend && npm install --legacy-peer-deps",
