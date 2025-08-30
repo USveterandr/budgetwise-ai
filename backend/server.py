@@ -84,6 +84,9 @@ class User(BaseModel):
     points: int = 0
     streak_days: int = 0
     last_login: Optional[datetime] = None
+    email_confirmed: bool = False
+    email_confirmation_token: Optional[str] = None
+    email_confirmation_sent_at: Optional[datetime] = None
 
 class UserCreate(BaseModel):
     email: EmailStr
