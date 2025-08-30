@@ -408,37 +408,51 @@ const Dashboard = ({ user }) => {
               </CardContent>
             </Card>
 
-            {/* Financial Health Score */}
+            {/* Gamification Preview */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Financial Health
+                  <Award className="h-5 w-5" />
+                  Your Progress
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center">
-                  <div className="w-24 h-24 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl font-bold text-white">85</span>
+                  <div className="w-16 h-16 bg-gradient-to-r from-violet-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-lg font-bold text-white">
+                      {Math.max(1, Math.floor((currentUser.points || 0) / 100))}
+                    </span>
                   </div>
-                  <p className="font-semibold text-gray-900 mb-2">Good Financial Health</p>
-                  <p className="text-sm text-gray-600 mb-4">
-                    You're doing great! Keep tracking expenses and stick to your budgets.
+                  <p className="font-semibold text-gray-900 mb-2">
+                    Level {Math.max(1, Math.floor((currentUser.points || 0) / 100))} Player
                   </p>
-                  <div className="space-y-2 text-xs text-left">
-                    <div className="flex justify-between">
-                      <span>Expense Tracking</span>
-                      <span className="text-green-600">✓ Active</span>
+                  <p className="text-sm text-gray-600 mb-4">
+                    {currentUser.points || 0} total points earned
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <Flame className="h-4 w-4 text-orange-500" />
+                        <span>Streak</span>
+                      </div>
+                      <span className="font-medium">{currentUser.streak_days || 0} days</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Budget Management</span>
-                      <span className="text-green-600">✓ Good</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Savings Goals</span>
-                      <span className="text-yellow-600">⚠ Needs Work</span>
+                    
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <Trophy className="h-4 w-4 text-yellow-500" />
+                        <span>Achievements</span>
+                      </div>
+                      <span className="font-medium">{achievementsCount}</span>
                     </div>
                   </div>
+                  
+                  <Link to="/gamification">
+                    <Button className="w-full mt-4 bg-gradient-to-r from-violet-500 to-purple-500">
+                      View All Rewards
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
