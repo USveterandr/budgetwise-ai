@@ -2,6 +2,11 @@ name = "budgetwise-app"
 compatibility_date = "2024-08-29"
 pages_build_output_dir = "frontend/build"
 
+# Force npm usage instead of yarn
+[build]
+command = "npm run build"
+cwd = ""
+
 [env.production.vars]
 NODE_ENV = "production"
 GENERATE_SOURCEMAP = "false"
@@ -11,8 +16,8 @@ DISABLE_ESLINT_PLUGIN = "true"
 NODE_ENV = "development"
 GENERATE_SOURCEMAP = "false"
 
-# Configuration for Cloudflare Pages
-# Build settings will be handled by Cloudflare Pages dashboard
+# Cloudflare Pages Configuration
 # Build command: npm run build
 # Build output directory: frontend/build
 # Root directory: (leave blank for root)
+# Install command: npm install
