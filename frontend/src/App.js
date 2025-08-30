@@ -9,6 +9,7 @@ import ExpenseTracker from "./components/ExpenseTracker";
 import BudgetManager from "./components/BudgetManager";
 import AchievementsPage from "./components/AchievementsPage";
 import InvestmentTracker from "./components/InvestmentTracker";
+import EmailConfirmation from "./components/EmailConfirmation";
 import { Toaster } from "./components/ui/sonner";
 
 function App() {
