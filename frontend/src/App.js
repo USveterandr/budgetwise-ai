@@ -31,6 +31,7 @@ function App() {
           <Route path="/investments" element={<InvestmentTracker user={user} />} />
           <Route path="/confirm-email" element={<EmailConfirmation />} />
           <Route path="/gamification" element={<GamificationDashboard user={user} />} />
+          <Route path="/receipts" element={<ReceiptGallery user={user} />} />
         </Routes>
         <Toaster />
       </BrowserRouter>
