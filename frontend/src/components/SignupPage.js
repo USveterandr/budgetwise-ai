@@ -152,10 +152,17 @@ const SignupPage = ({ setUser }) => {
         setUser(response.data.user);
         
         if (selectedPlan === "free") {
-          toast.success("Free account created successfully! Welcome to BudgetWise!");
+          toast.success("Free account created successfully! Please check your email to confirm your account.");
         } else {
-          toast.success("Account created successfully! Welcome to " + selectedPlanData?.name + "!");
+          toast.success("Account created successfully! Please check your email to confirm your account and unlock full features.");
         }
+        
+        // Show additional notification about email confirmation
+        setTimeout(() => {
+          toast.info("📧 Email confirmation sent! Check your inbox to verify your account.", {
+            duration: 5000
+          });
+        }, 2000);
         
         navigate("/dashboard");
       }
