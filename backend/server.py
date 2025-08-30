@@ -292,6 +292,129 @@ async def login(login_data: UserLogin):
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     return current_user
 
+@api_router.post("/auth/confirm-email")
+async def confirm_email(confirmation_data: EmailConfirmation):
+    # Find user with this confirmation token
+    user_doc = await db.users.find_one({"email_confirmation_token": confirmation_data.token})
+    if not user_doc:
+        raise HTTPException(status_code=400, detail="Invalid or expired confirmation token")
+    
+    # Check if token is not expired (24 hours)
+    if user_doc.get("email_confirmation_sent_at"):
+        sent_at = datetime.fromisoformat(user_doc["email_confirmation_sent_at"].replace('Z', '+00:00'))
+        if datetime.now(timezone.utc) - sent_at > timedelta(hours=24):
+            raise HTTPException(status_code=400, detail="Confirmation token has expired")
+    
+    # Update user as confirmed
+    await db.users.update_one(
+        {"id": user_doc["id"]},
+        {
+            "$set": {
+                "email_confirmed": True,
+                "email_confirmation_token": None
+            }
+        }
+    )
+    
+    # Send welcome email
+    try:
+        send_welcome_email(
+            user_doc["email"], 
+            user_doc["full_name"], 
+            user_doc.get("subscription_plan", "free")
+        )
+    except EmailDeliveryError as e:
+        logger.error(f"Failed to send welcome email to {user_doc['email']}: {str(e)}")
+    
+    return {"message": "Email confirmed successfully! Welcome to BudgetWise!"}
+
+@api_router.post("/auth/resend-confirmation")
+async def resend_confirmation_email(current_user: User = Depends(get_current_user)):
+    if current_user.email_confirmed:
+        raise HTTPException(status_code=400, detail="Email is already confirmed")
+    
+    # Generate new confirmation token
+    confirmation_token = str(uuid.uuid4())
+    
+    # Update user with new token
+    await db.users.update_one(
+        {"id": current_user.id},
+        {
+            "$set": {
+                "email_confirmation_token": confirmation_token,
+                "email_confirmation_sent_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    # Send confirmation email
+    try:
+        send_confirmation_email(current_user.email, current_user.full_name, confirmation_token)
+        return {"message": "Confirmation email sent successfully!"}
+    except EmailDeliveryError as e:
+        raise HTTPException(status_code=500, detail="Failed to send confirmation email")
+
+@api_router.post("/auth/request-password-reset")
+async def request_password_reset(reset_request: PasswordResetRequest):
+    # Find user by email
+    user_doc = await db.users.find_one({"email": reset_request.email})
+    if not user_doc:
+        # Don't reveal if email exists or not for security
+        return {"message": "If the email exists, a password reset link has been sent."}
+    
+    # Generate reset token
+    reset_token = str(uuid.uuid4())
+    reset_expires = datetime.now(timezone.utc) + timedelta(hours=1)
+    
+    # Store reset token in database
+    await db.users.update_one(
+        {"id": user_doc["id"]},
+        {
+            "$set": {
+                "password_reset_token": reset_token,
+                "password_reset_expires": reset_expires.isoformat()
+            }
+        }
+    )
+    
+    # Send reset email
+    try:
+        send_password_reset_email(user_doc["email"], user_doc["full_name"], reset_token)
+    except EmailDeliveryError as e:
+        logger.error(f"Failed to send password reset email to {user_doc['email']}: {str(e)}")
+    
+    return {"message": "If the email exists, a password reset link has been sent."}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(reset_data: PasswordReset):
+    # Find user with this reset token
+    user_doc = await db.users.find_one({"password_reset_token": reset_data.token})
+    if not user_doc:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    # Check if token is not expired
+    if user_doc.get("password_reset_expires"):
+        expires_at = datetime.fromisoformat(user_doc["password_reset_expires"].replace('Z', '+00:00'))
+        if datetime.now(timezone.utc) > expires_at:
+            raise HTTPException(status_code=400, detail="Reset token has expired")
+    
+    # Hash new password and update user
+    hashed_password = hash_password(reset_data.new_password)
+    await db.users.update_one(
+        {"id": user_doc["id"]},
+        {
+            "$set": {
+                "password": hashed_password
+            },
+            "$unset": {
+                "password_reset_token": "",
+                "password_reset_expires": ""
+            }
+        }
+    )
+    
+    return {"message": "Password reset successfully!"}
+
 # Expense routes
 @api_router.post("/expenses", response_model=Expense)
 async def create_expense(expense_data: ExpenseCreate, current_user: User = Depends(get_current_user)):
