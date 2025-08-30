@@ -263,8 +263,24 @@ const Dashboard = ({ user }) => {
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-4">
                   {quickActions.map((action, index) => (
-                    <Link key={index} to={action.link}>
-                      <Card className="cursor-pointer hover:shadow-md transition-shadow border-0 bg-gradient-to-r from-gray-50 to-gray-100">
+                    action.link ? (
+                      <Link key={index} to={action.link}>
+                        <Card className="cursor-pointer hover:shadow-md transition-shadow border-0 bg-gradient-to-r from-gray-50 to-gray-100">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 bg-gradient-to-r ${action.color} rounded-lg flex items-center justify-center text-white`}>
+                                {action.icon}
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">{action.title}</p>
+                                <p className="text-sm text-gray-600">{action.description}</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ) : (
+                      <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow border-0 bg-gradient-to-r from-gray-50 to-gray-100" onClick={action.action}>
                         <CardContent className="p-4">
                           <div className="flex items-center gap-3">
                             <div className={`w-10 h-10 bg-gradient-to-r ${action.color} rounded-lg flex items-center justify-center text-white`}>
@@ -277,7 +293,7 @@ const Dashboard = ({ user }) => {
                           </div>
                         </CardContent>
                       </Card>
-                    </Link>
+                    )
                   ))}
                 </div>
               </CardContent>
