@@ -532,6 +532,8 @@ async def get_user_subscription(current_user: User = Depends(get_current_user)):
     if subscription:
         return Subscription(**parse_from_mongo(subscription))
     return None
+
+@api_router.get("/dashboard")
 async def get_dashboard_data(current_user: User = Depends(get_current_user)):
     # Get recent expenses
     recent_expenses = await db.expenses.find(
