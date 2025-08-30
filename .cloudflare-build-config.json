@@ -1,15 +1,16 @@
 {
   "build": {
-    "command": "npm run build",
+    "command": "./build.sh",
     "outputDirectory": "frontend/build",
-    "installCommand": "npm install",
+    "installCommand": "echo 'Dependencies handled by build script'",
     "rootDirectory": "",
     "environment": {
-      "NODE_VERSION": "18.20.4",
-      "NPM_VERSION": "10.2.5",
+      "NODE_VERSION": "18",
+      "NPM_VERSION": "latest",
       "NODE_ENV": "production",
       "GENERATE_SOURCEMAP": "false",
-      "DISABLE_ESLINT_PLUGIN": "true"
+      "DISABLE_ESLINT_PLUGIN": "true",
+      "CI": "true"
     }
   }
 }
