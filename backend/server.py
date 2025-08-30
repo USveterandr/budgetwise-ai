@@ -134,7 +134,32 @@ class Achievement(BaseModel):
     description: str
     points: int
     icon: str
+    category: str = "general"  # general, budgeting, expenses, investments, savings
     unlocked_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    is_unlocked: bool = False
+
+class Challenge(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    description: str
+    category: str
+    target_value: float
+    current_value: float = 0.0
+    points_reward: int
+    badge_icon: str
+    duration_days: int = 7  # Weekly challenges by default
+    start_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    end_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc) + timedelta(days=7))
+    is_active: bool = True
+
+class UserChallenge(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    challenge_id: str
+    current_progress: float = 0.0
+    is_completed: bool = False
+    completed_at: Optional[datetime] = None
+    points_earned: int = 0
 
 class Investment(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
