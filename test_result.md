@@ -107,15 +107,18 @@
 ## backend:
   - task: "Fix user signup API with subscription plan handling"
     implemented: true
-    working: "needs_testing"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "needs_testing"
         - agent: "main"
         - comment: "Current signup API exists but may need update for subscription plan handling"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: Signup API works perfectly with subscription plan handling. Successfully tested free plan signup (subscription_plan='free') and paid plan signup (subscription_plan='personal-plus'). Both correctly store and return the subscription plan in user object. Authentication tokens are properly generated. Email duplicate prevention works correctly."
 
   - task: "Add SendGrid email confirmation system"
     implemented: false
