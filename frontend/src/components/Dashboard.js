@@ -34,6 +34,7 @@ const API = `${BACKEND_URL}/api`;
 const Dashboard = ({ user }) => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showCameraCapture, setShowCameraCapture] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
