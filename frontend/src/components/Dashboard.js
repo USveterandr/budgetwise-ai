@@ -105,6 +105,20 @@ const Dashboard = ({ user }) => {
       icon: <Trophy className="h-5 w-5" />,
       link: "/achievements",
       color: "from-yellow-500 to-amber-500"
+    },
+    {
+      title: "Scan Receipt",
+      description: "Capture with camera",
+      icon: <Camera className="h-5 w-5" />,
+      action: () => setShowCameraCapture(true),
+      color: "from-purple-500 to-indigo-500"
+    },
+    {
+      title: "Gamification Hub",
+      description: "View rewards & challenges",
+      icon: <Award className="h-5 w-5" />,
+      link: "/gamification",
+      color: "from-pink-500 to-rose-500"
     }
   ];
 
