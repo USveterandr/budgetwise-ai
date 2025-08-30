@@ -2,6 +2,9 @@ import requests
 import sys
 from datetime import datetime, timezone
 import json
+import io
+import os
+from pathlib import Path
 
 class BudgetWiseAPITester:
     def __init__(self, base_url="https://wisespend.preview.emergentagent.com/api"):
@@ -13,6 +16,8 @@ class BudgetWiseAPITester:
         self.created_expense_id = None
         self.created_budget_id = None
         self.created_investment_id = None
+        self.created_receipt_id = None
+        self.confirmation_token = None
 
     def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):
         """Run a single API test"""
