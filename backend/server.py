@@ -217,6 +217,27 @@ class PasswordReset(BaseModel):
     token: str
     new_password: str
 
+class Receipt(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    filename: str
+    file_path: str
+    file_type: str  # image, pdf
+    file_size: int
+    expense_id: Optional[str] = None  # Link to expense if processed
+    amount_extracted: Optional[float] = None
+    merchant_extracted: Optional[str] = None
+    date_extracted: Optional[datetime] = None
+    is_processed: bool = False
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class FileUploadResponse(BaseModel):
+    receipt_id: str
+    filename: str
+    file_type: str
+    file_size: int
+    message: str
+
 # Authentication functions
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
