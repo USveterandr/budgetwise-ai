@@ -420,6 +420,12 @@ const LandingPage = () => {
           </div>
         </div>
       </footer>
+
+      {/* Demo Modal */}
+      <DemoModal 
+        open={demoModalOpen} 
+        onOpenChange={setDemoModalOpen} 
+      />
     </div>
   );
 };
