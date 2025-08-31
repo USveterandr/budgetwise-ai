@@ -10,8 +10,8 @@ import PaymentForm from "./PaymentForm";
 import { PiggyBank, ArrowLeft, Check, Star, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+// Resolve API base: use env if provided, otherwise fallback to same-origin /api
+const API = `${(process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL.replace(/\/$/, '') : '')}/api`;
 
 const SignupPage = ({ setUser }) => {
   const navigate = useNavigate();

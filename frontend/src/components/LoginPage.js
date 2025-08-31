@@ -8,8 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { PiggyBank, ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API_BASE = (process.env.REACT_APP_BACKEND_URL ? process.env.REACT_APP_BACKEND_URL.replace(/\/$/, '') : '') + '/api';
+const API = API_BASE;
 
 const LoginPage = ({ setUser }) => {
   const navigate = useNavigate();
