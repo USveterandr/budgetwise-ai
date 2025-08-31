@@ -37,6 +37,7 @@ const CameraCapture = ({ onExpenseCreated, onClose }) => {
   });
   const [creatingExpense, setCreatingExpense] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -152,13 +153,44 @@ const CameraCapture = ({ onExpenseCreated, onClose }) => {
       });
       
       setReceiptId(response.data.receipt_id);
-      setCurrentStep("expense");
       toast.success("Receipt uploaded successfully!");
+
+      // After upload, try AI extraction to pre-fill fields
+      await extractWithAI();
+      setCurrentStep("expense");
     } catch (error) {
-      toast.error("Failed to upload receipt");
+      toast.error(error.response?.data?.detail || "Failed to upload receipt");
       console.error(error);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const extractWithAI = async () => {
+    if (!uploadedFile) return;
+    setExtracting(true);
+    try {
+      const form = new FormData();
+      form.append('file', uploadedFile);
+      const token = localStorage.getItem('token');
+      const resp = await axios.post(`${API}/ai/receipt/extract`, form, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      const data = resp.data?.extracted_data || {};
+      setExpenseData(prev => ({
+        ...prev,
+        amount: data.amount ? String(data.amount) : prev.amount,
+        category: data.category || prev.category,
+        description: data.merchant ? `Receipt: ${data.merchant}` : prev.description,
+      }));
+    } catch (e) {
+      console.error(e);
+      toast.message("Uploaded, but AI couldn't auto-extract. You can fill manually.");
+    } finally {
+      setExtracting(false);
     }
   };
 
@@ -191,7 +223,7 @@ const CameraCapture = ({ onExpenseCreated, onClose }) => {
         onClose();
       }
     } catch (error) {
-      toast.error("Failed to create expense");
+      toast.error(error.response?.data?.detail || "Failed to create expense");
       console.error(error);
     } finally {
       setCreatingExpense(false);
@@ -354,7 +386,7 @@ const CameraCapture = ({ onExpenseCreated, onClose }) => {
           Create Expense
         </h3>
         <p className="text-gray-600 mb-4">
-          Fill in the expense details from your receipt
+          {extracting ? 'Filling details with AI...' : 'Fill in the expense details from your receipt'}
         </p>
       </div>
       

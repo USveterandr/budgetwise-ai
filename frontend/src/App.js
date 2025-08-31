@@ -12,6 +12,7 @@ import InvestmentTracker from "./components/InvestmentTracker";
 import EmailConfirmation from "./components/EmailConfirmation";
 import GamificationDashboard from "./components/GamificationDashboard";
 import ReceiptGallery from "./components/ReceiptGallery";
+import BankStatementAnalyzer from "./components/BankStatementAnalyzer";
 import { Toaster } from "./components/ui/sonner";
 
 function App() {
@@ -32,6 +33,7 @@ function App() {
           <Route path="/confirm-email" element={<EmailConfirmation />} />
           <Route path="/gamification" element={<GamificationDashboard user={user} />} />
           <Route path="/receipts" element={<ReceiptGallery user={user} />} />
+          <Route path="/bank-statement" element={<BankStatementAnalyzer />} />
         </Routes>
         <Toaster />
       </BrowserRouter>

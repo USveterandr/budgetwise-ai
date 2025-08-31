@@ -26,6 +26,14 @@ from paypalcheckoutsdk.payments import CapturesRefundRequest
 # Email imports
 from emails import send_confirmation_email, send_welcome_email, send_password_reset_email, EmailDeliveryError
 
+# Gemini (Google GenAI) imports
+try:
+    from google import genai as google_genai
+    from google.genai import types as genai_types
+except Exception:
+    google_genai = None
+    genai_types = None
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -290,7 +298,7 @@ async def check_and_award_achievements(user_id: str):
             "points": 10,
             "icon": "👶",
             "category": "expenses",
-            "condition": expenses_count >= 1
+            "condition": expenses_count &gt;= 1
         },
         {
             "title": "Expense Tracker",
@@ -298,7 +306,7 @@ async def check_and_award_achievements(user_id: str):
             "points": 50,
             "icon": "📝",
             "category": "expenses", 
-            "condition": expenses_count >= 10
+            "condition": expenses_count &gt;= 10
         },
         {
             "title": "Budget Master",
@@ -306,7 +314,7 @@ async def check_and_award_achievements(user_id: str):
             "points": 25,
             "icon": "🎯",
             "category": "budgeting",
-            "condition": budgets_count >= 1
+            "condition": budgets_count &gt;= 1
         },
         {
             "title": "Investment Guru",
@@ -314,7 +322,7 @@ async def check_and_award_achievements(user_id: str):
             "points": 50,
             "icon": "📈",
             "category": "investments",
-            "condition": investments_count >= 1
+            "condition": investments_count &gt;= 1
         },
         {
             "title": "Week Warrior",
@@ -322,7 +330,7 @@ async def check_and_award_achievements(user_id: str):
             "points": 100,
             "icon": "🔥",
             "category": "general",
-            "condition": user_doc.get("streak_days", 0) >= 7
+            "condition": user_doc.get("streak_days", 0) &gt;= 7
         },
         {
             "title": "Month Champion",
@@ -330,7 +338,7 @@ async def check_and_award_achievements(user_id: str):
             "points": 500,
             "icon": "👑",
             "category": "general",
-            "condition": user_doc.get("streak_days", 0) >= 30
+            "condition": user_doc.get("streak_days", 0) &gt;= 30
         }
     ]
     
@@ -357,7 +365,7 @@ async def check_and_award_achievements(user_id: str):
             new_achievements.append(achievement)
     
     # Update user points
-    if points_awarded > 0:
+    if points_awarded &gt; 0:
         await db.users.update_one(
             {"id": user_id},
             {"$inc": {"points": points_awarded}}
@@ -524,7 +532,7 @@ async def confirm_email(confirmation_data: EmailConfirmation):
     # Check if token is not expired (24 hours)
     if user_doc.get("email_confirmation_sent_at"):
         sent_at = datetime.fromisoformat(user_doc["email_confirmation_sent_at"].replace('Z', '+00:00'))
-        if datetime.now(timezone.utc) - sent_at > timedelta(hours=24):
+        if datetime.now(timezone.utc) - sent_at &gt; timedelta(hours=24):
             raise HTTPException(status_code=400, detail="Confirmation token has expired")
     
     # Update user as confirmed
@@ -617,7 +625,7 @@ async def reset_password(reset_data: PasswordReset):
     # Check if token is not expired
     if user_doc.get("password_reset_expires"):
         expires_at = datetime.fromisoformat(user_doc["password_reset_expires"].replace('Z', '+00:00'))
-        if datetime.now(timezone.utc) > expires_at:
+        if datetime.now(timezone.utc) &gt; expires_at:
             raise HTTPException(status_code=400, detail="Reset token has expired")
     
     # Hash new password and update user
@@ -748,7 +756,7 @@ async def upload_receipt(
     # Validate file size (max 10MB)
     max_file_size = 10 * 1024 * 1024  # 10MB in bytes
     file_content = await file.read()
-    if len(file_content) > max_file_size:
+    if len(file_content) &gt; max_file_size:
         raise HTTPException(
             status_code=400,
             detail="File too large. Maximum size is 10MB"
@@ -912,7 +920,7 @@ async def upload_budget_document(
     # Validate file size (max 20MB for documents)
     max_file_size = 20 * 1024 * 1024  # 20MB
     file_content = await file.read()
-    if len(file_content) > max_file_size:
+    if len(file_content) &gt; max_file_size:
         raise HTTPException(
             status_code=400,
             detail="File too large. Maximum size is 20MB"
@@ -967,209 +975,144 @@ async def get_budget_documents(current_user: User = Depends(get_current_user)):
     
     return documents
 
-# Expense routes
-@api_router.post("/expenses", response_model=Expense)
-async def create_expense(expense_data: ExpenseCreate, current_user: User = Depends(get_current_user)):
-    expense_dict = expense_data.dict()
-    if expense_dict.get('date') is None:
-        expense_dict['date'] = datetime.now(timezone.utc)
-    
-    expense = Expense(
-        user_id=current_user.id,
-        **expense_dict
-    )
-    
-    expense_dict = prepare_for_mongo(expense.dict())
-    await db.expenses.insert_one(expense_dict)
-    
-    # Update budget spent amount if budget exists
-    budget = await db.budgets.find_one({
-        "user_id": current_user.id,
-        "category": expense.category
-    })
-    if budget:
-        await db.budgets.update_one(
-            {"id": budget["id"]},
-            {"$inc": {"spent": expense.amount}}
-        )
-    
-    # Check for new achievements
-    await check_and_award_achievements(current_user.id)
-    await update_user_streak(current_user.id)
-    
-    return expense
+# ============== AI: Gemini-powered extraction &amp; summarization ==============
 
-@api_router.get("/expenses", response_model=List[Expense])
-async def get_expenses(current_user: User = Depends(get_current_user)):
-    expenses = await db.expenses.find({"user_id": current_user.id}).to_list(length=1000)
-    return [Expense(**parse_from_mongo(expense)) for expense in expenses]
-
-# Budget routes
-@api_router.post("/budgets", response_model=Budget)
-async def create_budget(budget_data: BudgetCreate, current_user: User = Depends(get_current_user)):
-    # Calculate current spent for this category
-    expenses = await db.expenses.find({
-        "user_id": current_user.id,
-        "category": budget_data.category
-    }).to_list(length=1000)
-    
-    total_spent = sum(expense.get("amount", 0) for expense in expenses)
-    
-    budget = Budget(
-        user_id=current_user.id,
-        spent=total_spent,
-        **budget_data.dict()
-    )
-    
-    budget_dict = prepare_for_mongo(budget.dict())
-    await db.budgets.insert_one(budget_dict)
-    
-    return budget
-
-@api_router.get("/budgets", response_model=List[Budget])
-async def get_budgets(current_user: User = Depends(get_current_user)):
-    budgets = await db.budgets.find({"user_id": current_user.id}).to_list(length=1000)
-    return [Budget(**parse_from_mongo(budget)) for budget in budgets]
-
-# Achievement routes
-@api_router.get("/achievements", response_model=List[Achievement])
-async def get_achievements(current_user: User = Depends(get_current_user)):
-    achievements = await db.achievements.find({"user_id": current_user.id}).to_list(length=1000)
-    return [Achievement(**parse_from_mongo(achievement)) for achievement in achievements]
-
-# Investment routes
-@api_router.post("/investments", response_model=Investment)
-async def create_investment(investment_data: InvestmentCreate, current_user: User = Depends(get_current_user)):
-    investment = Investment(
-        user_id=current_user.id,
-        current_price=investment_data.purchase_price,  # Initial current price
-        **investment_data.dict()
-    )
-    
-    investment_dict = prepare_for_mongo(investment.dict())
-    await db.investments.insert_one(investment_dict)
-    
-    return investment
-
-@api_router.get("/investments", response_model=List[Investment])
-async def get_investments(current_user: User = Depends(get_current_user)):
-    investments = await db.investments.find({"user_id": current_user.id}).to_list(length=1000)
-    return [Investment(**parse_from_mongo(investment)) for investment in investments]
-
-# PayPal Payment Routes
-@api_router.post("/payments/create-order")
-async def create_payment_order(payment_data: PaymentIntent, current_user: User = Depends(get_current_user)):
+def _get_gemini_client():
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not configured in backend environment")
+    if google_genai is None or genai_types is None:
+        raise HTTPException(status_code=500, detail="Gemini SDK not installed on backend")
     try:
-        request = OrdersCreateRequest()
-        request.prefer('return=representation')
-        
-        # Plan pricing mapping
-        plan_pricing = {
-            "free": 0,
-            "personal-plus": 9.99,
-            "investor": 19.99,
-            "business-pro-elite": 49.99
-        }
-        
-        amount = plan_pricing.get(payment_data.plan_id, payment_data.amount)
-        
-        request.request_body = {
-            "intent": "CAPTURE",
-            "application_context": {
-                "brand_name": "BudgetWise",
-                "landing_page": "BILLING",
-                "shipping_preference": "NO_SHIPPING",
-                "user_action": "PAY_NOW",
-                "return_url": f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/payment/success",
-                "cancel_url": f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/payment/cancel"
-            },
-            "purchase_units": [{
-                "reference_id": f"user_{current_user.id}_plan_{payment_data.plan_id}",
-                "amount": {
-                    "currency_code": payment_data.currency,
-                    "value": f"{amount:.2f}"
-                },
-                "description": f"BudgetWise {payment_data.plan_id.replace('-', ' ').title()} Subscription"
-            }]
-        }
-        
-        response = paypal_client.execute(request)
-        
-        # Store pending payment in database
-        payment_record = {
-            "id": str(uuid.uuid4()),
-            "user_id": current_user.id,
-            "paypal_order_id": response.result.id,
-            "plan_id": payment_data.plan_id,
-            "amount": amount,
-            "currency": payment_data.currency,
-            "status": "pending",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-        
-        await db.payments.insert_one(prepare_for_mongo(payment_record))
-        
-        return {
-            "order_id": response.result.id,
-            "status": response.result.status,
-            "links": [{"href": link.href, "rel": link.rel, "method": link.method} for link in response.result.links]
-        }
-        
+        client = google_genai.Client(api_key=api_key)
+        return client
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Payment order creation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to initialize Gemini client: {str(e)}")
 
-@api_router.post("/payments/capture-order")
-async def capture_payment_order(capture_data: PaymentCapture, current_user: User = Depends(get_current_user)):
+
+def _strip_code_fences(text: str) -> str:
+    if text is None:
+        return ""
+    t = text.strip()
+    if t.startswith("```) and t.endswith("```"):
+        # remove first line with possible language hint
+        lines = t.splitlines()
+        if len(lines) &gt;= 3:
+            return "\n".join(lines[1:-1])
+    return t
+
+
+@api_router.post("/ai/receipt/extract")
+async def ai_extract_receipt(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Use Gemini to extract structured data from a receipt image/PDF"""
+    # Validate size (10MB)
+    content = await file.read()
+    if len(content) &gt; 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Max 10MB")
+    
+    client = _get_gemini_client()
+    mime = file.content_type or "application/octet-stream"
+
+    prompt = (
+        "Analyze this receipt and return ONLY valid JSON with these fields: "
+        "{\"amount\": float|null, \"merchant\": string|null, \"date\": YYYY-MM-DD|string|null, "
+        "\"category\": string|null (one of grocery, restaurant, retail, gas, pharmacy, entertainment, other), "
+        "\"items\": [{\"name\": string, \"price\": float, \"quantity\": int}], \"confidence\": float between 0 and 1}. "
+        "No extra commentary."
+    )
+
     try:
-        request = OrdersCaptureRequest(capture_data.order_id)
-        response = paypal_client.execute(request)
-        
-        if response.result.status == "COMPLETED":
-            # Update payment record
-            await db.payments.update_one(
-                {"paypal_order_id": capture_data.order_id},
-                {"$set": {
-                    "status": "completed",
-                    "captured_at": datetime.now(timezone.utc).isoformat(),
-                    "paypal_capture_id": response.result.purchase_units[0].payments.captures[0].id
-                }}
-            )
-            
-            # Get payment record to update user subscription
-            payment_record = await db.payments.find_one({"paypal_order_id": capture_data.order_id})
-            
-            if payment_record:
-                # Update user's subscription plan
-                await db.users.update_one(
-                    {"id": current_user.id},
-                    {"$set": {"subscription_plan": payment_record["plan_id"]}}
+        part = genai_types.Part.from_bytes(data=content, mime_type=mime)
+        resp = await app.state.loop.run_in_executor(
+            None,
+            lambda: client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=[part, prompt],
+                config=genai_types.GenerateContentConfig(
+                    max_output_tokens=1500,
+                    temperature=0.1,
+                    response_mime_type="application/json"
                 )
-                
-                # Create subscription record
-                subscription = {
-                    "id": str(uuid.uuid4()),
-                    "user_id": current_user.id,
-                    "plan_id": payment_record["plan_id"],
-                    "status": "active",
-                    "amount": payment_record["amount"],
-                    "currency": payment_record["currency"],
-                    "billing_cycle": "monthly",
-                    "next_billing_date": (datetime.now(timezone.utc) + timezone.timedelta(days=30)).isoformat(),
-                    "paypal_order_id": capture_data.order_id,
-                    "created_at": datetime.now(timezone.utc).isoformat()
-                }
-                
-                await db.subscriptions.insert_one(prepare_for_mongo(subscription))
-        
+            )
+        )
+        text = _strip_code_fences(getattr(resp, 'text', '') or '')
+        import json as _json
+        try:
+            data = _json.loads(text)
+        except Exception:
+            # try best-effort cleanup
+            cleaned = text.strip()
+            if cleaned.startswith('{') and cleaned.endswith('}'):
+                data = _json.loads(cleaned)
+            else:
+                raise
         return {
-            "capture_id": response.result.purchase_units[0].payments.captures[0].id,
-            "status": response.result.status,
-            "amount": response.result.purchase_units[0].payments.captures[0].amount
+            "status": "success",
+            "filename": file.filename,
+            "content_type": mime,
+            "extracted_data": data
         }
-        
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Payment capture failed: {str(e)}")
+        logger.error(f"Gemini receipt extraction error: {str(e)}")
+        raise HTTPException(status_code=500, detail="AI extraction failed")
 
+
+@api_router.post("/ai/bank-statement/summarize")
+async def ai_summarize_bank_statement(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Use Gemini to summarize a bank statement PDF/Image"""
+    content = await file.read()
+    if len(content) &gt; 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Max 20MB")
+    
+    client = _get_gemini_client()
+    mime = file.content_type or "application/pdf"
+
+    prompt = (
+        "Summarize this bank statement and return ONLY valid JSON with fields: "
+        "{\"period_start\": YYYY-MM-DD|null, \"period_end\": YYYY-MM-DD|null, \"opening_balance\": float|null, "
+        "\"closing_balance\": float|null, \"total_deposits\": float|null, \"total_withdrawals\": float|null, "
+        "\"transaction_count\": int, \"largest_deposit\": float|null, \"largest_withdrawal\": float|null, "
+        "\"categories\": {string: float}, \"confidence\": float between 0 and 1}. No extra text."
+    )
+
+    try:
+        part = genai_types.Part.from_bytes(data=content, mime_type=mime)
+        resp = await app.state.loop.run_in_executor(
+            None,
+            lambda: client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=[part, prompt],
+                config=genai_types.GenerateContentConfig(
+                    max_output_tokens=2000,
+                    temperature=0.1,
+                    response_mime_type="application/json"
+                )
+            )
+        )
+        text = _strip_code_fences(getattr(resp, 'text', '') or '')
+        import json as _json
+        data = _json.loads(text)
+        return {
+            "status": "success",
+            "filename": file.filename,
+            "content_type": mime,
+            "summary": data
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Gemini statement summarize error: {str(e)}")
+        raise HTTPException(status_code=500, detail="AI summarization failed")
+
+# ============================ Payments &amp; Plans =============================
 @api_router.get("/payments/plans")
 async def get_subscription_plans():
     return {
@@ -1177,7 +1120,7 @@ async def get_subscription_plans():
             {
                 "id": "free",
                 "name": "Free",
-                "price": 0,
+                "price": 0.0,
                 "currency": "USD",
                 "billing_cycle": "monthly",
                 "features": [

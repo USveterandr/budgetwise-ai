@@ -27,3 +27,4 @@ bcrypt>=4.0.0
 paypal-checkout-serversdk>=1.0.3
 sendgrid
 aiofiles
+google-genai>=0.3.0
