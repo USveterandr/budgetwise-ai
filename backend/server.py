@@ -298,7 +298,7 @@ async def check_and_award_achievements(user_id: str):
             "points": 10,
             "icon": "👶",
             "category": "expenses",
-            "condition": expenses_count &gt;= 1
+            "condition": expenses_count >= 1
         },
         {
             "title": "Expense Tracker",
