@@ -994,7 +994,7 @@ def _strip_code_fences(text: str) -> str:
     if text is None:
         return ""
     t = text.strip()
-    if t.startswith("```) and t.endswith("```"):
+    if t.startswith("```") and t.endswith("```"):
         # remove first line with possible language hint
         lines = t.splitlines()
         if len(lines) &gt;= 3:
