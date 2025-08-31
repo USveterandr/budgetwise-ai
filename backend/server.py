@@ -306,7 +306,7 @@ async def check_and_award_achievements(user_id: str):
             "points": 50,
             "icon": "📝",
             "category": "expenses", 
-            "condition": expenses_count &gt;= 10
+            "condition": expenses_count >= 10
         },
         {
             "title": "Budget Master",
@@ -314,7 +314,7 @@ async def check_and_award_achievements(user_id: str):
             "points": 25,
             "icon": "🎯",
             "category": "budgeting",
-            "condition": budgets_count &gt;= 1
+            "condition": budgets_count >= 1
         },
         {
             "title": "Investment Guru",
@@ -322,7 +322,7 @@ async def check_and_award_achievements(user_id: str):
             "points": 50,
             "icon": "📈",
             "category": "investments",
-            "condition": investments_count &gt;= 1
+            "condition": investments_count >= 1
         },
         {
             "title": "Week Warrior",
@@ -330,7 +330,7 @@ async def check_and_award_achievements(user_id: str):
             "points": 100,
             "icon": "🔥",
             "category": "general",
-            "condition": user_doc.get("streak_days", 0) &gt;= 7
+            "condition": user_doc.get("streak_days", 0) >= 7
         },
         {
             "title": "Month Champion",
@@ -338,7 +338,7 @@ async def check_and_award_achievements(user_id: str):
             "points": 500,
             "icon": "👑",
             "category": "general",
-            "condition": user_doc.get("streak_days", 0) &gt;= 30
+            "condition": user_doc.get("streak_days", 0) >= 30
         }
     ]
     
@@ -365,7 +365,7 @@ async def check_and_award_achievements(user_id: str):
             new_achievements.append(achievement)
     
     # Update user points
-    if points_awarded &gt; 0:
+    if points_awarded > 0:
         await db.users.update_one(
             {"id": user_id},
             {"$inc": {"points": points_awarded}}
@@ -532,7 +532,7 @@ async def confirm_email(confirmation_data: EmailConfirmation):
     # Check if token is not expired (24 hours)
     if user_doc.get("email_confirmation_sent_at"):
         sent_at = datetime.fromisoformat(user_doc["email_confirmation_sent_at"].replace('Z', '+00:00'))
-        if datetime.now(timezone.utc) - sent_at &gt; timedelta(hours=24):
+        if datetime.now(timezone.utc) - sent_at > timedelta(hours=24):
             raise HTTPException(status_code=400, detail="Confirmation token has expired")
     
     # Update user as confirmed
@@ -625,7 +625,7 @@ async def reset_password(reset_data: PasswordReset):
     # Check if token is not expired
     if user_doc.get("password_reset_expires"):
         expires_at = datetime.fromisoformat(user_doc["password_reset_expires"].replace('Z', '+00:00'))
-        if datetime.now(timezone.utc) &gt; expires_at:
+        if datetime.now(timezone.utc) > expires_at:
             raise HTTPException(status_code=400, detail="Reset token has expired")
     
     # Hash new password and update user
@@ -756,7 +756,7 @@ async def upload_receipt(
     # Validate file size (max 10MB)
     max_file_size = 10 * 1024 * 1024  # 10MB in bytes
     file_content = await file.read()
-    if len(file_content) &gt; max_file_size:
+    if len(file_content) > max_file_size:
         raise HTTPException(
             status_code=400,
             detail="File too large. Maximum size is 10MB"
@@ -920,7 +920,7 @@ async def upload_budget_document(
     # Validate file size (max 20MB for documents)
     max_file_size = 20 * 1024 * 1024  # 20MB
     file_content = await file.read()
-    if len(file_content) &gt; max_file_size:
+    if len(file_content) > max_file_size:
         raise HTTPException(
             status_code=400,
             detail="File too large. Maximum size is 20MB"
@@ -997,7 +997,7 @@ def _strip_code_fences(text: str) -> str:
     if t.startswith("```") and t.endswith("```"):
         # remove first line with possible language hint
         lines = t.splitlines()
-        if len(lines) &gt;= 3:
+        if len(lines) >= 3:
             return "\n".join(lines[1:-1])
     return t
 
@@ -1010,7 +1010,7 @@ async def ai_extract_receipt(
     """Use Gemini to extract structured data from a receipt image/PDF"""
     # Validate size (10MB)
     content = await file.read()
-    if len(content) &gt; 10 * 1024 * 1024:
+    if len(content) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File too large. Max 10MB")
     
     client = _get_gemini_client()
@@ -1069,7 +1069,7 @@ async def ai_summarize_bank_statement(
 ):
     """Use Gemini to summarize a bank statement PDF/Image"""
     content = await file.read()
-    if len(content) &gt; 20 * 1024 * 1024:
+    if len(content) > 20 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File too large. Max 20MB")
     
     client = _get_gemini_client()
