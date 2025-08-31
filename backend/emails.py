@@ -38,7 +38,7 @@ def send_email(to: str, subject: str, content: str, content_type: str = "html"):
         logger.error(f"Failed to send email to {to}: {str(e)}")
         raise EmailDeliveryError(f"Failed to send email: {str(e)}")
 
-def send_confirmation_email(user_email: str, user_name: str, confirmation_token: str, base_url: str = "https://wisespend.preview.emergentagent.com"):
+def send_confirmation_email(user_email: str, user_name: str, confirmation_token: str, base_url: str = "https://smart-finance-dash-2.preview.emergentagent.com"):
     """
     Send email confirmation for new user registration
     """
@@ -330,7 +330,7 @@ def send_welcome_email(user_email: str, user_name: str, subscription_plan: str =
                 </ul>
                 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="https://wisespend.preview.emergentagent.com/dashboard" class="cta-button">
+                    <a href="https://smart-finance-dash-2.preview.emergentagent.com/dashboard" class="cta-button">
                         Start Managing Your Finances
                     </a>
                 </div>
@@ -349,7 +349,7 @@ def send_welcome_email(user_email: str, user_name: str, subscription_plan: str =
     
     return send_email(user_email, subject, html_content, "html")
 
-def send_password_reset_email(user_email: str, user_name: str, reset_token: str, base_url: str = "https://wisespend.preview.emergentagent.com"):
+def send_password_reset_email(user_email: str, user_name: str, reset_token: str, base_url: str = "https://smart-finance-dash-2.preview.emergentagent.com"):
     """
     Send password reset email
     """
