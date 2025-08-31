@@ -1,6 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -16,6 +16,8 @@ from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
 from decimal import Decimal
+import io
+import csv
 
 # PayPal SDK imports
 from paypalcheckoutsdk.core import SandboxEnvironment, LiveEnvironment
@@ -64,6 +66,7 @@ api_router = APIRouter(prefix="/api")
 # Security
 security = HTTPBearer()
 JWT_SECRET = os.environ.get('JWT_SECRET', 'your-secret-key-here')
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')
 
 # Helper functions
 def prepare_for_mongo(data):
@@ -98,6 +101,7 @@ class User(BaseModel):
     email_confirmed: bool = False
     email_confirmation_token: Optional[str] = None
     email_confirmation_sent_at: Optional[datetime] = None
+    is_admin: bool = False
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -273,6 +277,11 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+async def admin_required(current_user: User = Depends(get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
 
 # Gamification functions
 async def check_and_award_achievements(user_id: str):
@@ -470,7 +479,8 @@ async def signup(user_data: UserCreate):
         subscription_plan=user_data.subscription_plan,
         email_confirmed=False,
         email_confirmation_token=confirmation_token,
-        email_confirmation_sent_at=datetime.now(timezone.utc)
+        email_confirmation_sent_at=datetime.now(timezone.utc),
+        is_admin=(ADMIN_EMAIL is not None and user_data.email.lower() == ADMIN_EMAIL.lower())
     )
     
     user_dict = prepare_for_mongo(user.dict())
@@ -506,7 +516,16 @@ async def login(login_data: UserLogin):
     if not verify_password(login_data.password, user_doc["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
+    # Bootstrap admin if matches ADMIN_EMAIL
+    if ADMIN_EMAIL and login_data.email.lower() == ADMIN_EMAIL.lower() and not user_doc.get("is_admin", False):
+        await db.users.update_one({"id": user_doc["id"]}, {"$set": {"is_admin": True}})
+        user_doc["is_admin"] = True
+
     # Update last login and streak
+    await db.users.update_one(
+        {"id": user_doc["id"]},
+        {"$set": {"last_login": datetime.now(timezone.utc).isoformat()}}
+    )
     user = User(**{k: v for k, v in user_doc.items() if k != "password"})
     
     # Create access token
@@ -645,94 +664,155 @@ async def reset_password(reset_data: PasswordReset):
     
     return {"message": "Password reset successfully!"}
 
-# Gamification routes
-@api_router.get("/gamification/achievements")
-async def get_user_achievements(current_user: User = Depends(get_current_user)):
-    """Get all user achievements"""
-    achievements = await db.achievements.find({"user_id": current_user.id}).to_list(length=1000)
-    return [Achievement(**parse_from_mongo(achievement)) for achievement in achievements]
+# -------------------- Admin APIs --------------------
+class AdminUserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    full_name: str
+    subscription_plan: str = "free"
+    is_admin: bool = False
 
-@api_router.get("/gamification/leaderboard")
-async def get_leaderboard(limit: int = 10):
-    """Get top users by points"""
-    pipeline = [
-        {"$sort": {"points": -1}},
-        {"$limit": limit},
-        {"$project": {"full_name": 1, "points": 1, "streak_days": 1}}
-    ]
-    leaderboard = await db.users.aggregate(pipeline).to_list(length=limit)
-    return leaderboard
+@api_router.get("/admin/users")
+async def admin_list_users(
+    page: int = 1,
+    page_size: int = 20,
+    q: Optional[str] = None,
+    plan: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    _: User = Depends(admin_required)
+):
+    filters = {}
+    if q:
+        filters["email"] = {"$regex": q, "$options": "i"}
+    if plan:
+        filters["subscription_plan"] = plan
+    if date_from:
+        filters["created_at"] = {"$gte": datetime.fromisoformat(date_from).isoformat()}
+    if date_to:
+        filters.setdefault("created_at", {})["$lte"] = datetime.fromisoformat(date_to).isoformat()
 
-@api_router.get("/gamification/challenges")
-async def get_active_challenges(current_user: User = Depends(get_current_user)):
-    """Get active challenges for user"""
-    # Get active global challenges
-    active_challenges = await db.challenges.find({"is_active": True}).to_list(length=1000)
-    
-    # Get user's progress on challenges
-    user_challenges = await db.user_challenges.find({"user_id": current_user.id}).to_list(length=1000)
-    user_progress = {uc["challenge_id"]: uc for uc in user_challenges}
-    
-    # Combine challenge data with user progress
-    challenges_with_progress = []
-    for challenge in active_challenges:
-        challenge_data = Challenge(**parse_from_mongo(challenge))
-        progress = user_progress.get(challenge["id"], {"current_progress": 0.0, "is_completed": False})
-        
-        challenges_with_progress.append({
-            **challenge_data.dict(),
-            "user_progress": progress.get("current_progress", 0.0),
-            "is_completed": progress.get("is_completed", False)
-        })
-    
-    return challenges_with_progress
+    total = await db.users.count_documents(filters)
+    cursor = db.users.find(filters).sort("created_at", -1).skip((page - 1) * page_size).limit(page_size)
+    items_raw = await cursor.to_list(length=page_size)
+    items = [User(**parse_from_mongo(u)) for u in items_raw]
+    return {"total": total, "page": page, "page_size": page_size, "items": items}
 
-@api_router.post("/gamification/check-achievements")
-async def check_achievements(current_user: User = Depends(get_current_user)):
-    """Manually check and award new achievements"""
-    new_achievements = await check_and_award_achievements(current_user.id)
-    await update_user_streak(current_user.id)
-    
+@api_router.post("/admin/users")
+async def admin_create_user(payload: AdminUserCreate, _: User = Depends(admin_required)):
+    # prevent duplicates
+    existing = await db.users.find_one({"email": payload.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    # build user
+    user = User(
+        email=payload.email,
+        full_name=payload.full_name,
+        subscription_plan=payload.subscription_plan,
+        email_confirmed=True,  # admin-created users are confirmed
+        is_admin=payload.is_admin
+    )
+    user_doc = prepare_for_mongo(user.dict())
+    user_doc["password"] = hash_password(payload.password)
+    await db.users.insert_one(user_doc)
+    return user
+
+@api_router.delete("/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, _: User = Depends(admin_required)):
+    user_doc = await db.users.find_one({"id": user_id})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    # delete related data (best-effort)
+    await db.expenses.delete_many({"user_id": user_id})
+    await db.budgets.delete_many({"user_id": user_id})
+    await db.investments.delete_many({"user_id": user_id})
+    await db.achievements.delete_many({"user_id": user_id})
+    await db.receipts.delete_many({"user_id": user_id})
+    await db.user_challenges.delete_many({"user_id": user_id})
+    await db.budget_documents.delete_many({"user_id": user_id})
+    await db.users.delete_one({"id": user_id})
+    return {"message": "User and related data deleted"}
+
+@api_router.get("/admin/reports/summary")
+async def admin_reports_summary(_: User = Depends(admin_required)):
+    now = datetime.now(timezone.utc)
+    seven_ago = now - timedelta(days=7)
+    thirty_ago = now - timedelta(days=30)
+
+    total_users = await db.users.count_documents({})
+
+    # counts by plan
+    plans = ["free", "personal-plus", "investor", "business-pro-elite"]
+    by_plan = {}
+    for p in plans:
+        by_plan[p] = await db.users.count_documents({"subscription_plan": p})
+
+    # signups last 7 and 30 days (daily buckets)
+    async def count_by_day(start: datetime, days: int):
+        # fetch users created since start
+        users = await db.users.find({"created_at": {"$gte": start.isoformat()}}).to_list(length=10000)
+        buckets = {}
+        for i in range(days):
+            d = (start + timedelta(days=i)).date().isoformat()
+            buckets[d] = 0
+        for u in users:
+            created = u.get("created_at")
+            if created:
+                if isinstance(created, str):
+                    try:
+                        d = datetime.fromisoformat(created.replace('Z', '+00:00')).date().isoformat()
+                    except:
+                        continue
+                else:
+                    d = created.date().isoformat()
+                if d in buckets:
+                    buckets[d] += 1
+        return buckets
+
+    last7 = await count_by_day((now - timedelta(days=6)).replace(hour=0, minute=0, second=0, microsecond=0), 7)
+    last30 = await count_by_day((now - timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0), 30)
+
+    # active users
+    active_24h = await db.users.count_documents({"last_login": {"$gte": (now - timedelta(hours=24)).isoformat()}})
+    active_7d = await db.users.count_documents({"last_login": {"$gte": seven_ago.isoformat()}})
+    active_30d = await db.users.count_documents({"last_login": {"$gte": thirty_ago.isoformat()}})
+
     return {
-        "new_achievements": new_achievements,
-        "message": f"Found {len(new_achievements)} new achievements!"
+        "totals": {
+            "users": total_users,
+            "by_plan": by_plan
+        },
+        "signups": {
+            "last_7_days": last7,
+            "last_30_days": last30
+        },
+        "active": {
+            "last_24h": active_24h,
+            "last_7d": active_7d,
+            "last_30d": active_30d
+        }
     }
 
-@api_router.get("/gamification/stats")
-async def get_user_gamification_stats(current_user: User = Depends(get_current_user)):
-    """Get comprehensive gamification stats for user"""
-    # Get updated user data
-    user_doc = await db.users.find_one({"id": current_user.id})
-    
-    # Get achievement counts by category
-    achievements = await db.achievements.find({"user_id": current_user.id}).to_list(length=1000)
-    achievement_categories = {}
-    total_achievements = len(achievements)
-    
-    for achievement in achievements:
-        category = achievement.get("category", "general")
-        achievement_categories[category] = achievement_categories.get(category, 0) + 1
-    
-    # Get challenge completion stats
-    completed_challenges = await db.user_challenges.count_documents({
-        "user_id": current_user.id,
-        "is_completed": True
-    })
-    
-    # Calculate user rank
-    users_with_fewer_points = await db.users.count_documents({"points": {"$lt": user_doc.get("points", 0)}})
-    user_rank = users_with_fewer_points + 1
-    
-    return {
-        "points": user_doc.get("points", 0),
-        "streak_days": user_doc.get("streak_days", 0),
-        "total_achievements": total_achievements,
-        "achievement_categories": achievement_categories,
-        "completed_challenges": completed_challenges,
-        "user_rank": user_rank,
-        "level": max(1, user_doc.get("points", 0) // 100),  # Level up every 100 points
-        "points_to_next_level": 100 - (user_doc.get("points", 0) % 100)
-    }
+@api_router.get("/admin/reports/exports/users.csv")
+async def export_users_csv(_: User = Depends(admin_required)):
+    users = await db.users.find({}).sort("created_at", -1).to_list(length=100000)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["id", "email", "full_name", "subscription_plan", "is_admin", "created_at", "last_login", "email_confirmed"])
+    for u in users:
+        writer.writerow([
+            u.get("id"),
+            u.get("email"),
+            u.get("full_name"),
+            u.get("subscription_plan"),
+            u.get("is_admin", False),
+            u.get("created_at"),
+            u.get("last_login"),
+            u.get("email_confirmed", False),
+        ])
+    csv_bytes = output.getvalue().encode('utf-8')
+    headers = {"Content-Disposition": "attachment; filename=users.csv"}
+    return Response(content=csv_bytes, media_type="text/csv", headers=headers)
 
 # File upload routes
 @api_router.post("/uploads/receipt", response_model=FileUploadResponse)

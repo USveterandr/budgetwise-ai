@@ -13,6 +13,7 @@ import EmailConfirmation from "./components/EmailConfirmation";
 import GamificationDashboard from "./components/GamificationDashboard";
 import ReceiptGallery from "./components/ReceiptGallery";
 import BankStatementAnalyzer from "./components/BankStatementAnalyzer";
+import AdminDashboard from "./components/AdminDashboard";
 import { Toaster } from "./components/ui/sonner";
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
           <Route path="/gamification" element={<GamificationDashboard user={user} />} />
           <Route path="/receipts" element={<ReceiptGallery user={user} />} />
           <Route path="/bank-statement" element={<BankStatementAnalyzer />} />
+          <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
         <Toaster />
       </BrowserRouter>
