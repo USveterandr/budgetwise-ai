@@ -975,7 +975,7 @@ async def get_budget_documents(current_user: User = Depends(get_current_user)):
     
     return documents
 
-# ============== AI: Gemini-powered extraction &amp; summarization ==============
+# ============== AI: Gemini-powered extraction & summarization ==============
 
 def _get_gemini_client():
     api_key = os.environ.get('GEMINI_API_KEY')
@@ -1112,7 +1112,7 @@ async def ai_summarize_bank_statement(
         logger.error(f"Gemini statement summarize error: {str(e)}")
         raise HTTPException(status_code=500, detail="AI summarization failed")
 
-# ============================ Payments &amp; Plans =============================
+# ============================ Payments & Plans =============================
 @api_router.get("/payments/plans")
 async def get_subscription_plans():
     return {
