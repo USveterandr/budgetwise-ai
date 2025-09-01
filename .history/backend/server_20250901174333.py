@@ -272,15 +272,11 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        if USE_SUPABASE:
-            user = await sb_get_user_by_id(user_id)
-        else:
-            user = await db.users.find_one({"id": user_id})
-        
+        user = await db.users.find_one({"id": user_id})
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
         
-        return User(**{k: v for k, v in user.items() if k != "password"})
+        return User(**user)
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:

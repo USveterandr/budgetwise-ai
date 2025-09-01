@@ -25,12 +25,12 @@ def _row_to_user(row: asyncpg.Record) -> Dict[str, Any]:
         "full_name": row["full_name"] if row["full_name"] else "",
         "subscription_plan": row["subscription_plan"] if row["subscription_plan"] else "free",
         "created_at": row["created_at"],
-        "points": row["points"] if row["points"] is not None else 0,
-        "streak_days": row["streak_days"] if row["streak_days"] is not None else 0,
-        "last_login": row["last_login"],
+        "points": 0,  # Default value since column doesn't exist
+        "streak_days": 0,  # Default value since column doesn't exist
+        "last_login": None,  # Default value since column doesn't exist
         "email_confirmed": row["email_confirmed"] if row["email_confirmed"] is not None else True,
-        "email_confirmation_token": row["email_confirmation_token"],
-        "email_confirmation_sent_at": row["email_confirmation_sent_at"],
+        "email_confirmation_token": None,  # Default value since column doesn't exist
+        "email_confirmation_sent_at": None,  # Default value since column doesn't exist
         "is_admin": row["is_admin"],
         "password": row["password_hash"],  # hashed
     }
