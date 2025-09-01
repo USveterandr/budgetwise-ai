@@ -14,6 +14,16 @@ export async function onRequest(context) {
   }
 
   const url = new URL(request.url);
+
+  // Handle CORS preflight
+  if (request.method === 'OPTIONS') {
+    const respHeaders = new Headers();
+    respHeaders.set('access-control-allow-origin', url.origin);
+    respHeaders.set('access-control-allow-credentials', 'true');
+    respHeaders.set('access-control-allow-methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    respHeaders.set('access-control-allow-headers', request.headers.get('access-control-request-headers') || '*');
+    return new Response(null, { status: 204, headers: respHeaders });
+  }
   // params.path includes the remainder after /api/
   const path = Array.isArray(params.path) ? params.path.join('/') : params.path || '';
   const targetUrl = `${backend.replace(/\/$/, '')}/api/${path}`;
@@ -38,6 +48,7 @@ export async function onRequest(context) {
     const respHeaders = new Headers(resp.headers);
     respHeaders.set('access-control-allow-origin', url.origin);
     respHeaders.set('access-control-allow-credentials', 'true');
+    respHeaders.set('vary', 'origin');
     return new Response(resp.body, { status: resp.status, headers: respHeaders });
   } catch (err) {
     return new Response(

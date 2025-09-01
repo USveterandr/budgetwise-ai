@@ -1,11 +1,12 @@
 name = "budgetwise-api"
 main = "src/index.js"
 compatibility_date = "2024-08-29"
+account_id = "44488d79973a81689876492e372fe199"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "budgetwise"
-database_id = "your-d1-database-id"
+database_id = "ab6a8925-a6b9-4cee-b23e-0a24f04094a4"
 
 [vars]
 JWT_SECRET = "your-jwt-secret-key"
