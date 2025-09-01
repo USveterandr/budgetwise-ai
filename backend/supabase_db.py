@@ -32,7 +32,7 @@ def _row_to_user(row: asyncpg.Record) -> Dict[str, Any]:
         "email_confirmation_token": str(row["email_confirmation_token"]) if row["email_confirmation_token"] else None,
         "email_confirmation_sent_at": row["email_confirmation_sent_at"],
         "is_admin": row["is_admin"],
-        "password": row["password"],  # hashed
+        "password": row["password_hash"],  # hashed
     }
 
 
@@ -62,7 +62,7 @@ async def create_user(user: Dict[str, Any]) -> Dict[str, Any]:
             INSERT INTO public.users (
                 id, email, full_name, subscription_plan, created_at, points,
                 streak_days, last_login, email_confirmed, email_confirmation_token,
-                email_confirmation_sent_at, is_admin, password
+                email_confirmation_sent_at, is_admin, password_hash
             ) VALUES (
                 $1::uuid, $2, $3, $4, now(), 0,
                 0, NULL, $5, $6::uuid,
