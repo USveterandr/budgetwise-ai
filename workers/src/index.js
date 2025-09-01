@@ -1,7 +1,4 @@
 // Cloudflare Workers API for BudgetWise
-import { Router } from 'itty-router';
-
-const router = Router();
 
 // CORS handler
 const corsHeaders = {
@@ -10,74 +7,89 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-// Handle CORS preflight requests
-router.options('*', () => new Response(null, { headers: corsHeaders }));
-
-// Health check
-router.get('/api/', () => {
-  return new Response(JSON.stringify({ message: "BudgetWise API is running on Cloudflare Workers" }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-  });
-});
-
-// Auth endpoints
-router.post('/api/auth/signup', async (request, env) => {
-  try {
-    const { email, password, full_name } = await request.json();
-    
-    // Hash password (you'll need to implement bcrypt for Workers)
-    const userId = crypto.randomUUID();
-    
-    // Insert user into D1 database
-    const stmt = env.DB.prepare(`
-      INSERT INTO users (id, email, password_hash, full_name, created_at) 
-      VALUES (?, ?, ?, ?, ?)
-    `);
-    
-    await stmt.bind(userId, email, password, full_name, new Date().toISOString()).run();
-    
-    // Generate JWT token (implement JWT for Workers)
-    const token = "jwt-token-here";
-    
-    return new Response(JSON.stringify({
-      access_token: token,
-      token_type: "bearer",
-      user: { id: userId, email, full_name, subscription_plan: "free" }
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-    
-  } catch (error) {
-    return new Response(JSON.stringify({ detail: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
-});
-
-// Expenses endpoints
-router.post('/api/expenses', async (request, env) => {
-  // Implement expense creation
-  return new Response(JSON.stringify({ message: "Expense created" }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-  });
-});
-
-router.get('/api/expenses', async (request, env) => {
-  // Implement expense retrieval
-  return new Response(JSON.stringify([]), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-  });
-});
-
-// Handle all requests
 export default {
   async fetch(request, env, ctx) {
-    return router.handle(request, env, ctx).catch(() => {
-      return new Response('Not Found', { 
-        status: 404,
-        headers: corsHeaders 
+    const url = new URL(request.url);
+    
+    // Handle CORS preflight
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders });
+    }
+    
+    // Health check
+    if (request.method === 'GET' && url.pathname === '/api/') {
+      return new Response(JSON.stringify({ message: "BudgetWise API is running on Cloudflare Workers" }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
+    }
+    
+    // Signup
+    if (request.method === 'POST' && url.pathname === '/api/auth/signup') {
+      try {
+        const { email, password, full_name } = await request.json();
+        
+        // Hash password with SHA-256
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const password_hash = Array.from(new Uint8Array(hashBuffer))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+        
+        // Check if user exists
+        const existing = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
+        if (existing) {
+          return new Response(JSON.stringify({ detail: "User already exists" }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        
+        const userId = crypto.randomUUID();
+        
+        // Insert user into D1 database
+        const stmt = env.DB.prepare(`
+          INSERT INTO users (id, email, password_hash, full_name, created_at) 
+          VALUES (?, ?, ?, ?, ?)
+        `);
+        
+        await stmt.bind(userId, email, password_hash, full_name, new Date().toISOString()).run();
+        
+        // Generate simple token
+        const token = crypto.randomUUID();
+        
+        return new Response(JSON.stringify({
+          access_token: token,
+          token_type: "bearer",
+          user: { id: userId, email, full_name, subscription_plan: "free" }
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+        
+      } catch (error) {
+        return new Response(JSON.stringify({ detail: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+    
+    // Expenses
+    if (request.method === 'POST' && url.pathname === '/api/expenses') {
+      return new Response(JSON.stringify({ message: "Expense created" }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (request.method === 'GET' && url.pathname === '/api/expenses') {
+      return new Response(JSON.stringify([]), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    return new Response('Not Found', { 
+      status: 404,
+      headers: corsHeaders 
     });
   },
 };

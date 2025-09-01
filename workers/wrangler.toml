@@ -9,7 +9,7 @@ database_name = "budgetwise"
 database_id = "ab6a8925-a6b9-4cee-b23e-0a24f04094a4"
 
 [vars]
-JWT_SECRET = "your-jwt-secret-key"
+JWT_SECRET = "supersecretkey123"
 
 [[r2_buckets]]
 binding = "STORAGE"
