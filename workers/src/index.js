@@ -75,6 +75,52 @@ export default {
     }
     
     // Expenses
+    // Login endpoint
+    if (request.method === 'POST' && url.pathname === '/api/auth/login') {
+      try {
+        const { email, password } = await request.json();
+        
+        // Hash the provided password
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const password_hash = Array.from(new Uint8Array(hashBuffer))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+        
+        // Find user by email and verify password
+        const user = await env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(email).first();
+        if (!user || user.password_hash !== password_hash) {
+          return new Response(JSON.stringify({ detail: "Invalid credentials" }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        
+        // Generate token
+        const token = crypto.randomUUID();
+        
+        return new Response(JSON.stringify({
+          access_token: token,
+          token_type: "bearer",
+          user: {
+            id: user.id,
+            email: user.email,
+            full_name: user.full_name,
+            subscription_plan: user.subscription_plan || "free"
+          }
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+        
+      } catch (error) {
+        return new Response(JSON.stringify({ detail: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+    
     if (request.method === 'POST' && url.pathname === '/api/expenses') {
       return new Response(JSON.stringify({ message: "Expense created" }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
