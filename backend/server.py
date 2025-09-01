@@ -497,6 +497,7 @@ async def signup(user_data: UserCreate):
     
     if USE_SUPABASE:
         await sb_create_user({
+            "id": user.id,
             "email": user.email,
             "full_name": user.full_name,
             "subscription_plan": user.subscription_plan,

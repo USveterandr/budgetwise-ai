@@ -64,11 +64,12 @@ async def create_user(user: Dict[str, Any]) -> Dict[str, Any]:
                 streak_days, last_login, email_confirmed, email_confirmation_token,
                 email_confirmation_sent_at, is_admin, password
             ) VALUES (
-                gen_random_uuid(), $1, $2, $3, now(), 0,
-                0, NULL, $4, $5::uuid,
-                $6, $7, $8
+                $1::uuid, $2, $3, $4, now(), 0,
+                0, NULL, $5, $6::uuid,
+                $7, $8, $9
             ) RETURNING *
             """,
+            user["id"],
             user["email"].lower(),
             user["full_name"],
             user.get("subscription_plan", "free"),
