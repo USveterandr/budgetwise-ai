@@ -107,7 +107,8 @@ export default {
             id: user.id,
             email: user.email,
             full_name: user.full_name,
-            subscription_plan: user.subscription_plan || "free"
+            subscription_plan: user.subscription_plan || "free",
+            is_admin: user.is_admin === 1
           }
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
