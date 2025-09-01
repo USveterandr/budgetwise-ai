@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BudgetWise AI</string>
+    <string name="title_activity_main">BudgetWise AI</string>
+    <string name="package_name">com.isaactrinidad.budgetwise</string>
+    <string name="custom_url_scheme">com.isaactrinidad.budgetwise</string>
+</resources>
