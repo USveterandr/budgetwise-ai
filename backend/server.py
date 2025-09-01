@@ -530,7 +530,7 @@ async def signup(user_data: UserCreate):
     }
 
 @api_router.post("/auth/login")
-async def login(login_data: UserLogin):
+async def wrangler_auth_token_DaWRQpM5c4XN0hyDNWvzijkgAByMTGA5eTtl108_login(login_data: UserLogin):
     # Find user
     if USE_SUPABASE:
         user_doc = await sb_get_user_by_email(login_data.email)
