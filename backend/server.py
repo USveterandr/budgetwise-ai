@@ -1369,3 +1369,10 @@ logger = logging.getLogger(__name__)
 async def shutdown_db_client():
     if not USE_SUPABASE:
         client.close()
+
+# For Cloudflare Worker
+worker_app = app
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
