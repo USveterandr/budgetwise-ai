@@ -38,11 +38,15 @@ except Exception:
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+USE_SUPABASE = os.environ.get('USE_SUPABASE', '0') in ('1', 'true', 'True')
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+if not USE_SUPABASE:
+    mongo_url = os.environ['MONGO_URL']
+    client = AsyncIOMotorClient(mongo_url)
+    db = client[os.environ['DB_NAME']]
+else:
+    from supabase_db import get_user_by_email as sb_get_user_by_email, create_user as sb_create_user, update_user_fields as sb_update_user_fields, set_last_login as sb_set_last_login
 
 # PayPal Configuration
 paypal_client_id = os.environ.get('PAYPAL_CLIENT_ID')
@@ -464,7 +468,10 @@ async def root():
 @api_router.post("/auth/signup")
 async def signup(user_data: UserCreate):
     # Check if user already exists
-    existing_user = await db.users.find_one({"email": user_data.email})
+    if USE_SUPABASE:
+        existing_user = await sb_get_user_by_email(user_data.email)
+    else:
+        existing_user = await db.users.find_one({"email": user_data.email})
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
@@ -483,10 +490,21 @@ async def signup(user_data: UserCreate):
         is_admin=(ADMIN_EMAIL is not None and user_data.email.lower() == ADMIN_EMAIL.lower())
     )
     
-    user_dict = prepare_for_mongo(user.dict())
-    user_dict["password"] = hashed_password
-    
-    await db.users.insert_one(user_dict)
+    if USE_SUPABASE:
+        await sb_create_user({
+            "email": user.email,
+            "full_name": user.full_name,
+            "subscription_plan": user.subscription_plan,
+            "email_confirmed": False,
+            "email_confirmation_token": confirmation_token,
+            "email_confirmation_sent_at": datetime.now(timezone.utc),
+            "is_admin": (ADMIN_EMAIL is not None and user.email.lower() == ADMIN_EMAIL.lower()),
+            "password": hashed_password,
+        })
+    else:
+        user_dict = prepare_for_mongo(user.dict())
+        user_dict["password"] = hashed_password
+        await db.users.insert_one(user_dict)
     
     # Send confirmation email
     try:
@@ -508,7 +526,10 @@ async def signup(user_data: UserCreate):
 @api_router.post("/auth/login")
 async def login(login_data: UserLogin):
     # Find user
-    user_doc = await db.users.find_one({"email": login_data.email})
+    if USE_SUPABASE:
+        user_doc = await sb_get_user_by_email(login_data.email)
+    else:
+        user_doc = await db.users.find_one({"email": login_data.email})
     if not user_doc:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
@@ -518,14 +539,21 @@ async def login(login_data: UserLogin):
     
     # Bootstrap admin if matches ADMIN_EMAIL
     if ADMIN_EMAIL and login_data.email.lower() == ADMIN_EMAIL.lower() and not user_doc.get("is_admin", False):
-        await db.users.update_one({"id": user_doc["id"]}, {"$set": {"is_admin": True}})
-        user_doc["is_admin"] = True
+        if USE_SUPABASE:
+            await sb_update_user_fields(user_doc["id"], {"is_admin": True})
+            user_doc["is_admin"] = True
+        else:
+            await db.users.update_one({"id": user_doc["id"]}, {"$set": {"is_admin": True}})
+            user_doc["is_admin"] = True
 
     # Update last login and streak
-    await db.users.update_one(
-        {"id": user_doc["id"]},
-        {"$set": {"last_login": datetime.now(timezone.utc).isoformat()}}
-    )
+    if USE_SUPABASE:
+        await sb_set_last_login(user_doc["id"])
+    else:
+        await db.users.update_one(
+            {"id": user_doc["id"]},
+            {"$set": {"last_login": datetime.now(timezone.utc).isoformat()}}
+        )
     user = User(**{k: v for k, v in user_doc.items() if k != "password"})
     
     # Create access token
@@ -1315,4 +1343,5 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    client.close()
+    if not USE_SUPABASE:
+        client.close()
