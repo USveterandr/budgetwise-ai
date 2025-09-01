@@ -1,7 +1,7 @@
 import os
 import asyncpg
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 _pool: Optional[asyncpg.Pool] = None
 
@@ -101,3 +101,96 @@ async def update_user_fields(user_id: str, fields: Dict[str, Any]) -> None:
 
 async def set_last_login(user_id: str) -> None:
     await update_user_fields(user_id, {"last_login": datetime.now(timezone.utc)})
+
+
+# ---------------- Budgets ----------------
+async def get_budgets_by_user(user_id: str) -> List[Dict[str, Any]]:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT * FROM public.budgets WHERE user_id = $1::uuid ORDER BY created_at DESC",
+            user_id,
+        )
+        return [dict(r) for r in rows]
+
+
+async def find_budget_by_user_and_category(user_id: str, category: str) -> Optional[Dict[str, Any]]:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT * FROM public.budgets WHERE user_id = $1::uuid AND category = $2",
+            user_id, category,
+        )
+        return dict(row) if row else None
+
+
+async def inc_budget_spent(budget_id: str, amount: float) -> None:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE public.budgets SET spent = COALESCE(spent,0) + $1 WHERE id = $2::uuid",
+            amount, budget_id,
+        )
+
+
+# ---------------- Expenses ----------------
+async def insert_expense(expense: Dict[str, Any]) -> Dict[str, Any]:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            INSERT INTO public.expenses (
+              id, user_id, amount, category, description, date, created_at
+            ) VALUES (
+              gen_random_uuid(), $1::uuid, $2, $3, $4, $5, now()
+            ) RETURNING *
+            """,
+            expense["user_id"], expense["amount"], expense["category"],
+            expense.get("description"), expense.get("date", datetime.now(timezone.utc)),
+        )
+        return dict(row)
+
+
+async def get_recent_expenses(user_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT * FROM public.expenses
+            WHERE user_id = $1::uuid
+            ORDER BY created_at DESC
+            LIMIT $2
+            """,
+            user_id, limit,
+        )
+        return [dict(r) for r in rows]
+
+
+async def sum_monthly_expenses(user_id: str, start_dt: datetime) -> float:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT COALESCE(SUM(amount),0) AS total FROM public.expenses WHERE user_id = $1::uuid AND date >= $2",
+            user_id, start_dt,
+        )
+        return float(row["total"] or 0.0)
+
+
+async def count_expenses(user_id: str) -> int:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT COUNT(1) AS c FROM public.expenses WHERE user_id = $1::uuid",
+            user_id,
+        )
+        return int(row["c"]) if row else 0
+
+
+async def count_budgets(user_id: str) -> int:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT COUNT(1) AS c FROM public.budgets WHERE user_id = $1::uuid",
+            user_id,
+        )
+        return int(row["c"]) if row else 0

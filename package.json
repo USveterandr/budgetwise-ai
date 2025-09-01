@@ -17,7 +17,13 @@
     "type": "git",
     "url": "https://github.com/USveterandr/budgetwise-ai"
   },
-  "keywords": ["budgeting", "finance", "saas", "react", "fastapi"],
+  "keywords": [
+    "budgeting",
+    "finance",
+    "saas",
+    "react",
+    "fastapi"
+  ],
   "author": "BudgetWise Team",
   "license": "MIT",
   "engines": {
@@ -25,5 +31,8 @@
     "npm": ">=8.0.0",
     "yarn": ">=1.0.0"
   },
-  "preferGlobal": false
+  "preferGlobal": false,
+  "dependencies": {
+    "mongodb": "^6.19.0"
+  }
 }

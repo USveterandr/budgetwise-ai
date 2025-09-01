@@ -299,8 +299,13 @@ async def check_and_award_achievements(user_id: str):
     existing_titles = {ach.get("title") for ach in existing_achievements}
     
     # Get user's stats for achievement checking
-    expenses_count = await db.expenses.count_documents({"user_id": user_id})
-    budgets_count = await db.budgets.count_documents({"user_id": user_id})
+    if USE_SUPABASE:
+        from supabase_db import count_expenses as sb_count_expenses, count_budgets as sb_count_budgets
+        expenses_count = await sb_count_expenses(user_id)
+        budgets_count = await sb_count_budgets(user_id)
+    else:
+        expenses_count = await db.expenses.count_documents({"user_id": user_id})
+        budgets_count = await db.budgets.count_documents({"user_id": user_id})
     investments_count = await db.investments.count_documents({"user_id": user_id})
     
     # Define achievements to check
@@ -951,8 +956,12 @@ async def create_expense_from_receipt(
         **expense_data.dict()
     )
     
-    expense_dict = prepare_for_mongo(expense.dict())
-    await db.expenses.insert_one(expense_dict)
+    if USE_SUPABASE:
+        from supabase_db import insert_expense as sb_insert_expense, find_budget_by_user_and_category as sb_find_budget_by_user_and_category, inc_budget_spent as sb_inc_budget_spent
+        inserted = await sb_insert_expense(expense.dict())
+    else:
+        expense_dict = prepare_for_mongo(expense.dict())
+        await db.expenses.insert_one(expense_dict)
     
     # Link receipt to expense
     await db.receipts.update_one(
@@ -967,15 +976,20 @@ async def create_expense_from_receipt(
     )
     
     # Update budget if exists
-    budget = await db.budgets.find_one({
-        "user_id": current_user.id,
-        "category": expense.category
-    })
-    if budget:
-        await db.budgets.update_one(
-            {"id": budget["id"]},
-            {"$inc": {"spent": expense.amount}}
-        )
+    if USE_SUPABASE:
+        budget = await sb_find_budget_by_user_and_category(current_user.id, expense.category)
+        if budget:
+            await sb_inc_budget_spent(budget["id"], expense.amount)
+    else:
+        budget = await db.budgets.find_one({
+            "user_id": current_user.id,
+            "category": expense.category
+        })
+        if budget:
+            await db.budgets.update_one(
+                {"id": budget["id"]},
+                {"$inc": {"spent": expense.amount}}
+            )
     
     # Check achievements
     await check_and_award_achievements(current_user.id)
@@ -1296,21 +1310,30 @@ async def get_user_subscription(current_user: User = Depends(get_current_user)):
 @api_router.get("/dashboard")
 async def get_dashboard_data(current_user: User = Depends(get_current_user)):
     # Get recent expenses
-    recent_expenses = await db.expenses.find(
-        {"user_id": current_user.id}
-    ).sort("created_at", -1).limit(5).to_list(length=5)
-    
-    # Get budgets with progress
-    budgets = await db.budgets.find({"user_id": current_user.id}).to_list(length=1000)
-    
-    # Calculate total expenses this month
-    current_month = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    monthly_expenses = await db.expenses.find({
-        "user_id": current_user.id,
-        "date": {"$gte": current_month.isoformat()}
-    }).to_list(length=1000)
-    
-    total_spent_this_month = sum(expense.get("amount", 0) for expense in monthly_expenses)
+    if USE_SUPABASE:
+        from supabase_db import get_recent_expenses as sb_get_recent_expenses, get_budgets_by_user as sb_get_budgets_by_user, sum_monthly_expenses as sb_sum_monthly_expenses
+        recent_expenses_rows = await sb_get_recent_expenses(current_user.id, 5)
+        recent_expenses = [Expense(**row) for row in recent_expenses_rows]
+        budgets_rows = await sb_get_budgets_by_user(current_user.id)
+        budgets = [Budget(**row) for row in budgets_rows]
+        current_month = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        total_spent_this_month = await sb_sum_monthly_expenses(current_user.id, current_month)
+    else:
+        recent_expenses = await db.expenses.find(
+            {"user_id": current_user.id}
+        ).sort("created_at", -1).limit(5).to_list(length=5)
+        
+        # Get budgets with progress
+        budgets = await db.budgets.find({"user_id": current_user.id}).to_list(length=1000)
+        
+        # Calculate total expenses this month
+        current_month = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        monthly_expenses = await db.expenses.find({
+            "user_id": current_user.id,
+            "date": {"$gte": current_month.isoformat()}
+        }).to_list(length=1000)
+        
+        total_spent_this_month = sum(expense.get("amount", 0) for expense in monthly_expenses)
     
     # Get achievements count
     achievements_count = await db.achievements.count_documents({"user_id": current_user.id})
