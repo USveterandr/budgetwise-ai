@@ -77,7 +77,7 @@ async def create_user(user: Dict[str, Any]) -> Dict[str, Any]:
             user.get("email_confirmation_token"),
             user.get("email_confirmation_sent_at"),
             bool(user.get("is_admin", False)),
-            user["password"],
+            user["password_hash"],
         )
         return _row_to_user(row)
 

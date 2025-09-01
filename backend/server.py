@@ -509,7 +509,7 @@ async def signup(user_data: UserCreate):
             "email_confirmation_token": confirmation_token,
             "email_confirmation_sent_at": datetime.now(timezone.utc),
             "is_admin": (ADMIN_EMAIL is not None and user.email.lower() == ADMIN_EMAIL.lower()),
-            "password": hashed_password,
+            "password_hash": hashed_password,
         })
     else:
         user_dict = prepare_for_mongo(user.dict())
