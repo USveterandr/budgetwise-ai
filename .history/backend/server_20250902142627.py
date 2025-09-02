@@ -283,9 +283,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        if USE_SQLITE:
-            user = await sqlite_get_user_by_id(user_id)
-        elif USE_SUPABASE:
+        if USE_SUPABASE:
             user = await sb_get_user_by_id(user_id)
         else:
             user = await db.users.find_one({"id": user_id})
@@ -549,9 +547,7 @@ async def signup(user_data: UserCreate):
 @api_router.post("/auth/login")
 async def login(login_data: UserLogin):
     # Find user
-    if USE_SQLITE:
-        user_doc = await sqlite_get_user_by_email(login_data.email)
-    elif USE_SUPABASE:
+    if USE_SUPABASE:
         user_doc = await sb_get_user_by_email(login_data.email)
     else:
         user_doc = await db.users.find_one({"email": login_data.email})
@@ -564,10 +560,7 @@ async def login(login_data: UserLogin):
     
     # Bootstrap admin if matches ADMIN_EMAIL
     if ADMIN_EMAIL and login_data.email.lower() == ADMIN_EMAIL.lower() and not user_doc.get("is_admin", False):
-        if USE_SQLITE:
-            await sqlite_update_user_fields(user_doc["id"], {"is_admin": True})
-            user_doc["is_admin"] = True
-        elif USE_SUPABASE:
+        if USE_SUPABASE:
             await sb_update_user_fields(user_doc["id"], {"is_admin": True})
             user_doc["is_admin"] = True
         else:
@@ -575,9 +568,7 @@ async def login(login_data: UserLogin):
             user_doc["is_admin"] = True
 
     # Update last login and streak
-    if USE_SQLITE:
-        await sqlite_set_last_login(user_doc["id"])
-    elif USE_SUPABASE:
+    if USE_SUPABASE:
         await sb_set_last_login(user_doc["id"])
     else:
         await db.users.update_one(

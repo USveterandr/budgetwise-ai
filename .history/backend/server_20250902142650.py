@@ -283,9 +283,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        if USE_SQLITE:
-            user = await sqlite_get_user_by_id(user_id)
-        elif USE_SUPABASE:
+        if USE_SUPABASE:
             user = await sb_get_user_by_id(user_id)
         else:
             user = await db.users.find_one({"id": user_id})
