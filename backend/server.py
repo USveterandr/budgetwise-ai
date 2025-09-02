@@ -19,6 +19,9 @@ from decimal import Decimal
 import io
 import csv
 
+# Add this import for the new Optional parameter handling
+from typing import Union
+
 # PayPal SDK imports
 from paypalcheckoutsdk.core import SandboxEnvironment, LiveEnvironment
 from paypalcheckoutsdk.core import PayPalHttpClient
@@ -106,6 +109,10 @@ class User(BaseModel):
     email_confirmation_token: Optional[str] = None
     email_confirmation_sent_at: Optional[datetime] = None
     is_admin: bool = False
+    is_hold: bool = False
+    is_paused: bool = False
+    paused_at: Optional[datetime] = None
+    hold_reason: Optional[str] = None
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -710,6 +717,19 @@ class AdminUserCreate(BaseModel):
     subscription_plan: str = "free"
     is_admin: bool = False
 
+class HoldUserRequest(BaseModel):
+    reason: Optional[str] = None
+
+class PauseUserRequest(BaseModel):
+    reason: Optional[str] = None
+
+# Add this new model for updating user information
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    subscription_plan: Optional[str] = None
+    email_confirmed: Optional[bool] = None
+    is_admin: Optional[bool] = None
+
 @api_router.get("/admin/users")
 async def admin_list_users(
     page: int = 1,
@@ -770,6 +790,136 @@ async def admin_delete_user(user_id: str, _: User = Depends(admin_required)):
     await db.budget_documents.delete_many({"user_id": user_id})
     await db.users.delete_one({"id": user_id})
     return {"message": "User and related data deleted"}
+
+# Add this new endpoint for updating user information
+@api_router.put("/admin/users/{user_id}")
+async def admin_update_user(user_id: str, payload: UserUpdate, _: User = Depends(admin_required)):
+    """Update user information"""
+    if USE_SUPABASE:
+        user_doc = await sb_get_user_by_id(user_id)
+    else:
+        user_doc = await db.users.find_one({"id": user_id})
+    
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prepare update fields
+    update_fields = {}
+    if payload.full_name is not None:
+        update_fields["full_name"] = payload.full_name
+    if payload.subscription_plan is not None:
+        update_fields["subscription_plan"] = payload.subscription_plan
+    if payload.email_confirmed is not None:
+        update_fields["email_confirmed"] = payload.email_confirmed
+    if payload.is_admin is not None:
+        update_fields["is_admin"] = payload.is_admin
+    
+    # Update user
+    if update_fields:
+        if USE_SUPABASE:
+            await sb_update_user_fields(user_id, update_fields)
+        else:
+            await db.users.update_one({"id": user_id}, {"$set": update_fields})
+    
+    # Return updated user
+    if USE_SUPABASE:
+        updated_user = await sb_get_user_by_id(user_id)
+    else:
+        updated_user = await db.users.find_one({"id": user_id})
+    
+    if updated_user is None:
+        raise HTTPException(status_code=404, detail="User not found after update")
+    
+    return User(**{k: v for k, v in updated_user.items() if k != "password"})
+
+@api_router.post("/admin/users/{user_id}/hold")
+async def admin_hold_user(user_id: str, request: Optional[HoldUserRequest] = None, _: User = Depends(admin_required)):
+    """Put a user account on hold"""
+    if USE_SUPABASE:
+        user_doc = await sb_get_user_by_id(user_id)
+    else:
+        user_doc = await db.users.find_one({"id": user_id})
+    
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update user to be on hold
+    update_fields = {
+        "is_hold": True,
+        "hold_reason": request.reason if request else None
+    }
+    
+    if USE_SUPABASE:
+        await sb_update_user_fields(user_id, update_fields)
+    else:
+        await db.users.update_one({"id": user_id}, {"$set": update_fields})
+    
+    return {"message": "User account has been put on hold"}
+
+@api_router.post("/admin/users/{user_id}/pause")
+async def admin_pause_user(user_id: str, request: Optional[PauseUserRequest] = None, _: User = Depends(admin_required)):
+    """Pause a user account"""
+    if USE_SUPABASE:
+        user_doc = await sb_get_user_by_id(user_id)
+    else:
+        user_doc = await db.users.find_one({"id": user_id})
+    
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update user to be paused
+    update_fields = {
+        "is_paused": True,
+        "paused_at": datetime.now(timezone.utc).isoformat(),
+        "hold_reason": request.reason if request else None  # Reusing hold_reason field for pause reason as well
+    }
+    
+    if USE_SUPABASE:
+        await sb_update_user_fields(user_id, update_fields)
+    else:
+        await db.users.update_one({"id": user_id}, {"$set": update_fields})
+    
+    return {"message": "User account has been paused"}
+
+@api_router.post("/admin/users/{user_id}/resume")
+async def admin_resume_user(user_id: str, _: User = Depends(admin_required)):
+    """Resume a user account (remove hold/pause)"""
+    if USE_SUPABASE:
+        user_doc = await sb_get_user_by_id(user_id)
+    else:
+        user_doc = await db.users.find_one({"id": user_id})
+    
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update user to remove hold/pause status
+    update_fields = {
+        "is_hold": False,
+        "is_paused": False,
+        "paused_at": None,
+        "hold_reason": None
+    }
+    
+    if USE_SUPABASE:
+        await sb_update_user_fields(user_id, update_fields)
+    else:
+        await db.users.update_one({"id": user_id}, {"$set": update_fields})
+    
+    return {"message": "User account has been resumed"}
+
+# Add this new endpoint for getting a single user's details
+@api_router.get("/admin/users/{user_id}")
+async def admin_get_user(user_id: str, _: User = Depends(admin_required)):
+    """Get a specific user's details"""
+    if USE_SUPABASE:
+        user_doc = await sb_get_user_by_id(user_id)
+    else:
+        user_doc = await db.users.find_one({"id": user_id})
+    
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return User(**{k: v for k, v in user_doc.items() if k != "password"})
 
 @api_router.get("/admin/reports/summary")
 async def admin_reports_summary(_: User = Depends(admin_required)):
@@ -1121,7 +1271,7 @@ def _strip_code_fences(text: str) -> str:
     if text is None:
         return ""
     t = text.strip()
-    if t.startswith("```") and t.endswith("```"):
+    if t.startswith("``") and t.endswith("```"):
         # remove first line with possible language hint
         lines = t.splitlines()
         if len(lines) >= 3:
