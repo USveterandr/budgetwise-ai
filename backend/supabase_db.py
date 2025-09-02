@@ -32,6 +32,10 @@ def _row_to_user(row: asyncpg.Record) -> Dict[str, Any]:
         "email_confirmation_token": row["email_confirmation_token"],
         "email_confirmation_sent_at": row["email_confirmation_sent_at"],
         "is_admin": row["is_admin"],
+        "is_hold": row["is_hold"] if row["is_hold"] is not None else False,
+        "is_paused": row["is_paused"] if row["is_paused"] is not None else False,
+        "paused_at": row["paused_at"],
+        "hold_reason": row["hold_reason"],
         "password": row["password_hash"],  # hashed
     }
 
@@ -62,11 +66,13 @@ async def create_user(user: Dict[str, Any]) -> Dict[str, Any]:
             INSERT INTO public.users (
                 id, email, full_name, subscription_plan, created_at, points,
                 streak_days, last_login, email_confirmed, email_confirmation_token,
-                email_confirmation_sent_at, is_admin, password_hash
+                email_confirmation_sent_at, is_admin, password_hash, is_hold, is_paused,
+                paused_at, hold_reason
             ) VALUES (
                 $1::uuid, $2, $3, $4, now(), 0,
                 0, NULL, $5, $6::uuid,
-                $7, $8, $9
+                $7, $8, $9, $10, $11,
+                $12, $13
             ) RETURNING *
             """,
             user["id"],
@@ -78,6 +84,10 @@ async def create_user(user: Dict[str, Any]) -> Dict[str, Any]:
             user.get("email_confirmation_sent_at"),
             bool(user.get("is_admin", False)),
             user["password_hash"],
+            bool(user.get("is_hold", False)),
+            bool(user.get("is_paused", False)),
+            user.get("paused_at"),
+            user.get("hold_reason")
         )
         return _row_to_user(row)
 
