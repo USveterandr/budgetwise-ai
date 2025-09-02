@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Script to add missing columns to the Supabase users table.
-This will add: points, streak_days, last_login, email_confirmation_token, email_confirmation_sent_at
+This will add: points, streak_days, last_login, email_confirmation_token, 
+email_confirmation_sent_at, is_hold, is_paused, paused_at, hold_reason
 """
 
 import os
@@ -32,7 +33,11 @@ async def add_missing_columns():
         ADD COLUMN IF NOT EXISTS streak_days INTEGER DEFAULT 0,
         ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE,
         ADD COLUMN IF NOT EXISTS email_confirmation_token TEXT,
-        ADD COLUMN IF NOT EXISTS email_confirmation_sent_at TIMESTAMP WITH TIME ZONE;
+        ADD COLUMN IF NOT EXISTS email_confirmation_sent_at TIMESTAMP WITH TIME ZONE,
+        ADD COLUMN IF NOT EXISTS is_hold BOOLEAN DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS is_paused BOOLEAN DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS paused_at TIMESTAMP WITH TIME ZONE,
+        ADD COLUMN IF NOT EXISTS hold_reason TEXT;
         """
         
         # Execute the ALTER TABLE statement
@@ -44,8 +49,10 @@ async def add_missing_columns():
         UPDATE users 
         SET 
             points = COALESCE(points, 0),
-            streak_days = COALESCE(streak_days, 0)
-        WHERE points IS NULL OR streak_days IS NULL;
+            streak_days = COALESCE(streak_days, 0),
+            is_hold = COALESCE(is_hold, FALSE),
+            is_paused = COALESCE(is_paused, FALSE)
+        WHERE points IS NULL OR streak_days IS NULL OR is_hold IS NULL OR is_paused IS NULL;
         """
         
         result = await conn.execute(update_defaults_sql)
@@ -85,5 +92,9 @@ if __name__ == "__main__":
         print("  - last_login (TIMESTAMP WITH TIME ZONE)")
         print("  - email_confirmation_token (TEXT)")
         print("  - email_confirmation_sent_at (TIMESTAMP WITH TIME ZONE)")
+        print("  - is_hold (BOOLEAN, default: FALSE)")
+        print("  - is_paused (BOOLEAN, default: FALSE)")
+        print("  - paused_at (TIMESTAMP WITH TIME ZONE)")
+        print("  - hold_reason (TEXT)")
     else:
         print("\n❌ Migration failed. Please check the error messages above.")
