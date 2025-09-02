@@ -9,8 +9,20 @@
 /signup       /index.html   200
 /login        /index.html   200
 
-# Handle SPA routing - serve index.html for all non-asset routes (must be last)
-# Exclude asset files and index.html itself to prevent infinite loop
-!/index.html
-!/static/*
+# Handle SPA routing - serve index.html for all non-asset routes
+# Cloudflare Pages automatically serves static assets, so we just need
+# to redirect all other routes to index.html for client-side routing
+# Exclude common static asset extensions to prevent infinite loops
+/*.html        /index.html   200
+/*.js          /index.html   200
+/*.css         /index.html   200
+/*.png         /index.html   200
+/*.jpg         /index.html   200
+/*.jpeg        /index.html   200
+/*.gif         /index.html   200
+/*.svg         /index.html   200
+/*.ico         /index.html   200
+/*.woff        /index.html   200
+/*.woff2       /index.html   200
+/*.ttf         /index.html   200
 /*            /index.html   200
