@@ -10,4 +10,7 @@
 /login        /index.html   200
 
 # Handle SPA routing - serve index.html for all non-asset routes (must be last)
+# Exclude asset files and index.html itself to prevent infinite loop
+!/index.html
+!/static/*
 /*            /index.html   200
