@@ -32,16 +32,7 @@ def send_email(to: str, subject: str, content: str, content_type: str = "html"):
     )
     
     try:
-        # Configure SSL context to use system certificates
-        ssl_context = ssl.create_default_context(cafile=certifi.where())
-        
-        # Create SendGrid client with proper SSL context
         sg = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
-        
-        # Set SSL context for the underlying HTTP client
-        if hasattr(sg.client, 'session'):
-            sg.client.session.verify = certifi.where()
-        
         response = sg.send(message)
         logger.info(f"Email sent successfully to {to}, status: {response.status_code}")
         return response.status_code == 202
