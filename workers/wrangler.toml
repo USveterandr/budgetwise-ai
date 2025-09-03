@@ -1,0 +1,14 @@
+name = "budgetwise-client"
+compatibility_date = "2025-08-16"
+
+[build]
+command = "npm run build"
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[env.staging]
+vars = { ENVIRONMENT = "staging" }
+
+[observability]
+enabled = true
