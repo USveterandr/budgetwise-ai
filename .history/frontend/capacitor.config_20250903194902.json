@@ -1,0 +1,12 @@
+{
+  "appId": "com.budgetwise.app",
+  "appName": "BudgetWise",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "build",
+  "server": {
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }

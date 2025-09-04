@@ -51,6 +51,27 @@ app.get('/health', async (req, res) => {
   });
 });
 
+  .then(({ data, error }) => {
+    if (error) {
+      console.error('Supabase connection error:', error.message);
+    } else {
+      console.log('Connected to Supabase');
+    }
+  });
+*/
+
+// Use centralized Supabase client
+const supabase = createSupabaseClient();
+
+// Add health check route
+app.get('/health', async (req, res) => {
+  const health = await checkSupabaseConnection();
+  
+  res.status(health.status === 'connected' ? 200 : 503).json({
+    database: health
+  });
+});
+
 // Add Supabase to locals for routes
 app.locals.supabase = supabase;
 

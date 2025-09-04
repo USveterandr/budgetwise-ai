@@ -92,4 +92,25 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+      ip: req.ip,
+      headers: req.headers
+    });
+    next();
+  });
+}
+
+// Log errors
+app.use((err, req, res, next) => {
+  logger.error(`Unhandled error: ${err.message}`, {
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    ip: req.ip
+  });
+  next(err);
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

@@ -89,6 +89,27 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    logger.debug(`Incoming request: ${req.method} ${req.url}`, {
+      ip: req.ip,
+      headers: req.headers
+    });
+    next();
+  });
+}
+
+// Log errors
+app.use((err, req, res, next) => {
+  logger.error(`Unhandled error: ${err.message}`, {
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    ip: req.ip
+  });
+  next(err);
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
