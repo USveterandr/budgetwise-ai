@@ -1,23 +1,13 @@
 {
-  "name": "budgetwise-client",
+  "name": "budgetwise-ai",
   "version": "1.0.0",
-  "private": true,
   "scripts": {
-    "build": "cd budgetwise-app/client && npm ci && npm run build && rm -rf ../../frontend/build && cp -r build/ ../../frontend/ && cp ../client/public/_redirects ../../frontend/",
-    "start": "cd budgetwise-app/client && PORT=3001 HTTPS=true npm start",
-    "test": "cd budgetwise-app/client && npm test",
-    "dev": "npm run start"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-scripts": "^0.0.0",
-    "typescript": "^4.9.5"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
-    "css-select": "^6.0.0",
-    "nth-check": "^2.1.1",
-    "postcss": "^8.5.6",
-    "webpack-dev-server": "^5.2.2"
+    "eslint": "^8.57.1",
+    "eslint-config-standard": "^17.1.0"
   }
 }
