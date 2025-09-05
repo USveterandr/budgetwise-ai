@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd budgetwise-app/client && npm ci && npm run build && rm -rf ../../frontend/build && cp -r build/ ../../frontend/",
+    "build": "cd budgetwise-app/client && npm ci && npm run build && rm -rf ../../frontend/build && cp -r build/ ../../frontend/ && cp ../client/public/_redirects ../../frontend/",
     "start": "cd budgetwise-app/client && PORT=3001 HTTPS=true npm start",
     "test": "cd budgetwise-app/client && npm test",
   "dev": "npm run start"
