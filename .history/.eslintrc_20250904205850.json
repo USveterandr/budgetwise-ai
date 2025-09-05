@@ -1,0 +1,15 @@
+{
+  "extends": "react-app",
+  "rules": {
+    "react/jsx-no-undef": "error",
+    "react/jsx-prop-verify": "error",
+    "react/jsx-key": "error",
+    "indent": ["error", 2],
+    "linebreak-style": ["error", "unix"],
+    "quotes": ["error", "single"],
+    "semi": ["error", "always"],
+    "comma-dangle": ["error", "never"],
+    "no-unused-vars": "error",
+    "no-console": "error"
+  }
+}
