@@ -2,42 +2,32 @@ version: '3.8'
 
 services:
   backend:
-    image: node:20
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: always
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
     ports:
       - '3001:3001'
     expose:
       - '3001'
     volumes:
-      - ./:/app
-    build:
-      context: .
-      dockerfile: budgetwise-app/Dockerfile
-    user: node
-    working_dir: /app
-    command: npm run dev
+      - ./server:/app/server
+    working_dir: /app/server
+    command: npm start
 
   frontend:
-    image: node:16
+    build:
+      context: ./client
+      dockerfile: ../Dockerfile
     restart: always
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
     ports:
       - '3000:3000'
     expose:
       - '3000'
-    volumes:
-      - ./:/app
-    build:
-      context: .
-    command:
-      - npm
-      - install
-      - && npm run build
-    user: node
-    working_dir: /app
 
 networks:
   budgetwise-network:

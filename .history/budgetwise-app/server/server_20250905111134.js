@@ -1,5 +1,4 @@
 import express from 'express';
-import cors from 'cors';
 import authRoutes from './routes/authRoutes.js';
 import { createClient } from '@supabase/supabase-js';
 import rateLimit from 'express-rate-limit';
@@ -10,63 +9,61 @@ import 'dotenv/config';
 const app = express();
 
 // Initialize Supabase client
-const initSupabase = async () => {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing Supabase credentials! Check your .env file.');
-    process.exit(1);
-  }
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase credentials! Check your .env file.');
+  process.exit(1);
+}
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-  try {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    
     // Test Supabase connection
     const { error } = await supabase.auth.admin().currentUser();
     if (error) {
       console.error('Supabase connection failed:', error);
       process.exit(1);
     }
-    return supabase;
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to initialize Supabase client:', error);
     process.exit(1);
   }
-};
+  
+  // Test Supabase connection
+  const { error } = await supabase.auth.admin().currentUser();
+  if (error) {
+    console.error('Supabase connection failed:', error);
+    process.exit(1);
+  }
+} catch (error) {
+  console.error('Failed to initialize Supabase client:', error);
+  process.exit(1);
+}
+
+console.log('Supabase client initialized');
 
 // Security middleware
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false,
-}));
+app.use(helmet());
 app.use(cookieParser());
-app.use(express.json({ limit: '10mb' }));
-
-// CORS configuration
-const corsOptions = {
-  origin: [process.env.CORS_ORIGIN || 'http://localhost:3000'],
-  credentials: true,
-  optionsSuccessStatus: 200,
-};
-
-app.use(cors(corsOptions));
-
-// Initialize Supabase connection
-const supabase = await initSupabase();
+app.use(express.json());
 
 // Rate limiting for auth routes
 const authLimiter = rateLimit({
   windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW || 15) * 60 * 1000, // 15 minutes by default
   max: parseInt(process.env.AUTH_RATE_LIMIT_MAX || 5), // Limit each IP to 5 requests per window
-  message: 'Too many login attempts, please try again later',
-  standardHeaders: true,
-  legacyHeaders: false,
+  message: 'Too many login attempts, please try again later'
 });
 
 // Apply to auth routes
 app.use('/auth/login', authLimiter);
 app.use('/auth/register', authLimiter);
+
+// CSRF protection is currently disabled due to helmet.csrf() not being available
+// To enable CSRF protection, consider using the 'csurf' package or alternative methods
+// app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
+// app.use(helmet.csrf({})); // This line causes error: helmet.csrf is not a function
 
 // CSRF token endpoint temporarily removed
 // app.get('/csrf-token', (req, res) => {
@@ -78,8 +75,6 @@ app.get('/', (req, res) => {
   res.json({
     message: 'BudgetWise API server is running',
     version: '1.0.0',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
     endpoints: {
       auth: {
         login: '/auth/login',
@@ -93,38 +88,6 @@ app.get('/', (req, res) => {
 app.use('/auth', authRoutes);
 
 // Basic logging for server start
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  
-  // Don't expose internal error details in production
-  const errorMessage = process.env.NODE_ENV === 'production' 
-    ? 'Internal server error' 
-    : err.message;
-    
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: errorMessage
-  });
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: 'The requested resource was not found'
-  });
-});
-
 console.log('Server starting', {
   env: process.env.NODE_ENV || 'development',
   port: process.env.PORT || 5000
@@ -149,12 +112,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-
-// Production-specific configurations
-if (process.env.NODE_ENV === 'production') {
-  console.log('Starting server in production mode');
-}
-
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+  console.log(`Server running on port ${PORT}`);
 });

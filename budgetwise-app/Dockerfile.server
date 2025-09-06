@@ -1,0 +1,28 @@
+# Use Node.js 20 alpine image
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY server/package*.json ./server/
+
+# Install production dependencies only
+RUN cd server && npm ci --only=production
+
+# Copy server source code
+COPY server/. ./server/
+
+# Set environment to production
+ENV NODE_ENV=production
+
+# Expose port
+EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node server/healthcheck.js || exit 1
+
+# Start the application
+WORKDIR /app/server
+CMD ["node", "server.js"]

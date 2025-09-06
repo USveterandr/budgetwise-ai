@@ -1,11 +1,11 @@
 import express from 'express';
-import cors from 'cors';
 import authRoutes from './routes/authRoutes.js';
 import { createClient } from '@supabase/supabase-js';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import 'dotenv/config';
+import cors from 'cors';
 
 const app = express();
 
@@ -36,12 +36,9 @@ const initSupabase = async () => {
 };
 
 // Security middleware
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false,
-}));
+app.use(helmet());
 app.use(cookieParser());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json());
 
 // CORS configuration
 const corsOptions = {
@@ -59,9 +56,7 @@ const supabase = await initSupabase();
 const authLimiter = rateLimit({
   windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW || 15) * 60 * 1000, // 15 minutes by default
   max: parseInt(process.env.AUTH_RATE_LIMIT_MAX || 5), // Limit each IP to 5 requests per window
-  message: 'Too many login attempts, please try again later',
-  standardHeaders: true,
-  legacyHeaders: false,
+  message: 'Too many login attempts, please try again later'
 });
 
 // Apply to auth routes
@@ -78,8 +73,6 @@ app.get('/', (req, res) => {
   res.json({
     message: 'BudgetWise API server is running',
     version: '1.0.0',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
     endpoints: {
       auth: {
         login: '/auth/login',
@@ -93,35 +86,12 @@ app.get('/', (req, res) => {
 app.use('/auth', authRoutes);
 
 // Basic logging for server start
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
-
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
-  
-  // Don't expose internal error details in production
-  const errorMessage = process.env.NODE_ENV === 'production' 
-    ? 'Internal server error' 
-    : err.message;
-    
   res.status(500).json({
     error: 'Internal Server Error',
-    message: errorMessage
-  });
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: 'The requested resource was not found'
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
   });
 });
 
@@ -149,12 +119,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-
-// Production-specific configurations
-if (process.env.NODE_ENV === 'production') {
-  console.log('Starting server in production mode');
-}
-
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+  console.log(`Server running on port ${PORT}`);
 });

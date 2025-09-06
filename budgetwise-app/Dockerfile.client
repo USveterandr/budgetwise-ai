@@ -1,36 +1,35 @@
-# Stage 1: Build the React application
+# Build stage
 FROM node:20-alpine AS build
 
 WORKDIR /app
 
 # Copy package files
-COPY client/package*.json ./client/
 COPY package*.json ./
 
 # Install dependencies
-RUN cd client && npm ci --only=production
+RUN npm ci --only=production
 
 # Copy source files
-COPY client/. ./client/
+COPY . .
 
 # Build the application
-RUN cd client && npm run build
+RUN npm run build
 
-# Stage 2: Serve the React application using Nginx
+# Production stage
 FROM nginx:alpine
 
-# Copy Nginx configuration
+# Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy the built application
-COPY --from=build /app/client/build /usr/share/nginx/html
+COPY --from=build /app/build /usr/share/nginx/html
 
-# Expose port 3000
+# Expose port
 EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3000/ || exit 1
 
-# Start Nginx
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
