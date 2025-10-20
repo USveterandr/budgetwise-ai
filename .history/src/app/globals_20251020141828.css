@@ -33,7 +33,6 @@ body {
 /* Fix for iPhone 14 Pro Plus and other mobile devices */
 @layer base {
   html {
-    text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }

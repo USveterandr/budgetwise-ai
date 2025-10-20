@@ -55,47 +55,38 @@ export default function SignupPage() {
 
   const plans = [
     {
-      id: "basic",
-      name: "Basic",
-      price: "$9.97/month",
-      discountedPrice: "$8.47/month",
-      discount: "15% off",
-      description: "Essential budgeting tools",
+      id: "free",
+      name: "Free",
+      price: "$0",
+      description: "Basic budgeting tools",
       features: [
-        "Track up to 500 transactions/month",
+        "Track up to 100 transactions/month",
         "Basic budget categories",
-        "Manual data entry",
-        "Email support"
+        "Manual data entry"
       ]
     },
     {
       id: "premium",
       name: "Premium",
-      price: "$19.97/month",
-      discountedPrice: "$15.97/month",
-      discount: "20% off",
+      price: "$9.99/month",
       description: "Advanced financial management",
       features: [
         "Unlimited transactions",
         "AI-powered insights",
         "Automatic categorization",
-        "Investment tracking",
-        "Priority email support"
+        "Investment tracking"
       ]
     },
     {
-      id: "premium-annual",
-      name: "Premium Annual",
-      price: "$49.97 for 12 months",
-      discountedPrice: "$34.97/month",
-      discount: "30% off with annual payment",
+      id: "pro",
+      name: "Pro",
+      price: "$19.99/month",
       description: "Complete financial advisor",
       features: [
         "All Premium features",
         "Personalized consultations",
         "Advanced analytics",
-        "24/7 priority support",
-        "Exclusive financial reports"
+        "Priority support"
       ]
     }
   ];
@@ -170,7 +161,7 @@ export default function SignupPage() {
               {/* Plan Selection - Required */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">Select Plan <span className="text-red-500">*</span></label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {plans.map((plan) => (
                     <button
                       key={plan.id}
@@ -183,9 +174,7 @@ export default function SignupPage() {
                       }`}
                     >
                       <div className="font-medium">{plan.name}</div>
-                      <div className="text-gray-600 line-through text-xs">{plan.price}</div>
-                      <div className="text-gray-900 font-medium">{plan.discountedPrice}</div>
-                      <div className="text-green-600 text-xs">{plan.discount}</div>
+                      <div className="text-gray-600">{plan.price}</div>
                     </button>
                   ))}
                 </div>
@@ -228,11 +217,7 @@ export default function SignupPage() {
                     <h3 className="font-bold text-gray-900">{plan.name}</h3>
                     <p className="text-sm text-gray-600">{plan.description}</p>
                   </div>
-                  <div className="text-right">
-                    <div className="line-through text-gray-500 text-sm">{plan.price}</div>
-                    <div className="font-bold text-gray-900">{plan.discountedPrice}</div>
-                    <div className="text-green-600 text-xs">{plan.discount}</div>
-                  </div>
+                  <span className="font-bold text-gray-900">{plan.price}</span>
                 </div>
                 <ul className="mt-3 space-y-1">
                   {plan.features.map((feature, index) => (
