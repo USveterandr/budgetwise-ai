@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Configure for static export
+export const dynamic = 'force-static';
+
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();

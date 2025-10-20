@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Configure for static export
+export const dynamic = 'force-static';
+
 // Mock function to simulate OCR processing
 async function processReceiptImage(_imageData: string) {
   // In a real implementation, you would:

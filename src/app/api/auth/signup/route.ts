@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import sgMail from '@sendgrid/mail';
 import nodemailer from 'nodemailer';
 
+// Configure for static export
+export const dynamic = 'force-static';
+
 // Send confirmation email using SendGrid (if available) or log to console
 async function sendConfirmationEmail(email: string, confirmationToken: string) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
