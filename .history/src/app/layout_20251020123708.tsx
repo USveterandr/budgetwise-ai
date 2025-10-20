@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: "BudgetWise AI - Your AI Financial Advisor",
   description: "Track, analyze, and grow your wealth with AI-powered insights",
   manifest: "/manifest.json",
+  icons: {
+    apple: "/icons/icon-192x192.png",
+  },
+  themeColor: "#3b82f6",
+  backgroundColor: "#ffffff",
 };
 
 export default function RootLayout({

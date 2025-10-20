@@ -30,14 +30,16 @@ const nextConfig: NextConfig = {
       };
     }
     
-    // PWA configuration
+    return config;
+  },
+  // PWA configuration
+  webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
       };
     }
-    
     return config;
   },
 };
