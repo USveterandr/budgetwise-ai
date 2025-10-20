@@ -1,12 +1,9 @@
 name = "budgetwise-ai"
 compatibility_date = "2025-10-20"
+pages_build_output_dir = ".next"
 
 [build]
 command = "npm run build"
-
-[assets]
-directory = ".next/static"
-base_dir = ".next"
 
 [vars]
 NODE_VERSION = "22"
