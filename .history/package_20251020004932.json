@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
-    "export": "next export",
+    "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
     "deploy": "wrangler pages deploy .next --project-name=budgetwise"
