@@ -1,8 +1,8 @@
+import { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 // Make this route static for export
 export const dynamic = 'force-static';
-export const revalidate = 0;
 
 export async function POST() {
   // Mock implementation for static export

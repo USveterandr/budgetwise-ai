@@ -14,24 +14,6 @@ const nextConfig: NextConfig = {
   },
   // Optimize build for static export
   trailingSlash: true,
-  // Disable webpack caching to reduce build size
-  webpack: (config, { isServer, nextRuntime }) => {
-    // Disable source maps to reduce bundle size
-    config.devtool = false;
-    
-    // Disable webpack caching
-    config.cache = false;
-    
-    // Reduce bundle size for Cloudflare Pages
-    if (isServer) {
-      config.optimization = {
-        ...config.optimization,
-        minimize: true,
-      };
-    }
-    
-    return config;
-  },
 };
 
 export default nextConfig;

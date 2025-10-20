@@ -1,8 +1,8 @@
+import { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-// Make this route static for export
+// Add this to make the route compatible with static export
 export const dynamic = 'force-static';
-export const revalidate = 0;
 
 export async function GET() {
   return NextResponse.json({ status: 'ok', timestamp: new Date().toISOString() });

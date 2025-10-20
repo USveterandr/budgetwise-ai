@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 // Make this route static for export
