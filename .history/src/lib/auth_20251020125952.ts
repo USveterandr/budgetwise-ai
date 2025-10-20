@@ -6,23 +6,21 @@ const mockUsers = [
   { id: '2', email: 'user@example.com', name: 'Regular User', plan: 'premium', isAdmin: false },
 ];
 
-// Check if user is authenticated
-export function isAuthenticated(): boolean {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('auth-token');
-    return !!token;
-  }
-  return false;
-}
-
-// Get current user data
-export function getCurrentUser(): { id: string; email: string; name: string; plan: string; isAdmin: boolean } | null {
+// Mock function to simulate authentication check
+export async function getCurrentUser(): Promise<{ id: string; email: string; name: string; plan: string; isAdmin: boolean } | null> {
+  // In a real implementation, you would check the session/token here
+  // For demo purposes, we'll simulate a logged-in user
+  // Check if we're in a browser environment
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('auth-token');
     if (token) {
-      // In a real implementation, you would decode the JWT token
-      // For demo purposes, we'll return the first user
-      return mockUsers[0];
+      // Parse the token to get user info (in a real app, you'd verify the JWT)
+      try {
+        const user = mockUsers[0]; // Return the first user as a demo
+        return user;
+      } catch (e) {
+        return null;
+      }
     }
   }
   return null;
@@ -74,12 +72,12 @@ export async function signup(name: string, email: string, password: string, plan
 }
 
 // Check if user is admin
-export function isAdmin(user: { isAdmin: boolean } | null): boolean {
-  return user ? user.isAdmin : false;
+export async function isAdmin(user: { isAdmin: boolean } | null) {
+  return user && user.isAdmin;
 }
 
 // Check if user has access to a specific plan feature
-export function hasPlanAccess(user: { plan: string } | null, requiredPlan: string): boolean {
+export function hasPlanAccess(user: { plan: string } | null, requiredPlan: string) {
   if (!user) return false;
   
   const planHierarchy = {

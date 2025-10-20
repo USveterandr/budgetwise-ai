@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { 
   Bars3Icon, 
   XMarkIcon,
@@ -12,12 +12,9 @@ import {
   ArrowTrendingUpIcon,
   BellIcon,
   UserIcon,
-  ShieldCheckIcon,
-  ArrowRightOnRectangleIcon,
-  DocumentTextIcon
+  ShieldCheckIcon
 } from "@heroicons/react/24/outline";
 import { getCurrentUser } from "@/lib/auth";
-import { logout } from "@/lib/auth";
 
 interface User {
   id: string;
@@ -32,12 +29,11 @@ export function Navbar() {
   const [showAdminLink, setShowAdminLink] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
-  const router = useRouter();
 
   useEffect(() => {
     const checkAdminStatus = async () => {
       // Check if the user is authenticated and is admin
-      const currentUser = getCurrentUser();
+      const currentUser = await getCurrentUser();
       setUser(currentUser);
       if (currentUser) {
         setShowAdminLink(currentUser.isAdmin);
@@ -47,17 +43,11 @@ export function Navbar() {
     checkAdminStatus();
   }, []);
 
-  const handleLogout = async () => {
-    await logout();
-    router.push("/auth/login");
-  };
-
   const baseNavigation = [
     { name: "Dashboard", href: "/dashboard", icon: ChartBarIcon },
     { name: "Transactions", href: "/transactions", icon: CreditCardIcon },
     { name: "Budget", href: "/budget", icon: WalletIcon },
     { name: "Investments", href: "/investments", icon: ArrowTrendingUpIcon },
-    { name: "Receipts", href: "/receipts", icon: DocumentTextIcon },
   ];
 
   const adminNavigation = [
@@ -108,17 +98,8 @@ export function Navbar() {
               >
                 <BellIcon className="h-5 w-5" />
               </button>
-              <div className="ml-3 relative flex items-center">
-                {user && (
-                  <button
-                    onClick={handleLogout}
-                    className="ml-3 p-1 text-gray-400 hover:text-gray-500"
-                    aria-label="Logout"
-                  >
-                    <ArrowRightOnRectangleIcon className="h-5 w-5" />
-                  </button>
-                )}
-                <div className="ml-3 bg-gray-200 rounded-full w-6 h-6 flex items-center justify-center">
+              <div className="ml-3 relative">
+                <div className="bg-gray-200 rounded-full w-6 h-6 flex items-center justify-center">
                   <UserIcon className="h-4 w-4 text-gray-500" />
                 </div>
               </div>
@@ -164,18 +145,6 @@ export function Navbar() {
                 </Link>
               );
             })}
-            {user && (
-              <button
-                onClick={() => {
-                  handleLogout();
-                  setIsMenuOpen(false);
-                }}
-                className="text-gray-600 hover:bg-gray-50 hover:text-gray-800 block pl-3 pr-4 py-2 text-base font-medium w-full text-left"
-              >
-                <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2 inline" />
-                Logout
-              </button>
-            )}
           </div>
         </div>
       )}

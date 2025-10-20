@@ -39,7 +39,7 @@ interface Analytics {
 }
 
 export default function AdminDashboard() {
-  const [users] = useState<User[]>([
+  const [users, setUsers] = useState<User[]>([
     { id: '1', name: 'John Doe', email: 'john@example.com', plan: 'premium', status: 'active', lastActive: '2025-10-19T10:30:00Z' },
     { id: '2', name: 'Jane Smith', email: 'jane@example.com', plan: 'free', status: 'active', lastActive: '2025-10-19T14:15:00Z' },
     { id: '3', name: 'Bob Johnson', email: 'bob@example.com', plan: 'pro', status: 'suspended', lastActive: '2025-10-18T09:45:00Z' },

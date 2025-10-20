@@ -19,11 +19,19 @@ const authRoutes = [
   '/auth/forgot-password'
 ];
 
+// Mock function to check if user is authenticated
+// In a real implementation, you would check the session/token from cookies
+function isAuthenticated(request: NextRequest): boolean {
+  // Check for auth token in cookies (mock implementation)
+  const token = request.cookies.get('auth-token');
+  return !!token; // Return true if token exists
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Get user session (in a real implementation, you would get this from cookies or headers)
-  const isLoggedIn = false; // Mock value - in real implementation, check session/JWT
+  // Check if user is authenticated
+  const isLoggedIn = isAuthenticated(request);
   
   // Check if the route is protected
   const isProtectedRoute = protectedRoutes.some(route => 

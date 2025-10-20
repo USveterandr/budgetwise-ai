@@ -13,8 +13,7 @@ import {
   BellIcon,
   UserIcon,
   ShieldCheckIcon,
-  ArrowRightOnRectangleIcon,
-  DocumentTextIcon
+  ArrowRightOnRectangleIcon
 } from "@heroicons/react/24/outline";
 import { getCurrentUser } from "@/lib/auth";
 import { logout } from "@/lib/auth";
@@ -37,7 +36,7 @@ export function Navbar() {
   useEffect(() => {
     const checkAdminStatus = async () => {
       // Check if the user is authenticated and is admin
-      const currentUser = getCurrentUser();
+      const currentUser = await getCurrentUser();
       setUser(currentUser);
       if (currentUser) {
         setShowAdminLink(currentUser.isAdmin);
@@ -57,7 +56,6 @@ export function Navbar() {
     { name: "Transactions", href: "/transactions", icon: CreditCardIcon },
     { name: "Budget", href: "/budget", icon: WalletIcon },
     { name: "Investments", href: "/investments", icon: ArrowTrendingUpIcon },
-    { name: "Receipts", href: "/receipts", icon: DocumentTextIcon },
   ];
 
   const adminNavigation = [

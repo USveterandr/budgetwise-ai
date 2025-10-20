@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   WalletIcon, 
@@ -10,6 +11,14 @@ import {
 } from "@heroicons/react/24/outline";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { getCurrentUser } from "@/lib/auth";
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  plan: string;
+  isAdmin: boolean;
+}
 
 export default function DashboardPage() {
   const user = getCurrentUser();
