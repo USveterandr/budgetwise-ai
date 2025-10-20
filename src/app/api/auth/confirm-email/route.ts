@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { Database } from '@/lib/db';
-import { R2Storage } from '@/lib/r2';
 
 export async function GET(request: Request) {
   try {

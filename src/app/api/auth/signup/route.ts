@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { Database } from '@/lib/db';
 import { R2Storage } from '@/lib/r2';
+import sgMail from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 
 // Send confirmation email using SendGrid (if available) or log to console
 async function sendConfirmationEmail(email: string, confirmationToken: string) {
@@ -10,7 +12,6 @@ async function sendConfirmationEmail(email: string, confirmationToken: string) {
   // Try to use SendGrid if API key is available
   if (process.env.SENDGRID_API_KEY) {
     try {
-      const sgMail = require('@sendgrid/mail');
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
       
       const msg = {
@@ -51,8 +52,6 @@ async function sendConfirmationEmail(email: string, confirmationToken: string) {
   // Try to use SMTP if configured
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
     try {
-      const nodemailer = require('nodemailer');
-      
       const transporter = nodemailer.createTransporter({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT || '587'),
