@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { R2Storage } from '@/lib/r2';
 
 // This is a test route to verify R2 storage connectivity
 // In a real Cloudflare Pages Functions environment, you would access R2 through context.env.R2_BUCKET

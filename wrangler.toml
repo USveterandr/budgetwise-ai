@@ -16,7 +16,16 @@ binding = "DB" # i.e. available in your Worker on env.DB
 database_name = "budgetwise-db"
 database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" # Replace with your actual D1 database ID
 
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "budgetwise-db"
+database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" # Replace with your actual D1 database ID
+
 # R2 Bucket Bindings
 [[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "budgetwise-storage"
+
+[[env.production.r2_buckets]]
 binding = "R2_BUCKET"
 bucket_name = "budgetwise-storage"

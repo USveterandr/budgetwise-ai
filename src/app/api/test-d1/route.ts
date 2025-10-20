@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { Database } from '@/lib/db';
 
 // This is a test route to verify D1 database connectivity
 // In a real Cloudflare Pages Functions environment, you would access D1 through context.env.DB
