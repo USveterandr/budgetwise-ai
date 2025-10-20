@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "wrangler pages deploy .next --project-name=budgetwise"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
