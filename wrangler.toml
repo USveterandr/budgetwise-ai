@@ -1,4 +1,4 @@
-name = "budgetwise-ai"
+name = "budgetwise"
 compatibility_date = "2025-10-20"
 pages_build_output_dir = ".next"
 
@@ -6,8 +6,6 @@ pages_build_output_dir = ".next"
 NODE_VERSION = "22"
 ENVIRONMENT = "development"
 
-[env.production]
-vars = { 
-  ENVIRONMENT = "production",
-  NODE_VERSION = "22"
-}
+[env.production.vars]
+ENVIRONMENT = "production"
+NODE_VERSION = "22"
