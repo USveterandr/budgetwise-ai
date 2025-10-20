@@ -23,9 +23,18 @@ export default function ProtectedRoute({
         return;
       }
       
+      // Get current user
+      const user = getCurrentUser();
+      
+      // Check if email is verified
+      if (user && !user.emailVerified) {
+        // Redirect to email confirmation page
+        router.push("/auth/confirm-email");
+        return;
+      }
+      
       // If admin is required, check if user is admin
       if (requireAdmin) {
-        const user = getCurrentUser();
         if (!user || !user.isAdmin) {
           // Redirect to dashboard if not admin
           router.push("/dashboard");

@@ -22,6 +22,12 @@ export default function LoginPage() {
       const result = await login(email, password);
       
       if (result.success) {
+        // Check if email is verified
+        if (result.user && !result.user.emailVerified) {
+          setError("Please verify your email address before logging in. Check your inbox for the confirmation email.");
+          return;
+        }
+        
         // Redirect to dashboard after successful login
         router.push("/dashboard");
       } else {
@@ -58,7 +64,7 @@ export default function LoginPage() {
                 placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                 required
               />
             </div>
@@ -70,7 +76,7 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                 required
               />
             </div>

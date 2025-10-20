@@ -16,7 +16,7 @@ export default function DashboardPage() {
   
   const userData = {
     name: user?.name || "User",
-    plan: user?.plan || "Free",
+    plan: user?.plan || "Basic",
     netWorth: 125000,
     monthlyIncome: 8500,
     monthlyExpenses: 5200,

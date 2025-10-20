@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -39,12 +38,12 @@ interface Analytics {
 }
 
 export default function AdminDashboard() {
-  const [users] = useState<User[]>([
+  const users: User[] = [
     { id: '1', name: 'John Doe', email: 'john@example.com', plan: 'premium', status: 'active', lastActive: '2025-10-19T10:30:00Z' },
-    { id: '2', name: 'Jane Smith', email: 'jane@example.com', plan: 'free', status: 'active', lastActive: '2025-10-19T14:15:00Z' },
-    { id: '3', name: 'Bob Johnson', email: 'bob@example.com', plan: 'pro', status: 'suspended', lastActive: '2025-10-18T09:45:00Z' },
+    { id: '2', name: 'Jane Smith', email: 'jane@example.com', plan: 'basic', status: 'active', lastActive: '2025-10-19T14:15:00Z' },
+    { id: '3', name: 'Bob Johnson', email: 'bob@example.com', plan: 'premium-annual', status: 'suspended', lastActive: '2025-10-18T09:45:00Z' },
     { id: '4', name: 'Alice Brown', email: 'alice@example.com', plan: 'premium', status: 'active', lastActive: '2025-10-20T08:20:00Z' },
-  ]);
+  ];
 
   const analytics: Analytics = {
     totalUsers: 1247,
@@ -98,13 +97,13 @@ export default function AdminDashboard() {
   ];
 
   const planDistribution = [
-    { name: "Free", value: analytics.freeUsers, color: "bg-gray-500" },
+    { name: "Basic", value: analytics.freeUsers, color: "bg-gray-500" },
     { name: "Premium", value: analytics.premiumUsers, color: "bg-blue-500" },
-    { name: "Pro", value: analytics.proUsers, color: "bg-purple-500" },
+    { name: "Premium Annual", value: analytics.proUsers, color: "bg-purple-500" },
   ];
 
   const recentActivity = [
-    { id: 1, user: "John Doe", action: "Upgraded to Pro", time: "2 minutes ago" },
+    { id: 1, user: "John Doe", action: "Upgraded to Premium Annual", time: "2 minutes ago" },
     { id: 2, user: "Jane Smith", action: "Added new transaction", time: "5 minutes ago" },
     { id: 3, user: "Bob Johnson", action: "Cancelled subscription", time: "1 hour ago" },
     { id: 4, user: "Alice Brown", action: "Created new budget", time: "2 hours ago" },
@@ -172,7 +171,7 @@ export default function AdminDashboard() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                ${user.plan === 'free' ? 'bg-gray-100 text-gray-800' : 
+                                ${user.plan === 'basic' ? 'bg-gray-100 text-gray-800' : 
                                   user.plan === 'premium' ? 'bg-blue-100 text-blue-800' : 
                                   'bg-purple-100 text-purple-800'}`}>
                                 {user.plan}
