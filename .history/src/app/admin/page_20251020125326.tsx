@@ -71,7 +71,7 @@ export default function AdminDashboard() {
       
       // Check if user is admin
       const adminStatus = await isAdmin(user);
-      setIsAdminUser(adminStatus || false);
+      setIsAdminUser(adminStatus);
       
       if (!adminStatus) {
         // Redirect to dashboard if not admin

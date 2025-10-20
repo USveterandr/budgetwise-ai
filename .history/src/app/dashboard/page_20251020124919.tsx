@@ -35,7 +35,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const checkAuth = async () => {
       // In a real implementation, you would check if the user is authenticated
-      const user = await getCurrentUser();
+      const user: User | null = await getCurrentUser() as User | null;
       
       if (!user) {
         // Redirect to login if not authenticated
@@ -45,8 +45,8 @@ export default function DashboardPage() {
       
       // Set user data
       setUserData({
-        name: (user as User).name || "User",
-        plan: (user as User).plan || "Free",
+        name: user.name || "User",
+        plan: user.plan || "Free",
         netWorth: 0,
         monthlyIncome: 0,
         monthlyExpenses: 0,

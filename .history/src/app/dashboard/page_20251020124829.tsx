@@ -12,14 +12,6 @@ import {
 import { useRouter } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  plan: string;
-  isAdmin: boolean;
-}
-
 export default function DashboardPage() {
   const [userData, setUserData] = useState({
     name: "",
@@ -45,8 +37,8 @@ export default function DashboardPage() {
       
       // Set user data
       setUserData({
-        name: (user as User).name || "User",
-        plan: (user as User).plan || "Free",
+        name: user.name || "User",
+        plan: user.plan || "Free",
         netWorth: 0,
         monthlyIncome: 0,
         monthlyExpenses: 0,

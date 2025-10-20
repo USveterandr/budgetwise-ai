@@ -14,7 +14,7 @@ import {
   UserIcon,
   ShieldCheckIcon
 } from "@heroicons/react/24/outline";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, isAdmin } from "@/lib/auth";
 
 interface User {
   id: string;
@@ -34,7 +34,8 @@ export function Navbar() {
       // In a real implementation, you would check if the user is authenticated and is admin
       const user = await getCurrentUser();
       if (user) {
-        setShowAdminLink(user.isAdmin);
+        const adminStatus = await isAdmin(user);
+        setShowAdminLink(adminStatus);
       }
     };
     
