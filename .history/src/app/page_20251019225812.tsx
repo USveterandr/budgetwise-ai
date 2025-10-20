@@ -41,15 +41,11 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5">
-              <Link href="/auth/signup" className="w-full h-full flex items-center justify-center">
-                Get Started
-              </Link>
+            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5">
+              <Link href="/auth/signup">Get Started</Link>
             </Button>
-            <Button variant="outline" className="px-6 py-2.5">
-              <Link href="/dashboard" className="w-full h-full flex items-center justify-center">
-                View Demo
-              </Link>
+            <Button asChild variant="outline" className="px-6 py-2.5">
+              <Link href="/dashboard">View Demo</Link>
             </Button>
           </motion.div>
         </div>
@@ -85,10 +81,8 @@ export default function HomePage() {
         <p className="text-gray-600 max-w-2xl mx-auto mb-8">
           Join thousands of users who are already building wealth with BudgetWise AI
         </p>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5">
-          <Link href="/auth/signup" className="w-full h-full flex items-center justify-center">
-            Start Free Trial
-          </Link>
+        <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5">
+          <Link href="/auth/signup">Start Free Trial</Link>
         </Button>
       </div>
     </div>
