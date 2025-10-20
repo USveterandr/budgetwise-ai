@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { Database } from '@/lib/db';
-import { R2Storage } from '@/lib/r2';
 import sgMail from '@sendgrid/mail';
 import nodemailer from 'nodemailer';
 
@@ -52,7 +50,7 @@ async function sendConfirmationEmail(email: string, confirmationToken: string) {
   // Try to use SMTP if configured
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
     try {
-      const transporter = nodemailer.createTransporter({
+      const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT || '587'),
         secure: false, // true for 465, false for other ports
