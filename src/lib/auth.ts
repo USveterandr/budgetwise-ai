@@ -34,141 +34,74 @@ export function getCurrentUser(): { id: string; email: string; name: string; pla
   return null;
 }
 
-// Simulate login API call
-export async function login(email: string, password: string) {
-  // In a real implementation, you would make an API call to your backend
-  try {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // For demo purposes, we'll create a mock response
-    // In a real app, this would come from your backend API
-    const user = {
-      id: '1',
-      email,
-      name: email.split('@')[0],
-      plan: 'basic',
-      isAdmin: email === 'admin@budgetwise.ai',
-      emailVerified: true
-    };
-    
-    // Create a mock JWT token
-    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-    const payload = btoa(JSON.stringify({ 
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      plan: user.plan,
-      isAdmin: user.isAdmin,
-      emailVerified: user.emailVerified
-    }));
-    const signature = btoa('mock-signature');
-    const token = `${header}.${payload}.${signature}`;
-    
-    // Store token in localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('auth-token', token);
-    }
-    
-    return { success: true, user };
-  } catch (error) {
-    return { success: false, error: 'Invalid credentials' };
-  }
-}
-
-// Simulate signup API call
+// Real signup API call
 export async function signup(name: string, email: string, password: string, plan: string) {
-  // In a real implementation, you would make an API call to your backend
   try {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    const response = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name, email, password, plan }),
+    });
     
-    // Check if user already exists (mock implementation)
-    // In a real app, this would be handled by your backend
-    const existingUser = false; // Mock value
+    const result = await response.json();
     
-    if (existingUser) {
-      return { success: false, error: 'User already exists' };
+    if (!response.ok) {
+      return { success: false, error: result.error || 'Signup failed' };
     }
     
-    // Create new user
-    const newUser = {
-      id: String(Date.now()), // Mock ID generation
-      email,
-      name,
-      plan,
-      isAdmin: email === 'admin@budgetwise.ai',
-      emailVerified: false // Email not verified yet
-    };
-    
-    // Create a mock JWT token
-    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-    const payload = btoa(JSON.stringify({ 
-      id: newUser.id,
-      email: newUser.email,
-      name: newUser.name,
-      plan: newUser.plan,
-      isAdmin: newUser.isAdmin,
-      emailVerified: newUser.emailVerified
-    }));
-    const signature = btoa('mock-signature');
-    const token = `${header}.${payload}.${signature}`;
-    
-    // Store token in localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('auth-token', token);
-    }
-    
-    // In a real implementation, you would send a confirmation email here
-    console.log(`Confirmation email would be sent to ${email}`);
-    
-    return { success: true, user: newUser };
+    return { success: true, message: result.message };
   } catch (error) {
-    return { success: false, error: 'Signup failed' };
+    console.error('Signup error:', error);
+    return { success: false, error: 'Network error. Please try again.' };
   }
 }
 
-// Simulate email confirmation
-export async function confirmEmail(token: string) {
-  // In a real implementation, you would make an API call to verify the email
+// Real login API call
+export async function login(email: string, password: string) {
   try {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // In a real implementation, you would make an API call to your backend
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
     
-    // Get current user from token
-    const user = getCurrentUser();
-    if (!user) {
-      return { success: false, error: 'Invalid token' };
+    const result = await response.json();
+    
+    if (!response.ok) {
+      return { success: false, error: result.error || 'Login failed' };
     }
     
-    // Update user's email verification status
-    // In a real implementation, this would be handled by your backend
-    const updatedUser = {
-      ...user,
-      emailVerified: true
-    };
-    
-    // Create a new token with updated email verification status
-    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-    const payload = btoa(JSON.stringify({ 
-      id: updatedUser.id,
-      email: updatedUser.email,
-      name: updatedUser.name,
-      plan: updatedUser.plan,
-      isAdmin: updatedUser.isAdmin,
-      emailVerified: updatedUser.emailVerified
-    }));
-    const signature = btoa('mock-signature');
-    const newToken = `${header}.${payload}.${signature}`;
-    
-    // Store updated token in localStorage
+    // Store token in localStorage
     if (typeof window !== 'undefined') {
-      localStorage.setItem('auth-token', newToken);
+      localStorage.setItem('auth-token', result.token);
     }
     
-    return { success: true, user: updatedUser };
+    return { success: true, user: result.user };
   } catch (error) {
-    return { success: false, error: 'Email confirmation failed' };
+    console.error('Login error:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+// Real email confirmation
+export async function confirmEmail(token: string) {
+  try {
+    const response = await fetch(`/api/auth/confirm-email?token=${token}`);
+    const result = await response.json();
+    
+    if (!response.ok) {
+      return { success: false, error: result.error || 'Email confirmation failed' };
+    }
+    
+    return { success: true, message: result.message };
+  } catch (error) {
+    console.error('Email confirmation error:', error);
+    return { success: false, error: 'Network error. Please try again.' };
   }
 }
 
