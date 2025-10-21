@@ -79,9 +79,42 @@ export default {
             userData.trial_ends_at || null
           ).run();
           
+          // Send confirmation email (if HUBSPOT_API_KEY is configured)
+          if (env.HUBSPOT_API_KEY && env.HUBSPOT_TEMPLATE_ID) {
+            try {
+              const confirmationToken = `token_${Math.random().toString(36).substring(2, 15)}`;
+              const confirmationUrl = `https://ba4e7731.budgetwise-ebe.pages.dev/auth/confirm-email?token=${confirmationToken}`;
+              
+              const emailResponse = await fetch('https://api.hubapi.com/marketing/v3/transactional/email/single-send', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${env.HUBSPOT_API_KEY}`
+                },
+                body: JSON.stringify({
+                  emailId: env.HUBSPOT_TEMPLATE_ID,
+                  recipient: {
+                    email: userData.email,
+                    properties: {
+                      firstname: userData.name,
+                      confirmation_link: confirmationUrl
+                    }
+                  }
+                })
+              });
+              
+              if (!emailResponse.ok) {
+                const errorData = await emailResponse.json();
+                console.error('HubSpot email error:', errorData);
+              }
+            } catch (emailError) {
+              console.error('Failed to send confirmation email:', emailError);
+            }
+          }
+          
           return new Response(JSON.stringify({ 
             success: true, 
-            message: 'User created successfully',
+            message: 'User created successfully. Please check your email for confirmation.',
             result: result,
             timestamp: new Date().toISOString()
           }), {
@@ -91,6 +124,21 @@ export default {
             }
           });
         } catch (error) {
+          // Handle specific database errors
+          if (error.message.includes('UNIQUE constraint failed: users.email')) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'An account with this email address already exists. Please use a different email or try logging in instead.',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 409, // Conflict status code
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
           return new Response(JSON.stringify({ 
             success: false, 
             error: error.message,

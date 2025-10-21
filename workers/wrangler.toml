@@ -12,3 +12,7 @@ database_id = "29d3d43f-8f0a-4c5c-abe9-bbe93a22414d"
 [[r2_buckets]]
 binding = "R2_BUCKET"
 bucket_name = "budgetwise-storage"
+
+# Environment variables
+[vars]
+HUBSPOT_TEMPLATE_ID = "251076152041"

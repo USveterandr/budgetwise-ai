@@ -59,31 +59,31 @@ export async function sendConfirmationEmail(email: string, name: string, confirm
 // Send via HubSpot Transactional API
 async function sendViaHubSpot(email: string, name: string, confirmationUrl: string) {
   try {
-    const response = await fetch('https://api.hubapi.com/email/public/v1/singleEmail/send', {
+    const response = await fetch('https://api.hubapi.com/marketing/v3/transactional/email/single-send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${HUBSPOT_API_KEY}`
       },
       body: JSON.stringify({
-        emailId: parseInt(HUBSPOT_TEMPLATE_ID),
-        message: {
-          to: email
-        },
-        contactProperties: {
-          firstname: name
-        },
-        customProperties: {
-          confirmation_link: confirmationUrl
+        emailId: HUBSPOT_TEMPLATE_ID,
+        recipient: {
+          email: email,
+          properties: {
+            firstname: name,
+            confirmation_link: confirmationUrl
+          }
         }
       })
     });
     
     if (!response.ok) {
-      throw new Error(`HubSpot API error: ${response.status}`);
+      const errorData = await response.json();
+      throw new Error(`HubSpot API error: ${response.status} - ${JSON.stringify(errorData)}`);
     }
     
-    console.log('Email sent via HubSpot to:', email);
+    const result = await response.json();
+    console.log('Email sent via HubSpot to:', email, result);
     return { success: true };
   } catch (error) {
     console.error('HubSpot email error:', error);

@@ -59,6 +59,10 @@ export async function signup(name: string, email: string, password: string, plan
     const result = await response.json();
     
     if (!response.ok || !result.success) {
+      // Handle conflict (email already exists) specifically
+      if (response.status === 409) {
+        return { success: false, error: result.error || 'An account with this email address already exists. Please use a different email or try logging in instead.' };
+      }
       return { success: false, error: result.error || 'Signup failed' };
     }
     
@@ -73,16 +77,22 @@ export async function signup(name: string, email: string, password: string, plan
 export async function login(email: string, password: string) {
   try {
     // Call our database worker to get the user
-    const response = await fetch(`${DATABASE_WORKER_URL}/users/${encodeURIComponent(email)}`);
+    const encodedEmail = encodeURIComponent(email);
+    const response = await fetch(`${DATABASE_WORKER_URL}/users/${encodedEmail}`);
     
     const result = await response.json();
     
     if (!response.ok) {
-      return { success: false, error: 'Network error. Please try again.' };
+      console.error('Login API error:', response.status, result);
+      return { success: false, error: result.error || 'Network error. Please try again.' };
     }
     
     if (!result.success) {
-      return { success: false, error: 'Invalid credentials' };
+      // Handle case where user doesn't exist
+      if (result.message === 'User not found') {
+        return { success: false, error: 'Invalid credentials' };
+      }
+      return { success: false, error: result.message || 'Invalid credentials' };
     }
     
     // In a real implementation, you would verify the password here
