@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
   },
   // Optimize build for static export
   trailingSlash: true,
+  // Configure base path for Cloudflare Pages
+  basePath: '',
   // Disable webpack caching to reduce build size
   webpack: (config, { isServer }) => {
     // Disable source maps to reduce bundle size
