@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 
-// API routes in static export should not have dynamic configuration
-// They will be handled by the server at runtime
+// Configure for static export
+// API routes should not be prerendered
+export const revalidate = 0;
 
 export async function POST(request: Request) {
   try {
