@@ -5,7 +5,7 @@ export const dynamic = 'force-static';
 export const revalidate = 0;
 
 // Mock function to simulate OCR processing
-async function processReceiptImage(_imageData: string) {
+async function processReceiptImage(imageData: string) {
   // In a real implementation, you would:
   // 1. Send the image to an OCR service (Google Vision, AWS Textract, etc.)
   // 2. Parse the response to extract merchant, amount, date, items, etc.

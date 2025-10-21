@@ -142,7 +142,6 @@ export async function POST(request: Request) {
     // 6. Send confirmation email
     
     // For now, we'll simulate the process
-    const userId = `user_${Date.now()}`;
     const confirmationToken = `token_${Math.random().toString(36).substring(2, 15)}`;
     
     // Simulate database storage of confirmation token
