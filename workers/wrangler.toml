@@ -1,0 +1,14 @@
+name = "budgetwise-database-worker"
+main = "database-worker.js"
+compatibility_date = "2025-10-20"
+
+# Bind to the D1 database
+[[d1_databases]]
+binding = "DB"
+database_name = "budgetwise-db"
+database_id = "29d3d43f-8f0a-4c5c-abe9-bbe93a22414d"
+
+# Bind to the R2 bucket
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "budgetwise-storage"

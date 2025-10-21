@@ -14,12 +14,12 @@ NODE_VERSION = "22"
 [[d1_databases]]
 binding = "DB" # i.e. available in your Worker on env.DB
 database_name = "budgetwise-db"
-database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" # Replace with your actual D1 database ID
+database_id = "29d3d43f-8f0a-4c5c-abe9-bbe93a22414d" # Your actual D1 database ID
 
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "budgetwise-db"
-database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" # Replace with your actual D1 database ID
+database_id = "29d3d43f-8f0a-4c5c-abe9-bbe93a22414d" # Your actual D1 database ID
 
 # R2 Bucket Bindings
 [[r2_buckets]]

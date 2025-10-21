@@ -10,6 +10,7 @@
     "deploy": "wrangler pages deploy out --project-name=budgetwise"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-label": "^2.1.7",
     "@sendgrid/mail": "^8.1.3",

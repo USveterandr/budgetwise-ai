@@ -6,6 +6,9 @@ import nodemailer from 'nodemailer';
 export const dynamic = 'force-static';
 export const revalidate = 0;
 
+// Import our email utility
+// import { sendConfirmationEmail } from '@/lib/email';
+
 // Send confirmation email using SendGrid (if available) or log to console
 async function sendConfirmationEmail(email: string, confirmationToken: string) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';

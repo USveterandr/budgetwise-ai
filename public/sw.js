@@ -51,6 +51,19 @@ self.addEventListener('fetch', event => {
         return response || fetch(event.request)
           .catch(error => {
             console.error('Fetch failed:', error);
+            // For JavaScript chunks, try to serve from network again
+            if (event.request.url.includes('.js')) {
+              return fetch(event.request).catch(err => {
+                console.error('Second attempt failed:', err);
+                return new Response('Network error occurred', {
+                  status: 503,
+                  statusText: 'Service Unavailable',
+                  headers: new Headers({
+                    'Content-Type': 'text/plain'
+                  })
+                });
+              });
+            }
             // Return a fallback response if needed
             return new Response('Network error occurred', {
               status: 503,

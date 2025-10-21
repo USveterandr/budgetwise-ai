@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   // Configure base path for Cloudflare Pages
   basePath: '',
+  // Configure asset prefix for Cloudflare Pages
+  assetPrefix: '',
   // Disable webpack caching to reduce build size
   webpack: (config, { isServer }) => {
     // Disable source maps to reduce bundle size
