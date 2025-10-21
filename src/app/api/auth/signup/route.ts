@@ -3,7 +3,7 @@ import sgMail from '@sendgrid/mail';
 import nodemailer from 'nodemailer';
 
 // Configure for static export
-// API routes should not be prerendered
+export const dynamic = 'force-static';
 export const revalidate = 0;
 
 // Send confirmation email using SendGrid (if available) or log to console
