@@ -3,12 +3,12 @@
 const CACHE_NAME = 'budgetwise-ai-v1.0';
 const urlsToCache = [
   '/',
-  '/dashboard',
-  '/budget',
-  '/transactions',
-  '/investments',
-  '/subscription',
-  '/consultation'
+  '/dashboard/',
+  '/budget/',
+  '/transactions/',
+  '/investments/',
+  '/subscription/',
+  '/consultation/'
 ];
 
 // Install event
@@ -40,7 +40,7 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (!cacheWhitelist.includes(cacheName)) {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
             return caches.delete(cacheName);
           }
         })
