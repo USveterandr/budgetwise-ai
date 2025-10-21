@@ -2,10 +2,13 @@ CREATE TABLE users (
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   name TEXT,
+  password_hash TEXT NOT NULL,
   plan TEXT DEFAULT 'trial',
   is_admin BOOLEAN DEFAULT FALSE,
   email_verified BOOLEAN DEFAULT FALSE,
   trial_ends_at TIMESTAMP,
+  password_reset_token TEXT,
+  password_reset_expires TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

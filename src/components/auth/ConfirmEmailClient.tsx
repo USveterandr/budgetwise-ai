@@ -1,70 +1,61 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { confirmEmail } from "@/lib/auth";
+import { verifyEmailToken } from "@/lib/email";
+import { Button } from "@/components/ui/button";
 
 export default function ConfirmEmailClient() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState("");
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [message, setMessage] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
   useEffect(() => {
-    // Skip execution during server-side rendering
-    if (typeof window === 'undefined') return;
-    
-    const confirmToken = searchParams.get('token');
-    
-    if (!confirmToken) {
-      setError("Invalid confirmation link");
-      setIsLoading(false);
-      return;
-    }
-    
-    const confirmEmailAndRedirect = async () => {
+    const confirmEmail = async () => {
+      if (!token) {
+        setStatus("error");
+        setMessage("Invalid confirmation link. Token is missing.");
+        return;
+      }
+
       try {
-        const result = await confirmEmail(confirmToken);
+        const result = await verifyEmailToken(token);
         
         if (result.success) {
-          setIsSuccess(true);
+          setStatus("success");
+          setMessage(result.message || "Email confirmed successfully. You can now log in to your account.");
         } else {
-          setError(result.error || "Email confirmation failed");
+          setStatus("error");
+          setMessage(result.error || "Email confirmation failed.");
         }
       } catch (error) {
-        setError("An unexpected error occurred");
-      } finally {
-        setIsLoading(false);
+        console.error("Email confirmation error:", error);
+        setStatus("error");
+        setMessage("An unexpected error occurred during email confirmation.");
       }
     };
-    
-    confirmEmailAndRedirect();
-  }, [searchParams]);
 
-  // Show loading state during SSR
-  if (typeof window === 'undefined') {
+    confirmEmail();
+  }, [token]);
+
+  const handleLoginRedirect = () => {
+    router.push("/auth/login");
+  };
+
+  if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="w-full max-w-md">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="w-full max-w-md">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Confirming your email...</p>
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Verifying Email</h1>
+              <p className="text-gray-600">Please wait while we verify your email address...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -75,51 +66,46 @@ export default function ConfirmEmailClient() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md">
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
-          {isSuccess ? (
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              {status === "success" ? (
                 <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                 </svg>
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Email Confirmed!</h1>
-              <p className="text-gray-600 mb-6">
-                Your email has been successfully confirmed. You can now access all features of BudgetWise AI.
-              </p>
-              <Button 
-                onClick={() => router.push("/dashboard")}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Continue to Dashboard
-              </Button>
-            </div>
-          ) : (
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              ) : (
                 <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Confirmation Failed</h1>
-              <p className="text-gray-600 mb-6">
-                {error || "We couldn't confirm your email. The confirmation link may be invalid or expired."}
-              </p>
+              )}
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              {status === "success" ? "Email Verified" : "Verification Failed"}
+            </h1>
+            <p className="text-gray-600 mb-6">{message}</p>
+            
+            {status === "success" && (
+              <Button 
+                onClick={handleLoginRedirect}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Continue to Login
+              </Button>
+            )}
+            
+            {status === "error" && (
               <div className="space-y-3">
                 <Button 
-                  onClick={() => router.push("/auth/login")}
+                  onClick={handleLoginRedirect}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  Go to Login
+                  Try Again
                 </Button>
-                <p className="text-sm text-gray-600">
-                  Need a new confirmation link?{" "}
-                  <Link href="/auth/signup" className="font-medium text-blue-600 hover:underline">
-                    Sign up again
-                  </Link>
+                <p className="text-sm text-gray-500">
+                  If you continue to have issues, please contact support.
                 </p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

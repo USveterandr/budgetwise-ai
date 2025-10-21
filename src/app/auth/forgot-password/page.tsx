@@ -4,35 +4,31 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { login } from "@/lib/auth";
+import { requestPasswordReset } from "@/lib/auth";
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setMessage("");
     setError("");
     
     try {
-      console.log("Submitting login form...");
-      const result = await login(email, password);
-      console.log("Login result:", result);
+      const result = await requestPasswordReset(email);
       
       if (result.success) {
-        // Redirect to dashboard after successful login
-        router.push("/dashboard");
+        setMessage(result.message || "If an account exists with that email, you will receive a password reset link shortly.");
       } else {
-        console.log("Login failed with error:", result.error);
-        setError(result.error || "Login failed");
+        setError(result.error || "Failed to request password reset.");
       }
     } catch (err) {
-      console.error("Unexpected error during login:", err);
-      setError("An unexpected error occurred");
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -42,15 +38,15 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
-          <p className="text-gray-600">Sign in to your BudgetWise account</p>
+          <h1 className="text-2xl font-bold text-gray-900">Reset Your Password</h1>
+          <p className="text-gray-600">Enter your email address and we'll send you a link to reset your password.</p>
         </div>
         
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 text-red-700 p-3 rounded-md text-sm">
-                {error}
+            {(message || error) && (
+              <div className={`p-3 rounded-md text-sm ${message ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                {message || error}
               </div>
             )}
             
@@ -66,38 +62,21 @@ export default function LoginPage() {
                 required
               />
             </div>
-            <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-              <input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
-                required
-              />
-            </div>
+            
             <Button 
               type="submit" 
               className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm"
               disabled={isLoading}
             >
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? "Sending..." : "Send Reset Link"}
             </Button>
           </form>
           
-          <div className="mt-4 text-center">
-            <Link href="/auth/forgot-password" className="text-sm text-blue-600 hover:underline">
-              Forgot your password?
-            </Link>
-          </div>
-          
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don&apos;t have an account?{" "}
-              <Link href="/auth/signup" className="font-medium text-blue-600 hover:underline">
-                Sign up
+              Remember your password?{" "}
+              <Link href="/auth/login" className="font-medium text-blue-600 hover:underline">
+                Sign in
               </Link>
             </p>
           </div>

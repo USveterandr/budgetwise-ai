@@ -1,4 +1,5 @@
 // Authentication utility functions
+import bcrypt from 'bcryptjs';
 
 // Database worker URL
 const DATABASE_WORKER_URL = 'https://budgetwise-database-worker.isaactrinidadllc.workers.dev';
@@ -30,6 +31,7 @@ export function getCurrentUser(): { id: string; email: string; name: string; pla
           emailVerified: payload.emailVerified || false
         };
       } catch (e) {
+        console.error('Error parsing token:', e);
         return null;
       }
     }
@@ -40,6 +42,13 @@ export function getCurrentUser(): { id: string; email: string; name: string; pla
 // Real signup API call
 export async function signup(name: string, email: string, password: string, plan: string) {
   try {
+    console.log('Attempting signup for email:', email);
+    
+    // Validate password strength
+    if (!isValidPassword(password)) {
+      return { success: false, error: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.' };
+    }
+    
     // Call our database worker to create the user
     const response = await fetch(`${DATABASE_WORKER_URL}/users`, {
       method: 'POST',
@@ -50,13 +59,17 @@ export async function signup(name: string, email: string, password: string, plan
         id: `user_${Date.now()}`,
         email,
         name,
+        password,
         plan,
         is_admin: email === 'admin@budgetwise.ai',
         email_verified: false
       }),
     });
     
+    console.log('Signup response status:', response.status);
+    
     const result = await response.json();
+    console.log('Signup response data:', result);
     
     if (!response.ok || !result.success) {
       // Handle conflict (email already exists) specifically
@@ -76,27 +89,25 @@ export async function signup(name: string, email: string, password: string, plan
 // Real login API call
 export async function login(email: string, password: string) {
   try {
-    // Call our database worker to get the user
-    const encodedEmail = encodeURIComponent(email);
-    const response = await fetch(`${DATABASE_WORKER_URL}/users/${encodedEmail}`);
+    console.log('Attempting login for email:', email);
+    
+    // Call our database worker login endpoint
+    const response = await fetch(`${DATABASE_WORKER_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    
+    console.log('Login response status:', response.status);
     
     const result = await response.json();
+    console.log('Login response data:', result);
     
-    if (!response.ok) {
-      console.error('Login API error:', response.status, result);
-      return { success: false, error: result.error || 'Network error. Please try again.' };
+    if (!response.ok || !result.success) {
+      return { success: false, error: result.error || 'Invalid credentials' };
     }
-    
-    if (!result.success) {
-      // Handle case where user doesn't exist
-      if (result.message === 'User not found') {
-        return { success: false, error: 'Invalid credentials' };
-      }
-      return { success: false, error: result.message || 'Invalid credentials' };
-    }
-    
-    // In a real implementation, you would verify the password here
-    // For now, we'll assume the user exists and the password is correct
     
     // Create a JWT token
     const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
@@ -126,6 +137,100 @@ export async function login(email: string, password: string) {
     } };
   } catch (error) {
     console.error('Login error:', error);
+    // More specific error handling
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      return { success: false, error: 'Network error. Please check your connection and try again.' };
+    }
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+// Password strength validation
+export function isValidPassword(password: string): boolean {
+  // At least 8 characters, one uppercase, one lowercase, one number
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+  return passwordRegex.test(password);
+}
+
+// Request password reset
+export async function requestPasswordReset(email: string) {
+  try {
+    console.log('Requesting password reset for email:', email);
+    
+    const response = await fetch(`${DATABASE_WORKER_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      return { success: false, error: result.error || 'Failed to request password reset.' };
+    }
+    
+    return { success: true, message: result.message || 'Password reset email sent successfully.' };
+  } catch (error) {
+    console.error('Password reset request error:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+// Verify password reset token
+export async function verifyPasswordResetToken(token: string) {
+  try {
+    console.log('Verifying password reset token:', token);
+    
+    const response = await fetch(`${DATABASE_WORKER_URL}/auth/reset-password/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      return { success: false, error: result.error || 'Invalid or expired reset token.' };
+    }
+    
+    return { success: true, message: result.message || 'Token is valid.' };
+  } catch (error) {
+    console.error('Password reset token verification error:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+// Reset password
+export async function resetPassword(token: string, newPassword: string) {
+  try {
+    console.log('Resetting password with token:', token);
+    
+    // Validate password strength
+    if (!isValidPassword(newPassword)) {
+      return { success: false, error: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.' };
+    }
+    
+    const response = await fetch(`${DATABASE_WORKER_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token, newPassword }),
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      return { success: false, error: result.error || 'Failed to reset password.' };
+    }
+    
+    return { success: true, message: result.message || 'Password reset successfully.' };
+  } catch (error) {
+    console.error('Password reset error:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }
@@ -158,6 +263,7 @@ export function hasPlanAccess(user: { plan: string } | null, requiredPlan: strin
   if (!user) return false;
   
   const planHierarchy = {
+    'trial': 0,
     'basic': 1,
     'premium': 2,
     'premium-annual': 3

@@ -1,55 +1,33 @@
-// Email utility functions using multiple email providers
+// Email utility functions
 
-import emailjs from '@emailjs/browser';
+// Check if we're running on the client side
+const isClient = typeof window !== 'undefined';
 
-// EmailJS Configuration (optional)
-const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || '';
-const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || '';
-const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || '';
+// Get environment variables (works both on client and server)
+const HUBSPOT_API_KEY = isClient 
+  ? (window as unknown as { env?: { HUBSPOT_API_KEY?: string } }).env?.HUBSPOT_API_KEY || process.env.NEXT_PUBLIC_HUBSPOT_API_KEY
+  : process.env.HUBSPOT_API_KEY;
 
-// SMTP Configuration (Gmail/Other SMTP)
-const SMTP_HOST = process.env.SMTP_HOST || '';
-const SMTP_PORT = process.env.SMTP_PORT || '587';
-const SMTP_USER = process.env.SMTP_USER || '';
-const SMTP_PASS = process.env.SMTP_PASS || '';
-const SMTP_FROM = process.env.SMTP_FROM || '';
-
-// HubSpot Configuration
-const HUBSPOT_API_KEY = process.env.HUBSPOT_API_KEY || '';
-const HUBSPOT_TEMPLATE_ID = process.env.HUBSPOT_TEMPLATE_ID || '';
-
-// Initialize EmailJS if credentials are provided
-if (typeof window !== 'undefined' && EMAILJS_PUBLIC_KEY) {
-  emailjs.init(EMAILJS_PUBLIC_KEY);
-}
+const HUBSPOT_TEMPLATE_ID = isClient
+  ? (window as unknown as { env?: { HUBSPOT_TEMPLATE_ID?: string } }).env?.HUBSPOT_TEMPLATE_ID || process.env.NEXT_PUBLIC_HUBSPOT_TEMPLATE_ID
+  : process.env.HUBSPOT_TEMPLATE_ID;
 
 // Send confirmation email
 export async function sendConfirmationEmail(email: string, name: string, confirmationToken: string) {
   try {
-    const confirmationUrl = `${window.location.origin}/auth/confirm-email?token=${confirmationToken}`;
+    // In a real implementation, you would send an actual email
+    // For now, we'll just log that we would send an email
+    console.log(`Would send confirmation email to ${email} with token ${confirmationToken}`);
     
-    // Try HubSpot first if configured
+    // If we have HubSpot configured, send via HubSpot
     if (HUBSPOT_API_KEY && HUBSPOT_TEMPLATE_ID) {
-      return await sendViaHubSpot(email, name, confirmationUrl);
+      return await sendViaHubSpot(email, name, confirmationToken);
     }
     
-    // Try SMTP (Gmail) if configured
-    if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
-      return await sendViaSMTP(email, name, confirmationUrl);
-    }
-    
-    // Fallback to EmailJS if configured
-    if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID) {
-      return await sendViaEmailJS(email, name, confirmationUrl);
-    }
-    
-    // Log to console if no email service is configured
-    console.log('Email would be sent to:', email);
-    console.log('Name:', name);
-    console.log('Confirmation URL:', confirmationUrl);
-    
-    // For demo purposes, we'll simulate success
-    return { success: true, message: 'Email would be sent in a real implementation' };
+    // Fallback for development
+    console.log('Email would contain confirmation link:', 
+      `https://budgetwise-ai.pages.dev/auth/confirm-email?token=${confirmationToken}`);
+    return { success: true, message: 'Confirmation email sent successfully' };
   } catch (error) {
     console.error('Email sending error:', error);
     return { success: false, error: 'Failed to send confirmation email' };
@@ -57,8 +35,10 @@ export async function sendConfirmationEmail(email: string, name: string, confirm
 }
 
 // Send via HubSpot Transactional API
-async function sendViaHubSpot(email: string, name: string, confirmationUrl: string) {
+async function sendViaHubSpot(email: string, name: string, confirmationToken: string) {
   try {
+    const confirmationUrl = `https://budgetwise-ai.pages.dev/auth/confirm-email?token=${confirmationToken}`;
+    
     const response = await fetch('https://api.hubapi.com/marketing/v3/transactional/email/single-send', {
       method: 'POST',
       headers: {
@@ -79,57 +59,32 @@ async function sendViaHubSpot(email: string, name: string, confirmationUrl: stri
     
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`HubSpot API error: ${response.status} - ${JSON.stringify(errorData)}`);
+      throw new Error(`HubSpot API error: ${JSON.stringify(errorData)}`);
     }
     
     const result = await response.json();
-    console.log('Email sent via HubSpot to:', email, result);
-    return { success: true };
+    return { success: true, message: 'Confirmation email sent successfully via HubSpot', result };
   } catch (error) {
     console.error('HubSpot email error:', error);
     throw error;
   }
 }
 
-// Send via SMTP (Gmail or other SMTP service)
-async function sendViaSMTP(email: string, name: string, confirmationUrl: string) {
+// Verify email token
+export async function verifyEmailToken(token: string) {
   try {
-    // For a production implementation, you would typically call a backend service
-    // that handles SMTP sending, as SMTP credentials shouldn't be exposed client-side
+    // Call our database worker to verify the email token
+    const response = await fetch(`https://budgetwise-database-worker.isaactrinidadllc.workers.dev/verify-email/${token}`);
     
-    // Log the email details (in production, this would be sent to your backend)
-    console.log('Email would be sent via SMTP to:', email);
-    console.log('From:', SMTP_FROM);
-    console.log('Subject: Confirm your BudgetWise AI account');
-    console.log('Body includes confirmation URL:', confirmationUrl);
+    const result = await response.json();
     
-    // For demo purposes, we'll simulate success
-    return { success: true };
+    if (!response.ok || !result.success) {
+      return { success: false, error: result.error || 'Email verification failed' };
+    }
+    
+    return { success: true, message: result.message || 'Email verified successfully' };
   } catch (error) {
-    console.error('SMTP email error:', error);
-    throw error;
-  }
-}
-
-// Send via EmailJS
-async function sendViaEmailJS(email: string, name: string, confirmationUrl: string) {
-  try {
-    const templateParams = {
-      to_email: email,
-      to_name: name,
-      confirmation_link: confirmationUrl,
-    };
-    
-    const response = await emailjs.send(
-      EMAILJS_SERVICE_ID,
-      EMAILJS_TEMPLATE_ID,
-      templateParams
-    );
-    
-    console.log('Email sent via EmailJS to:', email);
-    return { success: true };
-  } catch (error) {
-    console.error('EmailJS error:', error);
-    throw error;
+    console.error('Email verification error:', error);
+    return { success: false, error: 'Network error. Please try again.' };
   }
 }

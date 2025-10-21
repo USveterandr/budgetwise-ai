@@ -30,8 +30,14 @@ export default function SignupPage() {
       return;
     }
     
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
+    
+    // Check for required characters
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      setError("Password must contain at least one uppercase letter, one lowercase letter, and one number");
       return;
     }
     
@@ -216,6 +222,7 @@ export default function SignupPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                   required
                 />
+                <p className="text-xs text-gray-500">Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.</p>
               </div>
               <div className="space-y-2">
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm Password</label>

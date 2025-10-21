@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #6c757d;
+        }
+        pre {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Login API</h1>
+    <div class="container">
+        <button id="testLogin">Test Login API</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('testLogin').addEventListener('click', async () => {
+            const button = document.getElementById('testLogin');
+            const resultDiv = document.getElementById('result');
+            
+            button.disabled = true;
+            resultDiv.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                console.log('Testing login...');
+                const email = 'login_test@example.com';
+                const encodedEmail = encodeURIComponent(email);
+                console.log('Encoded email:', encodedEmail);
+                
+                const DATABASE_WORKER_URL = 'https://budgetwise-database-worker.isaactrinidadllc.workers.dev';
+                
+                const response = await fetch(`${DATABASE_WORKER_URL}/users/${encodedEmail}`);
+                console.log('Response status:', response.status);
+                
+                const result = await response.json();
+                console.log('Response data:', result);
+                
+                resultDiv.innerHTML = `
+                    <h3>Result:</h3>
+                    <p>Status: ${response.status}</p>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `
+                    <h3>Error:</h3>
+                    <pre>${error.message}</pre>
+                `;
+            } finally {
+                button.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
