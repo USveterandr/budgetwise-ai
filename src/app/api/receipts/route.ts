@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Configure for dynamic rendering
-// API routes should not be statically rendered
-export const dynamic = 'force-dynamic';
+// API routes in static export should not have dynamic configuration
+// They will be handled by the server at runtime
 
 // Mock function to simulate OCR processing
 async function processReceiptImage(_imageData: string) {

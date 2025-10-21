@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 
-// Configure for dynamic rendering
-// API routes should not be statically rendered
-export const dynamic = 'force-dynamic';
+// API routes in static export should not have dynamic configuration
+// They will be handled by the server at runtime
 
 export async function GET(request: Request) {
   // For static export, we need to handle the URL parsing differently
