@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 
-// Remove the dynamic export for API routes
+// Configure for dynamic rendering
 // API routes should not be statically rendered
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {

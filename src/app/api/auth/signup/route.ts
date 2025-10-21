@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import sgMail from '@sendgrid/mail';
 import nodemailer from 'nodemailer';
 
-// Remove the dynamic export for API routes
+// Configure for dynamic rendering
 // API routes should not be statically rendered
+export const dynamic = 'force-dynamic';
 
 // Send confirmation email using SendGrid (if available) or log to console
 async function sendConfirmationEmail(email: string, confirmationToken: string) {
