@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Configure for static export
-export const dynamic = 'force-static';
+// Remove the dynamic export for API routes
+// API routes should not be statically rendered
 
 // Mock function to simulate OCR processing
 async function processReceiptImage(_imageData: string) {
