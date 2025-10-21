@@ -14,19 +14,6 @@ const nextConfig: NextConfig = {
   },
   // Optimize build for static export
   trailingSlash: true,
-  // Configure static generation to skip API routes
-  exportPathMap: async function (
-    defaultPathMap: { [path: string]: { page: string } }
-  ) {
-    // Remove API routes from static generation
-    const pathMap = { ...defaultPathMap };
-    Object.keys(pathMap).forEach((path) => {
-      if (path.startsWith('/api/')) {
-        delete pathMap[path];
-      }
-    });
-    return pathMap;
-  },
   // Disable webpack caching to reduce build size
   webpack: (config, { isServer }) => {
     // Disable source maps to reduce bundle size
