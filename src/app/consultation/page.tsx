@@ -1,15 +1,17 @@
 "use client";
 
+import React from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
-  CalendarIcon,
+  UserIcon, 
+  CalendarIcon, 
   ClockIcon,
-  UserIcon,
-  CheckCircleIcon,
+  ChatBubbleLeftRightIcon,
   XCircleIcon
 } from "@heroicons/react/24/outline";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function ConsultationPage() {
   const [consultations, setConsultations] = useState([
@@ -221,7 +223,7 @@ export default function ConsultationPage() {
                     <div className="flex items-center">
                       {consultation.status === "completed" ? (
                         <span className="flex items-center text-green-600">
-                          <CheckCircleIcon className="h-5 w-5 mr-1" />
+                          <ChatBubbleLeftRightIcon className="h-5 w-5 mr-1" />
                           Completed
                         </span>
                       ) : consultation.status === "pending" ? (

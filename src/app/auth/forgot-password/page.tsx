@@ -1,9 +1,10 @@
 "use client";
 
+import React from "react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { requestPasswordReset } from "@/lib/auth";
 
 export default function ForgotPasswordPage() {
@@ -39,7 +40,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Reset Your Password</h1>
-          <p className="text-gray-600">Enter your email address and we'll send you a link to reset your password.</p>
+          <p className="text-gray-600">Enter your email address and we&apos;ll send you a link to reset your password.</p>
         </div>
         
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">

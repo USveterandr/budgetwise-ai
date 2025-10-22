@@ -1,3 +1,44 @@
+// Rate limiting middleware
+const requestCounts = {};
+
+function rateLimit(request, maxRequests, windowSeconds) {
+  const ip = request.headers.get('cf-connecting-ip');
+  const now = Date.now();
+
+  if (!requestCounts[ip]) {
+    requestCounts[ip] = [];
+  }
+
+  // Remove requests that are outside the time window
+  requestCounts[ip] = requestCounts[ip].filter(
+    (timestamp) => timestamp > now - windowSeconds * 1000
+  );
+
+  // Check if the number of requests exceeds the limit
+  if (requestCounts[ip].length >= maxRequests) {
+    return {
+      success: false,
+      response: new Response(
+        JSON.stringify({ success: false, error: 'Too many requests' }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          },
+        }
+      ),
+    };
+  }
+
+  // Add the current request timestamp
+  requestCounts[ip].push(now);
+
+  return { success: true };
+}
+
 // Helper function to hash password using Web Crypto API
 async function hashPassword(password) {
   const encoder = new TextEncoder();
@@ -16,6 +57,71 @@ async function verifyPassword(password, hash) {
 // Helper function to generate secure random token
 function generateToken() {
   return crypto.randomUUID();
+}
+
+// Helper function to verify auth token
+function verifyAuthToken(token) {
+  try {
+    // Decode the base64 encoded token
+    const tokenData = JSON.parse(atob(token));
+    return {
+      success: true,
+      user: tokenData
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: 'Invalid token'
+    };
+  }
+}
+
+// Authentication middleware
+function requireAuth(request) {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return {
+      success: false,
+      response: new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Authentication required'
+      }), {
+        status: 401,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      })
+    };
+  }
+  
+  const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+  const verification = verifyAuthToken(token);
+  
+  if (!verification.success) {
+    return {
+      success: false,
+      response: new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid token'
+      }), {
+        status: 401,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      })
+    };
+  }
+  
+  return {
+    success: true,
+    user: verification.user
+  };
 }
 
 export default {
@@ -85,18 +191,453 @@ export default {
           });
         }
       }
+
+      // Test database schema
+      if (path === '/test-db-schema' && request.method === 'POST') {
+        try {
+          const { query } = await request.json();
+          
+          // Test the database schema with the provided query
+          const result = await env.DB.prepare(query).all();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: 'Database schema query executed',
+            result: result,
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Debug logging for transaction endpoints
+      console.log(`Checking transaction endpoints for path: ${path} and method: ${request.method}`);
+      
+      // Transaction operations
+      if (path === '/transactions' && request.method === 'POST') {
+        console.log('Matched POST /transactions endpoint');
+        // Require authentication for transaction operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for POST /transactions');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for POST /transactions, user:', user);
+        
+        try {
+          const transactionData = await request.json();
+          console.log('Transaction data received:', transactionData);
+          
+          // Validate required fields
+          if (!transactionData.user_id || !transactionData.date || !transactionData.description || 
+              transactionData.amount === undefined || !transactionData.type) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Missing required fields: user_id, date, description, amount, type',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Ensure user can only create transactions for themselves
+          if (transactionData.user_id !== user.id) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Unauthorized: Cannot create transaction for another user',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 403,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Validate transaction type
+          if (transactionData.type !== 'income' && transactionData.type !== 'expense') {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Invalid transaction type. Must be "income" or "expense"',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Generate unique ID
+          const id = `txn_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+          const now = new Date().toISOString();
+          
+          // Insert transaction into database
+          const result = await env.DB.prepare(
+            'INSERT INTO transactions (id, user_id, date, description, category, amount, type, receipt_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          ).bind(
+            id,
+            transactionData.user_id,
+            transactionData.date,
+            transactionData.description,
+            transactionData.category || null,
+            transactionData.amount,
+            transactionData.type,
+            transactionData.receipt_url || null,
+            now,
+            now
+          ).run();
+          
+          // Return the created transaction
+          const newTransaction = {
+            id,
+            user_id: transactionData.user_id,
+            date: transactionData.date,
+            description: transactionData.description,
+            category: transactionData.category || null,
+            amount: transactionData.amount,
+            type: transactionData.type,
+            receipt_url: transactionData.receipt_url || null,
+            created_at: now,
+            updated_at: now
+          };
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            transaction: newTransaction,
+            message: 'Transaction created successfully',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error creating transaction:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      if (path.startsWith('/transactions/user/') && request.method === 'GET') {
+        console.log('Matched GET /transactions/user/{userId} endpoint');
+        // Require authentication for transaction operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for GET /transactions/user/{userId}');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for GET /transactions/user/{userId}, user:', user);
+        
+        try {
+          // Extract user ID from the URL path
+          const pathParts = path.split('/');
+          console.log('Path parts for transaction user lookup:', pathParts);
+          if (pathParts.length < 4) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Invalid path. Expected format: /transactions/user/{user_id}',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          const userId = pathParts[3];
+          console.log('Extracted userId from path:', userId);
+          
+          // Ensure user can only access their own transactions
+          if (userId !== user.id) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Unauthorized: Cannot access transactions for another user',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 403,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          const limit = url.searchParams.get('limit') || 50;
+          const offset = url.searchParams.get('offset') || 0;
+          
+          // Query transactions from database
+          const result = await env.DB.prepare(
+            'SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC LIMIT ? OFFSET ?'
+          ).bind(userId, parseInt(limit), parseInt(offset)).all();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            transactions: result.results || [],
+            count: result.results ? result.results.length : 0,
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error getting transactions:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      if (path.startsWith('/transactions/') && request.method === 'PUT') {
+        console.log('Matched PUT /transactions/{transactionId} endpoint');
+        // Require authentication for transaction operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for PUT /transactions/{transactionId}');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for PUT /transactions/{transactionId}, user:', user);
+        
+        try {
+          // Extract transaction ID from the URL path
+          const pathParts = path.split('/');
+          console.log('Path parts for transaction update:', pathParts);
+          if (pathParts.length < 3) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Invalid path. Expected format: /transactions/{transaction_id}',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          const transactionId = pathParts[2];
+          console.log('Extracted transactionId from path:', transactionId);
+          
+          const updateData = await request.json();
+          console.log('Update data received:', updateData);
+          
+          // Verify the transaction belongs to the user
+          const existingTransaction = await env.DB.prepare(
+            'SELECT * FROM transactions WHERE id = ? AND user_id = ?'
+          ).bind(transactionId, user.id).first();
+          
+          if (!existingTransaction) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Transaction not found or unauthorized',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 404,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Update the transaction
+          const now = new Date().toISOString();
+          const result = await env.DB.prepare(
+            'UPDATE transactions SET date = ?, description = ?, category = ?, amount = ?, type = ?, receipt_url = ?, updated_at = ? WHERE id = ?'
+          ).bind(
+            updateData.date || existingTransaction.date,
+            updateData.description || existingTransaction.description,
+            updateData.category || existingTransaction.category,
+            updateData.amount !== undefined ? updateData.amount : existingTransaction.amount,
+            updateData.type || existingTransaction.type,
+            updateData.receipt_url || existingTransaction.receipt_url,
+            now,
+            transactionId
+          ).run();
+          
+          // Return the updated transaction
+          const updatedTransaction = {
+            ...existingTransaction,
+            ...updateData,
+            updated_at: now
+          };
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            transaction: updatedTransaction,
+            message: 'Transaction updated successfully',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error updating transaction:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      if (path.startsWith('/transactions/') && request.method === 'DELETE') {
+        console.log('Matched DELETE /transactions/{transactionId} endpoint');
+        // Require authentication for transaction operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for DELETE /transactions/{transactionId}');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for DELETE /transactions/{transactionId}, user:', user);
+        
+        try {
+          // Extract transaction ID from the URL path
+          const pathParts = path.split('/');
+          console.log('Path parts for transaction delete:', pathParts);
+          if (pathParts.length < 3) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Invalid path. Expected format: /transactions/{transaction_id}',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          const transactionId = pathParts[2];
+          console.log('Extracted transactionId from path:', transactionId);
+          
+          // Verify the transaction belongs to the user
+          const existingTransaction = await env.DB.prepare(
+            'SELECT * FROM transactions WHERE id = ? AND user_id = ?'
+          ).bind(transactionId, user.id).first();
+          
+          if (!existingTransaction) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Transaction not found or unauthorized',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 404,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Delete the transaction
+          const result = await env.DB.prepare(
+            'DELETE FROM transactions WHERE id = ?'
+          ).bind(transactionId).run();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: 'Transaction deleted successfully',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error deleting transaction:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
       
       // User operations
       if (path === '/users' && request.method === 'POST') {
+        const rateLimitResult = rateLimit(request, 10, 60); // 10 requests per minute
+        if (!rateLimitResult.success) {
+          return rateLimitResult.response;
+        }
         try {
           const userData = await request.json();
           
           // Hash the password before storing
           const passwordHash = await hashPassword(userData.password);
           
-          // Insert user into database
+          // Generate email verification token and expiration (24 hours from now)
+          const emailVerificationToken = generateToken();
+          const emailVerificationExpires = new Date(Date.now() + 86400000); // 24 hours
+          
+          // Insert user into database with email verification token
           const result = await env.DB.prepare(
-            'INSERT INTO users (id, email, name, password_hash, plan, is_admin, email_verified, trial_ends_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO users (id, email, name, password_hash, plan, is_admin, email_verified, trial_ends_at, email_verification_token, email_verification_expires) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
           ).bind(
             userData.id,
             userData.email,
@@ -104,15 +645,16 @@ export default {
             passwordHash,
             userData.plan || 'trial',
             userData.is_admin || false,
-            userData.email_verified || false,
-            userData.trial_ends_at || null
+            userData.email_verified || false, // Use the provided value or default to false
+            userData.trial_ends_at || null,
+            emailVerificationToken,
+            emailVerificationExpires.toISOString()
           ).run();
           
           // Send confirmation email (if HUBSPOT_API_KEY is configured)
           if (env.HUBSPOT_API_KEY && env.HUBSPOT_TEMPLATE_ID) {
             try {
-              const confirmationToken = `token_${Math.random().toString(36).substring(2, 15)}`;
-              const confirmationUrl = `https://budgetwise-ai.pages.dev/auth/confirm-email?token=${confirmationToken}`;
+              const confirmationUrl = `https://budgetwise-ai.pages.dev/auth/confirm-email?token=${emailVerificationToken}`;
               
               const emailResponse = await fetch('https://api.hubapi.com/marketing/v3/transactional/email/single-send', {
                 method: 'POST',
@@ -260,6 +802,10 @@ export default {
       
       // Login endpoint
       if (path === '/auth/login' && request.method === 'POST') {
+        const rateLimitResult = rateLimit(request, 5, 60); // 5 requests per minute
+        if (!rateLimitResult.success) {
+          return rateLimitResult.response;
+        }
         try {
           const { email, password } = await request.json();
           
@@ -345,6 +891,10 @@ export default {
       
       // Password reset request endpoint
       if (path === '/auth/forgot-password' && request.method === 'POST') {
+        const rateLimitResult = rateLimit(request, 3, 60); // 3 requests per minute
+        if (!rateLimitResult.success) {
+          return rateLimitResult.response;
+        }
         try {
           let email;
           try {
@@ -639,15 +1189,15 @@ export default {
         }
       }
       
-      // Verify email endpoint
-      if (path.startsWith('/verify-email/') && request.method === 'GET') {
+      // Confirm email endpoint - this is the proper endpoint for email verification
+      if (path === '/auth/confirm-email' && request.method === 'POST') {
         try {
-          // Extract the token from the URL path
-          const pathParts = path.split('/');
-          if (pathParts.length < 3) {
+          const { token } = await request.json();
+          
+          if (!token) {
             return new Response(JSON.stringify({ 
               success: false, 
-              error: 'Invalid verification link',
+              error: 'Verification token is required.',
               timestamp: new Date().toISOString()
             }), {
               status: 400,
@@ -658,18 +1208,33 @@ export default {
             });
           }
           
-          const token = pathParts[2];
-          console.log(`Verifying email with token: ${token}`);
+          // Look up the user by the verification token
+          const user = await env.DB.prepare(
+            'SELECT * FROM users WHERE email_verification_token = ? AND email_verification_expires > ?'
+          ).bind(token, new Date().toISOString()).first();
           
-          // In a real implementation, you would:
-          // 1. Verify the token is valid and not expired
-          // 2. Find the user associated with this token
-          // 3. Update the user's email_verified field to true
+          if (!user) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Invalid or expired verification token.',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
           
-          // For this mock implementation, we'll just return success
+          // Update the user's email_verified field to true and clear the verification token
+          await env.DB.prepare(
+            'UPDATE users SET email_verified = ?, email_verification_token = NULL, email_verification_expires = NULL WHERE id = ?'
+          ).bind(true, user.id).run();
+          
           return new Response(JSON.stringify({ 
             success: true, 
-            message: 'Email verified successfully',
+            message: 'Email confirmed successfully. You can now log in to your account.',
             timestamp: new Date().toISOString()
           }), {
             headers: { 
@@ -678,10 +1243,10 @@ export default {
             }
           });
         } catch (error) {
-          console.error('Error verifying email:', error);
+          console.error('Error confirming email:', error);
           return new Response(JSON.stringify({ 
             success: false, 
-            error: error.message,
+            error: 'An error occurred while confirming your email. Please try again.',
             timestamp: new Date().toISOString()
           }), {
             status: 500,

@@ -1,8 +1,7 @@
 // Authentication utility functions
-import bcrypt from 'bcryptjs';
 
 // Database worker URL
-const DATABASE_WORKER_URL = 'https://budgetwise-database-worker.isaactrinidadllc.workers.dev';
+const DATABASE_WORKER_URL = process.env.NEXT_PUBLIC_DATABASE_WORKER_URL || 'http://localhost:8787';
 
 // Check if user is authenticated
 export function isAuthenticated(): boolean {
@@ -19,16 +18,15 @@ export function getCurrentUser(): { id: string; email: string; name: string; pla
     const token = localStorage.getItem('auth-token');
     if (token) {
       try {
-        // In a real implementation, you would decode the JWT token
-        // For now, we'll parse a simplified token structure
-        const payload = JSON.parse(atob(token.split('.')[1]));
+        // Decode the base64 encoded token
+        const tokenData = JSON.parse(atob(token));
         return {
-          id: payload.id,
-          email: payload.email,
-          name: payload.name,
-          plan: payload.plan,
-          isAdmin: payload.isAdmin,
-          emailVerified: payload.emailVerified || false
+          id: tokenData.id,
+          email: tokenData.email,
+          name: tokenData.name,
+          plan: tokenData.plan,
+          isAdmin: tokenData.isAdmin,
+          emailVerified: tokenData.emailVerified || false
         };
       } catch (e) {
         console.error('Error parsing token:', e);
@@ -48,7 +46,6 @@ export async function signup(name: string, email: string, password: string, plan
     if (!isValidPassword(password)) {
       return { success: false, error: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.' };
     }
-    
     // Call our database worker to create the user
     const response = await fetch(`${DATABASE_WORKER_URL}/users`, {
       method: 'POST',
@@ -109,32 +106,25 @@ export async function login(email: string, password: string) {
       return { success: false, error: result.error || 'Invalid credentials' };
     }
     
-    // Create a JWT token
-    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-    const payload = btoa(JSON.stringify({ 
+    // Create a simple token structure (in a real app, this would be a proper JWT)
+    const tokenData = {
       id: result.user.id,
       email: result.user.email,
       name: result.user.name,
       plan: result.user.plan,
       isAdmin: result.user.is_admin,
       emailVerified: result.user.email_verified
-    }));
-    const signature = btoa('mock-signature');
-    const token = `${header}.${payload}.${signature}`;
+    };
+    
+    // Simple base64 encoding for client-side storage (not secure for production)
+    const token = btoa(JSON.stringify(tokenData));
     
     // Store token in localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('auth-token', token);
     }
     
-    return { success: true, user: {
-      id: result.user.id,
-      email: result.user.email,
-      name: result.user.name,
-      plan: result.user.plan,
-      isAdmin: result.user.is_admin,
-      emailVerified: result.user.email_verified
-    } };
+    return { success: true, user: tokenData };
   } catch (error) {
     console.error('Login error:', error);
     // More specific error handling

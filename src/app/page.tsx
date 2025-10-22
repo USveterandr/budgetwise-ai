@@ -1,9 +1,18 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import React from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { DevicePhoneMobileIcon } from "@heroicons/react/24/outline";
+import { Button } from "@/components/ui/button";
+import { 
+  ArrowRightIcon, 
+  ShieldCheckIcon, 
+  ChartBarIcon,
+  LightBulbIcon,
+  CreditCardIcon,
+  UserGroupIcon,
+  DevicePhoneMobileIcon
+} from "@heroicons/react/24/outline";
+import { getCurrentUser } from "@/lib/auth";
 
 export default function HomePage() {
   return (
@@ -11,28 +20,19 @@ export default function HomePage() {
       {/* Hero Section */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
         <div className="text-center">
-          <motion.h1 
+          <h1 
             className="text-4xl md:text-5xl font-bold text-gray-900 mb-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
           >
             Your AI Financial Advisor
-          </motion.h1>
-          <motion.p 
+          </h1>
+          <p 
             className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-10"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
           >
             Track, analyze, and grow your wealth with AI-powered insights. 
             Simple, elegant, effective.
-          </motion.p>
-          <motion.div 
+          </p>
+          <div 
             className="flex flex-col sm:flex-row justify-center gap-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
           >
             <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5">
               <Link href="/auth/signup" className="w-full h-full flex items-center justify-center">
@@ -44,7 +44,7 @@ export default function HomePage() {
                 Sign In
               </Link>
             </Button>
-          </motion.div>
+          </div>
         </div>
       </div>
 

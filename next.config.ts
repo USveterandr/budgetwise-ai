@@ -2,48 +2,18 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  // Add output configuration for Cloudflare Pages
+  // Configure for static export
   output: 'export',
   // Configure images for static export
   images: {
     unoptimized: true,
   },
-  // Reduce build output size for Cloudflare Pages
-  experimental: {
-    webpackBuildWorker: false,
-  },
-  // Optimize build for static export
+  // Optimize build for production
   trailingSlash: true,
-  // Configure base path for Cloudflare Pages
+  // Configure base path for production
   basePath: '',
-  // Configure asset prefix for Cloudflare Pages
+  // Configure asset prefix for production
   assetPrefix: '',
-  // Disable webpack caching to reduce build size
-  webpack: (config, { isServer }) => {
-    // Disable source maps to reduce bundle size
-    config.devtool = false;
-    
-    // Disable webpack caching
-    config.cache = false;
-    
-    // Reduce bundle size for Cloudflare Pages
-    if (isServer) {
-      config.optimization = {
-        ...config.optimization,
-        minimize: true,
-      };
-    }
-    
-    // PWA configuration
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-      };
-    }
-    
-    return config;
-  },
 };
 
 export default nextConfig;

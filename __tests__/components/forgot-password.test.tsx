@@ -127,6 +127,7 @@ describe('ForgotPasswordPage', () => {
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
     fireEvent.click(submitButton);
     
+    // Wait for the component to update
     await waitFor(() => {
       expect(screen.getByText('Network error. Please try again.')).toBeInTheDocument();
     });
@@ -165,4 +166,5 @@ describe('ForgotPasswordPage', () => {
       expect(screen.queryByText('If an account exists with that email, you will receive a password reset link shortly.')).not.toBeInTheDocument();
     });
   });
+
 });

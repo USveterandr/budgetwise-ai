@@ -111,6 +111,7 @@ BudgetWise AI is a modern personal finance application that helps users manage t
 ### Environment Variables
 - `NEXT_PUBLIC_HUBSPOT_API_KEY` - HubSpot API key
 - `NEXT_PUBLIC_HUBSPOT_TEMPLATE_ID` - Email template ID
+- `NEXT_PUBLIC_DATABASE_WORKER_URL` - Database worker URL
 
 ### Scripts
 - `npm run dev` - Start development server
@@ -126,6 +127,7 @@ BudgetWise AI is a modern personal finance application that helps users manage t
 - Jest testing framework
 - Test coverage for authentication functions
 - Test coverage for password reset functions
+- Test coverage for transaction functions
 
 ### Integration Tests
 - API endpoint testing
@@ -155,9 +157,12 @@ BudgetWise AI is a modern personal finance application that helps users manage t
 - ✅ Password reset functionality
 - ✅ Protected routes
 - ✅ Unit testing framework
+- ✅ Transaction management (API endpoints)
+- ✅ Transaction management (Frontend UI)
 
 ### In Progress
 - 🔧 Integration testing
+- 🔧 Budget management implementation
 - 🔧 Error tracking implementation
 
 ### Planned
@@ -174,6 +179,7 @@ BudgetWise AI is a modern personal finance application that helps users manage t
 - [Password Reset Feature Summary](PASSWORD_RESET_FEATURE_SUMMARY.md)
 - [Monitoring Implementation Plan](MONITORING_IMPLEMENTATION_PLAN.md)
 - [Next Steps Implementation Guide](NEXT_STEPS_IMPLEMENTATION.md)
+- [Transaction Feature Setup Guide](TRANSACTION_FEATURE_SETUP.md)
 
 ## Contributing
 

@@ -1,12 +1,14 @@
 "use client";
 
+import React, { Suspense } from "react";
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { verifyPasswordResetToken, resetPassword } from "@/lib/auth";
 
-export default function ResetPasswordPage() {
+// Create a separate component for the main content to avoid issues with useSearchParams
+function ResetPasswordContent() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -223,5 +225,27 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h1>
+              <p className="text-gray-600">Please wait while we load the page...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
