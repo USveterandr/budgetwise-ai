@@ -90,6 +90,21 @@ BudgetWise AI is a comprehensive personal finance management application built w
 - [SETUP.md](SETUP.md) - Detailed setup guide
 - [CLOUDFLARE_SETUP.md](CLOUDFLARE_SETUP.md) - Cloudflare configuration guide
 
+### 4.5 Checklists & Tracking
+- [Production Ready Checklist](PRODUCTION_READY_CHECKLIST.md) - Current production readiness status
+- [Product Requirement Checklist](PRODUCT_REQUIREMENT_CHECKLIST.md) - Comprehensive feature tracking
+- [Implementation Progress Summary](IMPLEMENTATION_PROGRESS_SUMMARY.md) - Current implementation status and progress
+
+### 4.6 Implementation Plans
+- [Transaction Management Implementation Plan](TRANSACTION_MANAGEMENT_IMPLEMENTATION_PLAN.md) - Detailed plan for transaction features
+- [Budget Management Implementation Plan](BUDGET_MANAGEMENT_IMPLEMENTATION_PLAN.md) - Detailed plan for budget features
+- [Investment Tracking Implementation Plan](INVESTMENT_TRACKING_IMPLEMENTATION_PLAN.md) - Detailed plan for investment features
+- [Receipt Management with OCR Implementation Plan](RECEIPT_MANAGEMENT_OCR_IMPLEMENTATION_PLAN.md) - Detailed plan for receipt management features
+- [Core Features Implementation Roadmap](CORE_FEATURES_IMPLEMENTATION_ROADMAP.md) - Consolidated roadmap for all core features
+
+### 4.7 Progress Tracking
+- [Transaction Enhancements Progress](TRANSACTION_ENHANCEMENTS_PROGRESS.md) - Current status of transaction management enhancements
+- [Transaction Enhancements Complete](TRANSACTION_ENHANCEMENTS_COMPLETE.md) - Full implementation summary
 ## 5. Next Immediate Actions
 
 ### 5.1 Short-term Priorities (Next 2 Weeks)

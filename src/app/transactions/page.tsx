@@ -7,9 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   PlusIcon, 
   PencilIcon, 
-  TrashIcon
+  TrashIcon,
+  ChartBarIcon,
+  CogIcon
 } from "@heroicons/react/24/outline";
 import { getCurrentUser } from "@/lib/auth";
+import TransactionSearch from "@/components/transaction/TransactionSearch";
+import TransactionBulkActions from "@/components/transaction/TransactionBulkActions";
+import CategoryRulesManager from "@/components/transaction/CategoryRulesManager";
+import TransactionAnalytics from "@/components/transaction/TransactionAnalytics";
+import TransactionForm from "@/components/transaction/TransactionForm";
 
 // Define the transaction type
 interface Transaction {
@@ -21,6 +28,10 @@ interface Transaction {
   amount: number;
   type: "income" | "expense";
   receipt_url: string | null;
+  merchant?: string;
+  tags?: string;
+  notes?: string;
+  currency?: string;
   created_at: string;
   updated_at: string;
 }
@@ -38,6 +49,10 @@ export default function TransactionsPage() {
     amount: "",
     type: "expense" as "income" | "expense"
   });
+  const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showCategoryRules, setShowCategoryRules] = useState(false);
+  const [searchFilters, setSearchFilters] = useState({});
 
   const user = getCurrentUser();
 
@@ -56,20 +71,43 @@ export default function TransactionsPage() {
     };
   };
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (filters = searchFilters) => {
     if (!user) return;
     
     try {
       setLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions/user/${user.id}`, {
-        headers: getAuthHeaders()
-      });
-      const result = await response.json();
       
-      if (result.success) {
-        setTransactions(result.transactions);
+      // If filters are provided, use search endpoint
+      if (Object.keys(filters).length > 0) {
+        const queryParams = new URLSearchParams({
+          user_id: user.id,
+          ...filters
+        });
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions/search?${queryParams}`, {
+          headers: getAuthHeaders()
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          setTransactions(result.transactions);
+        } else {
+          setError(result.error || "Failed to fetch transactions");
+        }
       } else {
-        setError(result.error || "Failed to fetch transactions");
+        // Otherwise, use the original endpoint
+        const response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions/user/${user.id}`, {
+          headers: getAuthHeaders()
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          setTransactions(result.transactions);
+        } else {
+          setError(result.error || "Failed to fetch transactions");
+        }
       }
     } catch (err) {
       setError("Failed to fetch transactions");
@@ -90,63 +128,109 @@ export default function TransactionsPage() {
       type: "expense"
     });
   };
-
-  const handleEditTransaction = (transaction: Transaction) => {
-    setEditingTransaction(transaction.id);
-    setShowForm(true);
-    setFormData({
-      date: transaction.date,
-      description: transaction.description,
-      category: transaction.category,
-      amount: transaction.amount.toString(),
-      type: transaction.type
-    });
+  
+  interface SearchFilters {
+    query?: string;
+    startDate?: string;
+    endDate?: string;
+    category?: string;
+    type?: string;
+    minAmount?: string;
+    maxAmount?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  }
+  
+  const handleSearch = (filters: SearchFilters) => {
+    setSearchFilters(filters);
+    fetchTransactions(filters);
   };
-
-  const handleDeleteTransaction = async (id: string) => {
+  
+  const handleBulkDelete = async (transactionIds: string[]) => {
     if (!user) return;
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
+      const response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions/bulk-delete`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ transaction_ids: transactionIds }),
       });
       
       const result = await response.json();
       
       if (result.success) {
-        // Remove transaction from state
-        setTransactions(transactions.filter(t => t.id !== id));
+        // Refresh transactions
+        await fetchTransactions();
+        setSelectedTransactions([]);
       } else {
-        setError(result.error || "Failed to delete transaction");
+        setError(result.error || "Failed to delete transactions");
       }
     } catch (err) {
-      setError("Failed to delete transaction");
-      console.error("Error deleting transaction:", err);
+      setError("Failed to delete transactions");
+      console.error("Error deleting transactions:", err);
     }
   };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  
+  interface BulkUpdateData {
+    category?: string;
+    type?: "income" | "expense";
+  }
+  
+  const handleBulkUpdate = async (transactionIds: string[], updates: BulkUpdateData) => {
     if (!user) return;
     
     try {
-      const transactionData = {
-        user_id: user.id,
-        date: formData.date,
-        description: formData.description,
-        category: formData.category,
-        amount: parseFloat(formData.amount),
-        type: formData.type,
-        receipt_url: null
-      };
+      const response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions/bulk-update`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ transaction_ids: transactionIds, updates }),
+      });
       
+      const result = await response.json();
+      
+      if (result.success) {
+        // Refresh transactions
+        await fetchTransactions();
+        setSelectedTransactions([]);
+      } else {
+        setError(result.error || "Failed to update transactions");
+      }
+    } catch (err) {
+      setError("Failed to update transactions");
+      console.error("Error updating transactions:", err);
+    }
+  };
+  
+  const handleExport = (transactionIds: string[]) => {
+    // In a real implementation, this would export the selected transactions
+    alert(`Exporting ${transactionIds.length} transactions`);
+  };
+  
+  const handleSelectTransaction = (id: string) => {
+    if (selectedTransactions.includes(id)) {
+      setSelectedTransactions(selectedTransactions.filter(transactionId => transactionId !== id));
+    } else {
+      setSelectedTransactions([...selectedTransactions, id]);
+    }
+  };
+  
+  const handleSelectAll = () => {
+    if (selectedTransactions.length === transactions.length) {
+      setSelectedTransactions([]);
+    } else {
+      setSelectedTransactions(transactions.map(t => t.id));
+    }
+  };
+  
+  const handleSubmitTransaction = async (transactionData: Omit<Transaction, 'created_at' | 'updated_at'>) => {
+    if (!user) return;
+    
+    try {
       let response;
       
-      if (editingTransaction) {
+      if (transactionData.id) {
         // Update existing transaction
-        response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions/${editingTransaction}`, {
+        response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions/${transactionData.id}`, {
           method: 'PUT',
           headers: getAuthHeaders(),
           body: JSON.stringify(transactionData),
@@ -166,13 +250,6 @@ export default function TransactionsPage() {
         // Refresh transactions
         await fetchTransactions();
         setShowForm(false);
-        setFormData({
-          date: "",
-          description: "",
-          category: "",
-          amount: "",
-          type: "expense"
-        });
       } else {
         setError(result.error || "Failed to save transaction");
       }
@@ -181,6 +258,45 @@ export default function TransactionsPage() {
       console.error("Error saving transaction:", err);
     }
   };
+  
+  const handleRulesChange = () => {
+    // Refresh transactions to apply new category rules
+    fetchTransactions();
+  };
+  
+  const toggleAnalytics = () => {
+    setShowAnalytics(!showAnalytics);
+  };
+  
+  const toggleCategoryRules = () => {
+    setShowCategoryRules(!showCategoryRules);
+  };
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction.id);
+    setShowForm(true);
+    setFormData({
+      date: transaction.date,
+      description: transaction.description,
+      category: transaction.category,
+      amount: transaction.amount.toString(),
+      type: transaction.type
+    });
+  };
+  
+  const handleEditTransactionNew = (transaction: Transaction) => {
+    setEditingTransaction(transaction.id);
+    setShowForm(true);
+  };
+  
+  const handleCancelTransaction = () => {
+    setShowForm(false);
+    setEditingTransaction(null);
+  };
+  
+
+
+
 
   if (loading) {
     return (
@@ -198,8 +314,30 @@ export default function TransactionsPage() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
-          <p className="text-gray-600">Track and manage your financial transactions</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
+              <p className="text-gray-600">Track and manage your financial transactions</p>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={toggleAnalytics}
+                variant="outline"
+                className="flex items-center text-sm"
+              >
+                <ChartBarIcon className="h-4 w-4 mr-1" />
+                Analytics
+              </Button>
+              <Button 
+                onClick={toggleCategoryRules}
+                variant="outline"
+                className="flex items-center text-sm"
+              >
+                <CogIcon className="h-4 w-4 mr-1" />
+                Rules
+              </Button>
+            </div>
+          </div>
         </div>
 
         {error && (
@@ -208,6 +346,23 @@ export default function TransactionsPage() {
           </div>
         )}
 
+        <TransactionSearch onSearch={handleSearch} />
+        
+        {showAnalytics && user && (
+          <TransactionAnalytics userId={user.id} />
+        )}
+        
+        {showCategoryRules && user && (
+          <CategoryRulesManager userId={user.id} onRulesChange={handleRulesChange} />
+        )}
+        
+        <TransactionBulkActions 
+          selectedTransactions={selectedTransactions}
+          onBulkDelete={handleBulkDelete}
+          onBulkUpdate={handleBulkUpdate}
+          onExport={handleExport}
+        />
+        
         <div className="mb-6">
           <Button 
             onClick={handleAddTransaction}
@@ -218,97 +373,13 @@ export default function TransactionsPage() {
           </Button>
         </div>
 
-        {showForm && (
-          <Card className="mb-6 shadow-sm">
-            <CardHeader>
-              <CardTitle>
-                {editingTransaction ? "Edit Transaction" : "Add New Transaction"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor="date" className="text-sm font-medium">Date</label>
-                    <input
-                      id="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData({...formData, date: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="type" className="text-sm font-medium">Type</label>
-                    <select
-                      id="type"
-                      value={formData.type}
-                      onChange={(e) => setFormData({...formData, type: e.target.value as "income" | "expense"})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
-                      required
-                    >
-                      <option value="income">Income</option>
-                      <option value="expense">Expense</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="description" className="text-sm font-medium">Description</label>
-                    <input
-                      id="description"
-                      type="text"
-                      placeholder="e.g., Grocery Store"
-                      value={formData.description}
-                      onChange={(e) => setFormData({...formData, description: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="category" className="text-sm font-medium">Category</label>
-                    <input
-                      id="category"
-                      type="text"
-                      placeholder="e.g., Food"
-                      value={formData.category}
-                      onChange={(e) => setFormData({...formData, category: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="amount" className="text-sm font-medium">Amount ($)</label>
-                    <input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      placeholder="e.g., 50.00"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="flex space-x-2">
-                  <Button 
-                    type="submit" 
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm"
-                  >
-                    {editingTransaction ? "Update" : "Add"}
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowForm(false)}
-                    className="text-sm"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+        {showForm && user && (
+          <TransactionForm 
+            userId={user.id}
+            transaction={editingTransaction ? transactions.find(t => t.id === editingTransaction) : undefined}
+            onSubmit={handleSubmitTransaction}
+            onCancel={handleCancelTransaction}
+          />
         )}
 
         <Card className="shadow-sm">

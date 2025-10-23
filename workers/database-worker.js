@@ -297,7 +297,7 @@ export default {
           
           // Insert transaction into database
           const result = await env.DB.prepare(
-            'INSERT INTO transactions (id, user_id, date, description, category, amount, type, receipt_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO transactions (id, user_id, date, description, category, amount, type, receipt_url, merchant, tags, notes, currency, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
           ).bind(
             id,
             transactionData.user_id,
@@ -307,6 +307,10 @@ export default {
             transactionData.amount,
             transactionData.type,
             transactionData.receipt_url || null,
+            transactionData.merchant || null,
+            transactionData.tags || null,
+            transactionData.notes || null,
+            transactionData.currency || 'USD',
             now,
             now
           ).run();
@@ -321,6 +325,10 @@ export default {
             amount: transactionData.amount,
             type: transactionData.type,
             receipt_url: transactionData.receipt_url || null,
+            merchant: transactionData.merchant || null,
+            tags: transactionData.tags || null,
+            notes: transactionData.notes || null,
+            currency: transactionData.currency || 'USD',
             created_at: now,
             updated_at: now
           };
@@ -491,7 +499,7 @@ export default {
           // Update the transaction
           const now = new Date().toISOString();
           const result = await env.DB.prepare(
-            'UPDATE transactions SET date = ?, description = ?, category = ?, amount = ?, type = ?, receipt_url = ?, updated_at = ? WHERE id = ?'
+            'UPDATE transactions SET date = ?, description = ?, category = ?, amount = ?, type = ?, receipt_url = ?, merchant = ?, tags = ?, notes = ?, currency = ?, updated_at = ? WHERE id = ?'
           ).bind(
             updateData.date || existingTransaction.date,
             updateData.description || existingTransaction.description,
@@ -499,6 +507,10 @@ export default {
             updateData.amount !== undefined ? updateData.amount : existingTransaction.amount,
             updateData.type || existingTransaction.type,
             updateData.receipt_url || existingTransaction.receipt_url,
+            updateData.merchant || existingTransaction.merchant,
+            updateData.tags || existingTransaction.tags,
+            updateData.notes || existingTransaction.notes,
+            updateData.currency || existingTransaction.currency,
             now,
             transactionId
           ).run();
@@ -605,6 +617,1016 @@ export default {
           });
         } catch (error) {
           console.error('Error deleting transaction:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Search and filter transactions
+      if (path === '/transactions/search' && request.method === 'GET') {
+        console.log('Matched GET /transactions/search endpoint');
+        // Require authentication for transaction operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for GET /transactions/search');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for GET /transactions/search, user:', user);
+        
+        try {
+          // Get query parameters
+          const userId = user.id;
+          const query = url.searchParams.get('query') || '';
+          const startDate = url.searchParams.get('start_date') || '';
+          const endDate = url.searchParams.get('end_date') || '';
+          const category = url.searchParams.get('category') || '';
+          const type = url.searchParams.get('type') || '';
+          const minAmount = url.searchParams.get('min_amount') || '';
+          const maxAmount = url.searchParams.get('max_amount') || '';
+          const sortBy = url.searchParams.get('sort_by') || 'date';
+          const sortOrder = url.searchParams.get('sort_order') || 'DESC';
+          const limit = parseInt(url.searchParams.get('limit') || '50');
+          const offset = parseInt(url.searchParams.get('offset') || '0');
+          
+          // Build the SQL query dynamically
+          let sql = 'SELECT * FROM transactions WHERE user_id = ?';
+          const params = [userId];
+          
+          // Add text search condition
+          if (query) {
+            sql += ' AND (description LIKE ? OR category LIKE ?)';
+            params.push(`%${query}%`, `%${query}%`);
+          }
+          
+          // Add date range conditions
+          if (startDate) {
+            sql += ' AND date >= ?';
+            params.push(startDate);
+          }
+          
+          if (endDate) {
+            sql += ' AND date <= ?';
+            params.push(endDate);
+          }
+          
+          // Add category filter
+          if (category) {
+            sql += ' AND category = ?';
+            params.push(category);
+          }
+          
+          // Add type filter
+          if (type) {
+            sql += ' AND type = ?';
+            params.push(type);
+          }
+          
+          // Add amount range filters
+          if (minAmount) {
+            sql += ' AND amount >= ?';
+            params.push(parseFloat(minAmount));
+          }
+          
+          if (maxAmount) {
+            sql += ' AND amount <= ?';
+            params.push(parseFloat(maxAmount));
+          }
+          
+          // Add sorting
+          const validSortColumns = ['date', 'amount', 'description', 'category'];
+          const validSortOrders = ['ASC', 'DESC'];
+          const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'date';
+          const sortDirection = validSortOrders.includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+          sql += ` ORDER BY ${sortColumn} ${sortDirection}`;
+          
+          // Add pagination
+          sql += ' LIMIT ? OFFSET ?';
+          params.push(limit, offset);
+          
+          console.log('Executing search query:', sql, params);
+          
+          // Execute the query
+          const result = await env.DB.prepare(sql).bind(...params).all();
+          
+          // Get total count for pagination
+          let countSql = 'SELECT COUNT(*) as total FROM transactions WHERE user_id = ?';
+          const countParams = [userId];
+          
+          // Add the same conditions for count query
+          if (query) {
+            countSql += ' AND (description LIKE ? OR category LIKE ?)';
+            countParams.push(`%${query}%`, `%${query}%`);
+          }
+          
+          if (startDate) {
+            countSql += ' AND date >= ?';
+            countParams.push(startDate);
+          }
+          
+          if (endDate) {
+            countSql += ' AND date <= ?';
+            countParams.push(endDate);
+          }
+          
+          if (category) {
+            countSql += ' AND category = ?';
+            countParams.push(category);
+          }
+          
+          if (type) {
+            countSql += ' AND type = ?';
+            countParams.push(type);
+          }
+          
+          if (minAmount) {
+            countSql += ' AND amount >= ?';
+            countParams.push(parseFloat(minAmount));
+          }
+          
+          if (maxAmount) {
+            countSql += ' AND amount <= ?';
+            countParams.push(parseFloat(maxAmount));
+          }
+          
+          const countResult = await env.DB.prepare(countSql).bind(...countParams).first();
+          const totalCount = countResult.total || 0;
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            transactions: result.results || [],
+            count: result.results ? result.results.length : 0,
+            total: totalCount,
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error searching transactions:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Bulk delete transactions
+      if (path === '/transactions/bulk-delete' && request.method === 'POST') {
+        console.log('Matched POST /transactions/bulk-delete endpoint');
+        // Require authentication for transaction operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for POST /transactions/bulk-delete');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for POST /transactions/bulk-delete, user:', user);
+        
+        try {
+          const { transaction_ids } = await request.json();
+          
+          // Validate input
+          if (!Array.isArray(transaction_ids) || transaction_ids.length === 0) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'transaction_ids must be a non-empty array',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Verify all transactions belong to the user
+          const placeholders = transaction_ids.map(() => '?').join(',');
+          const checkQuery = `SELECT COUNT(*) as count FROM transactions WHERE user_id = ? AND id IN (${placeholders})`;
+          const checkParams = [user.id, ...transaction_ids];
+          
+          const checkResult = await env.DB.prepare(checkQuery).bind(...checkParams).first();
+          
+          if (checkResult.count !== transaction_ids.length) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'One or more transactions do not belong to the user or do not exist',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 403,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Delete the transactions
+          const deleteQuery = `DELETE FROM transactions WHERE user_id = ? AND id IN (${placeholders})`;
+          const deleteParams = [user.id, ...transaction_ids];
+          
+          const result = await env.DB.prepare(deleteQuery).bind(...deleteParams).run();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            deleted_count: result.meta.changes || 0,
+            message: 'Transactions deleted successfully',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error bulk deleting transactions:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Bulk update transactions
+      if (path === '/transactions/bulk-update' && request.method === 'POST') {
+        console.log('Matched POST /transactions/bulk-update endpoint');
+        // Require authentication for transaction operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for POST /transactions/bulk-update');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for POST /transactions/bulk-update, user:', user);
+        
+        try {
+          const { transaction_ids, updates } = await request.json();
+          
+          // Validate input
+          if (!Array.isArray(transaction_ids) || transaction_ids.length === 0) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'transaction_ids must be a non-empty array',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          if (!updates || typeof updates !== 'object') {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'updates must be an object',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Verify all transactions belong to the user
+          const placeholders = transaction_ids.map(() => '?').join(',');
+          const checkQuery = `SELECT COUNT(*) as count FROM transactions WHERE user_id = ? AND id IN (${placeholders})`;
+          const checkParams = [user.id, ...transaction_ids];
+          
+          const checkResult = await env.DB.prepare(checkQuery).bind(...checkParams).first();
+          
+          if (checkResult.count !== transaction_ids.length) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'One or more transactions do not belong to the user or do not exist',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 403,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Build update query
+          const updateFields = [];
+          const updateParams = [];
+          
+          for (const [key, value] of Object.entries(updates)) {
+            // Only allow updating specific fields
+            const allowedFields = ['category', 'type', 'merchant', 'tags', 'notes', 'currency'];
+            if (allowedFields.includes(key)) {
+              updateFields.push(`${key} = ?`);
+              updateParams.push(value);
+            }
+          }
+          
+          if (updateFields.length === 0) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'No valid fields to update',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Add updated_at timestamp
+          updateFields.push('updated_at = ?');
+          updateParams.push(new Date().toISOString());
+          
+          // Add user_id and transaction_ids to parameters
+          const updateQuery = `UPDATE transactions SET ${updateFields.join(', ')} WHERE user_id = ? AND id IN (${placeholders})`;
+          const finalParams = [...updateParams, user.id, ...transaction_ids];
+          
+          const result = await env.DB.prepare(updateQuery).bind(...finalParams).run();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            updated_count: result.meta.changes || 0,
+            message: 'Transactions updated successfully',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error bulk updating transactions:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Spending by category report
+      if (path === '/transactions/analytics/spending-by-category' && request.method === 'GET') {
+        console.log('Matched GET /transactions/analytics/spending-by-category endpoint');
+        // Require authentication for transaction operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for GET /transactions/analytics/spending-by-category');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for GET /transactions/analytics/spending-by-category, user:', user);
+        
+        try {
+          // Get query parameters
+          const userId = user.id;
+          const startDate = url.searchParams.get('start_date') || '';
+          const endDate = url.searchParams.get('end_date') || '';
+          const type = url.searchParams.get('type') || '';
+          
+          // Build the SQL query
+          let sql = 'SELECT category, SUM(amount) as amount, COUNT(*) as count FROM transactions WHERE user_id = ? AND type = ?';
+          const params = [userId, 'expense'];
+          
+          // Add date range conditions
+          if (startDate) {
+            sql += ' AND date >= ?';
+            params.push(startDate);
+          }
+          
+          if (endDate) {
+            sql += ' AND date <= ?';
+            params.push(endDate);
+          }
+          
+          // Add type filter if specified
+          if (type) {
+            sql += ' AND type = ?';
+            params.push(type);
+          }
+          
+          sql += ' GROUP BY category ORDER BY amount DESC';
+          
+          console.log('Executing spending by category query:', sql, params);
+          
+          // Execute the query
+          const result = await env.DB.prepare(sql).bind(...params).all();
+          
+          // Calculate total for percentage calculation
+          const totalResult = await env.DB.prepare(
+            'SELECT SUM(amount) as total FROM transactions WHERE user_id = ? AND type = ?'
+          ).bind(userId, 'expense').first();
+          
+          const total = totalResult.total || 0;
+          
+          // Add percentage to each category
+          const data = (result.results || []).map(row => ({
+            ...row,
+            percentage: total > 0 ? (row.amount / total) * 100 : 0
+          }));
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            data: data,
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error getting spending by category:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Monthly spending summary
+      if (path === '/transactions/analytics/monthly-summary' && request.method === 'GET') {
+        console.log('Matched GET /transactions/analytics/monthly-summary endpoint');
+        // Require authentication for transaction operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for GET /transactions/analytics/monthly-summary');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for GET /transactions/analytics/monthly-summary, user:', user);
+        
+        try {
+          // Get query parameters
+          const userId = user.id;
+          const year = url.searchParams.get('year') || new Date().getFullYear();
+          
+          // Build the SQL query
+          const sql = `
+            SELECT 
+              strftime('%Y-%m', date) as month,
+              SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income,
+              SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expense,
+              SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) - SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as net
+            FROM transactions 
+            WHERE user_id = ? AND strftime('%Y', date) = ?
+            GROUP BY strftime('%Y-%m', date)
+            ORDER BY month
+          `;
+          
+          const params = [userId, year.toString()];
+          
+          console.log('Executing monthly summary query:', sql, params);
+          
+          // Execute the query
+          const result = await env.DB.prepare(sql).bind(...params).all();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            data: result.results || [],
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error getting monthly summary:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Get category rules for user
+      if (path.startsWith('/category-rules/user/') && request.method === 'GET') {
+        console.log('Matched GET /category-rules/user/{userId} endpoint');
+        // Require authentication for category rules operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for GET /category-rules/user/{userId}');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for GET /category-rules/user/{userId}, user:', user);
+        
+        try {
+          // Extract user ID from the URL path
+          const pathParts = path.split('/');
+          console.log('Path parts for category rules user lookup:', pathParts);
+          if (pathParts.length < 4) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Invalid path. Expected format: /category-rules/user/{user_id}',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          const userId = pathParts[3];
+          console.log('Extracted userId from path:', userId);
+          
+          // Ensure user can only access their own category rules
+          if (userId !== user.id) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Unauthorized: Cannot access category rules for another user',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 403,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Query category rules from database
+          const result = await env.DB.prepare(
+            'SELECT * FROM category_rules WHERE user_id = ? ORDER BY priority DESC, created_at DESC'
+          ).bind(userId).all();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            category_rules: result.results || [],
+            count: result.results ? result.results.length : 0,
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error getting category rules:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Create category rule
+      if (path === '/category-rules' && request.method === 'POST') {
+        console.log('Matched POST /category-rules endpoint');
+        // Require authentication for category rules operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for POST /category-rules');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for POST /category-rules, user:', user);
+        
+        try {
+          const ruleData = await request.json();
+          console.log('Category rule data received:', ruleData);
+          
+          // Validate required fields
+          if (!ruleData.merchant_pattern || !ruleData.category) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Missing required fields: merchant_pattern, category',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Ensure user can only create rules for themselves
+          if (ruleData.user_id !== user.id) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Unauthorized: Cannot create category rule for another user',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 403,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Generate unique ID
+          const id = `catrule_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+          const now = new Date().toISOString();
+          
+          // Insert category rule into database
+          const result = await env.DB.prepare(
+            'INSERT INTO category_rules (id, user_id, merchant_pattern, category, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          ).bind(
+            id,
+            ruleData.user_id,
+            ruleData.merchant_pattern,
+            ruleData.category,
+            ruleData.priority || 0,
+            now,
+            now
+          ).run();
+          
+          // Return the created category rule
+          const newCategoryRule = {
+            id,
+            user_id: ruleData.user_id,
+            merchant_pattern: ruleData.merchant_pattern,
+            category: ruleData.category,
+            priority: ruleData.priority || 0,
+            created_at: now,
+            updated_at: now
+          };
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            category_rule: newCategoryRule,
+            message: 'Category rule created successfully',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error creating category rule:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Update category rule
+      if (path.startsWith('/category-rules/') && request.method === 'PUT') {
+        console.log('Matched PUT /category-rules/{ruleId} endpoint');
+        // Require authentication for category rules operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for PUT /category-rules/{ruleId}');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for PUT /category-rules/{ruleId}, user:', user);
+        
+        try {
+          // Extract rule ID from the URL path
+          const pathParts = path.split('/');
+          console.log('Path parts for category rule update:', pathParts);
+          if (pathParts.length < 3) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Invalid path. Expected format: /category-rules/{rule_id}',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          const ruleId = pathParts[2];
+          console.log('Extracted ruleId from path:', ruleId);
+          
+          const updateData = await request.json();
+          console.log('Update data received:', updateData);
+          
+          // Verify the category rule belongs to the user
+          const existingRule = await env.DB.prepare(
+            'SELECT * FROM category_rules WHERE id = ? AND user_id = ?'
+          ).bind(ruleId, user.id).first();
+          
+          if (!existingRule) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Category rule not found or unauthorized',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 404,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Update the category rule
+          const now = new Date().toISOString();
+          const result = await env.DB.prepare(
+            'UPDATE category_rules SET merchant_pattern = ?, category = ?, priority = ?, updated_at = ? WHERE id = ?'
+          ).bind(
+            updateData.merchant_pattern || existingRule.merchant_pattern,
+            updateData.category || existingRule.category,
+            updateData.priority !== undefined ? updateData.priority : existingRule.priority,
+            now,
+            ruleId
+          ).run();
+          
+          // Return the updated category rule
+          const updatedRule = {
+            ...existingRule,
+            ...updateData,
+            updated_at: now
+          };
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            category_rule: updatedRule,
+            message: 'Category rule updated successfully',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error updating category rule:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Delete category rule
+      if (path.startsWith('/category-rules/') && request.method === 'DELETE') {
+        console.log('Matched DELETE /category-rules/{ruleId} endpoint');
+        // Require authentication for category rules operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for DELETE /category-rules/{ruleId}');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for DELETE /category-rules/{ruleId}, user:', user);
+        
+        try {
+          // Extract rule ID from the URL path
+          const pathParts = path.split('/');
+          console.log('Path parts for category rule delete:', pathParts);
+          if (pathParts.length < 3) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Invalid path. Expected format: /category-rules/{rule_id}',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          const ruleId = pathParts[2];
+          console.log('Extracted ruleId from path:', ruleId);
+          
+          // Verify the category rule belongs to the user
+          const existingRule = await env.DB.prepare(
+            'SELECT * FROM category_rules WHERE id = ? AND user_id = ?'
+          ).bind(ruleId, user.id).first();
+          
+          if (!existingRule) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Category rule not found or unauthorized',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 404,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Delete the category rule
+          const result = await env.DB.prepare(
+            'DELETE FROM category_rules WHERE id = ?'
+          ).bind(ruleId).run();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: 'Category rule deleted successfully',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error deleting category rule:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Get category suggestion
+      if (path === '/transactions/categorize' && request.method === 'POST') {
+        console.log('Matched POST /transactions/categorize endpoint');
+        // Require authentication for transaction operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for POST /transactions/categorize');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for POST /transactions/categorize, user:', user);
+        
+        try {
+          const { description, merchant, amount } = await request.json();
+          
+          // Validate input
+          if (!description) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'description is required',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Get user's category rules
+          const rulesResult = await env.DB.prepare(
+            'SELECT * FROM category_rules WHERE user_id = ? ORDER BY priority DESC'
+          ).bind(user.id).all();
+          
+          const rules = rulesResult.results || [];
+          
+          // Try to match against category rules
+          let matchedCategory = null;
+          let confidence = 0;
+          
+          // Check merchant first
+          if (merchant) {
+            for (const rule of rules) {
+              const pattern = new RegExp(rule.merchant_pattern, 'i');
+              if (pattern.test(merchant)) {
+                matchedCategory = rule.category;
+                confidence = 0.9;
+                break;
+              }
+            }
+          }
+          
+          // If no merchant match, check description
+          if (!matchedCategory && description) {
+            for (const rule of rules) {
+              const pattern = new RegExp(rule.merchant_pattern, 'i');
+              if (pattern.test(description)) {
+                matchedCategory = rule.category;
+                confidence = 0.8;
+                break;
+              }
+            }
+          }
+          
+          // If no rules match, use simple keyword matching
+          if (!matchedCategory) {
+            const lowerDescription = (description || '').toLowerCase();
+            const lowerMerchant = (merchant || '').toLowerCase();
+            
+            // Simple keyword matching
+            if (lowerDescription.includes('grocery') || lowerDescription.includes('food') || 
+                lowerMerchant.includes('grocery') || lowerMerchant.includes('food')) {
+              matchedCategory = 'Food & Dining';
+              confidence = 0.7;
+            } else if (lowerDescription.includes('gas') || lowerDescription.includes('fuel') || 
+                       lowerMerchant.includes('gas') || lowerMerchant.includes('fuel')) {
+              matchedCategory = 'Transportation';
+              confidence = 0.7;
+            } else if (lowerDescription.includes('salary') || lowerDescription.includes('payroll') || 
+                       lowerMerchant.includes('salary') || lowerMerchant.includes('payroll')) {
+              matchedCategory = 'Income';
+              confidence = 0.9;
+            } else if (lowerDescription.includes('rent') || lowerDescription.includes('mortgage') || 
+                       lowerMerchant.includes('rent') || lowerMerchant.includes('mortgage')) {
+              matchedCategory = 'Housing';
+              confidence = 0.8;
+            } else if (lowerDescription.includes('utility') || lowerDescription.includes('electric') || 
+                       lowerMerchant.includes('utility') || lowerMerchant.includes('electric')) {
+              matchedCategory = 'Utilities';
+              confidence = 0.8;
+            } else {
+              // Default category
+              matchedCategory = 'Uncategorized';
+              confidence = 0.1;
+            }
+          }
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            category: matchedCategory,
+            confidence: confidence,
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error categorizing transaction:', error);
           return new Response(JSON.stringify({ 
             success: false, 
             error: error.message,

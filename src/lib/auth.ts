@@ -1,37 +1,54 @@
 // Authentication utility functions
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 
 // Database worker URL
 const DATABASE_WORKER_URL = process.env.NEXT_PUBLIC_DATABASE_WORKER_URL || 'http://localhost:8787';
 
+// Helper function to get cookies
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
+
+// Helper function to set cookies
+function setCookie(name: string, value: string, days: number): void {
+  const date = new Date();
+  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+  const expires = `expires=${date.toUTCString()}`;
+  document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Strict; Secure`;
+}
+
+// Helper function to delete cookies
+function deleteCookie(name: string): void {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict; Secure`;
+}
+
 // Check if user is authenticated
 export function isAuthenticated(): boolean {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('auth-token');
-    return !!token;
-  }
-  return false;
+  return !!getCookie('auth-token');
 }
 
 // Get current user data from token
 export function getCurrentUser(): { id: string; email: string; name: string; plan: string; isAdmin: boolean; emailVerified: boolean } | null {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('auth-token');
-    if (token) {
-      try {
-        // Decode the base64 encoded token
-        const tokenData = JSON.parse(atob(token));
-        return {
-          id: tokenData.id,
-          email: tokenData.email,
-          name: tokenData.name,
-          plan: tokenData.plan,
-          isAdmin: tokenData.isAdmin,
-          emailVerified: tokenData.emailVerified || false
-        };
-      } catch (e) {
-        console.error('Error parsing token:', e);
-        return null;
-      }
+  const token = getCookie('auth-token');
+  if (token) {
+    try {
+      // Decode the base64 encoded token
+      const tokenData = JSON.parse(atob(token));
+      return {
+        id: tokenData.id,
+        email: tokenData.email,
+        name: tokenData.name,
+        plan: tokenData.plan,
+        isAdmin: tokenData.isAdmin,
+        emailVerified: tokenData.emailVerified || false
+      };
+    } catch (e) {
+      console.error('Error parsing token:', e);
+      return null;
     }
   }
   return null;
@@ -46,17 +63,21 @@ export async function signup(name: string, email: string, password: string, plan
     if (!isValidPassword(password)) {
       return { success: false, error: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.' };
     }
+    
+    // Hash the password before sending it to the database worker
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
     // Call our database worker to create the user
     const response = await fetch(`${DATABASE_WORKER_URL}/users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         id: `user_${Date.now()}`,
         email,
         name,
-        password,
+        password: hashedPassword,
         plan,
         is_admin: email === 'admin@budgetwise.ai',
         email_verified: false
@@ -106,7 +127,7 @@ export async function login(email: string, password: string) {
       return { success: false, error: result.error || 'Invalid credentials' };
     }
     
-    // Create a simple token structure (in a real app, this would be a proper JWT)
+    // Create a proper JWT token
     const tokenData = {
       id: result.user.id,
       email: result.user.email,
@@ -116,13 +137,13 @@ export async function login(email: string, password: string) {
       emailVerified: result.user.email_verified
     };
     
-    // Simple base64 encoding for client-side storage (not secure for production)
-    const token = btoa(JSON.stringify(tokenData));
+    // Generate a proper JWT token
+    const token = jwt.sign(tokenData, process.env.JWT_SECRET || 'default-secret', {
+      expiresIn: '1h'
+    });
     
-    // Store token in localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('auth-token', token);
-    }
+    // Store token in cookie
+    setCookie('auth-token', token, 1);
     
     return { success: true, user: tokenData };
   } catch (error) {
@@ -204,12 +225,15 @@ export async function resetPassword(token: string, newPassword: string) {
       return { success: false, error: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.' };
     }
     
+    // Hash the new password before sending it to the database worker
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
     const response = await fetch(`${DATABASE_WORKER_URL}/auth/reset-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ token, newPassword }),
+      body: JSON.stringify({ token, newPassword: hashedPassword }),
     });
     
     const result = await response.json();
@@ -230,7 +254,6 @@ export async function confirmEmail(token: string) {
   try {
     // For static export, we'll simulate the email confirmation process
     // In a real implementation with a backend, you would make an API call here
-    console.log('Email confirmation attempt with token:', token);
     
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -264,8 +287,6 @@ export function hasPlanAccess(user: { plan: string } | null, requiredPlan: strin
 
 // Logout function
 export async function logout() {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('auth-token');
-  }
+  deleteCookie('auth-token');
   return { success: true };
 }
