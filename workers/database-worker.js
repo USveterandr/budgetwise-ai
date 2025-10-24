@@ -303,6 +303,281 @@ export default {
             transactionData.user_id,
             transactionData.date,
             transactionData.description,
+            transactionData.category,
+            transactionData.amount,
+            transactionData.type,
+            transactionData.receipt_url,
+            transactionData.merchant,
+            transactionData.tags,
+            transactionData.notes,
+            transactionData.currency,
+            now,
+            now
+          ).run();
+          console.log('Transaction inserted:', result);
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            transaction_id: id,
+            message: 'Transaction created successfully',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error creating transaction:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'An error occurred while creating the transaction.',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      if (path === '/transactions' && request.method === 'GET') {
+        console.log('Matched GET /transactions endpoint');
+        // Require authentication for transaction operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for GET /transactions');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for GET /transactions, user:', user);
+        
+        try {
+          // Fetch transactions for the authenticated user
+          const result = await env.DB.prepare(
+            'SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC'
+          ).bind(user.id).all();
+          console.log('Transactions fetched:', result);
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            transactions: result,
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error fetching transactions:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'An error occurred while fetching transactions.',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // User operations
+      if (path === '/users/register' && request.method === 'POST') {
+        try {
+          const { email, password } = await request.json();
+          
+          // Hash the password
+          const passwordHash = await hashPassword(password);
+          
+          // Check if user already exists
+          const userExists = await env.DB.prepare(
+            'SELECT * FROM users WHERE email = ?'
+          ).bind(email).all();
+          if (userExists.length > 0) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'User already exists.',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 409,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Generate unique ID
+          const id = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+          const now = new Date().toISOString();
+          
+          // Insert user into database
+          const result = await env.DB.prepare(
+            'INSERT INTO users (id, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
+          ).bind(
+            id,
+            email,
+            passwordHash,
+            now,
+            now
+          ).run();
+          console.log('User registered:', result);
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            user_id: id,
+            message: 'User registered successfully',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error registering user:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'An error occurred while registering the user.',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      if (path === '/users/login' && request.method === 'POST') {
+        try {
+          const { email, password } = await request.json();
+          
+          // Fetch user by email
+          const userResult = await env.DB.prepare(
+            'SELECT * FROM users WHERE email = ?'
+          ).bind(email).all();
+          if (userResult.length === 0) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'User not found.',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 404,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          const user = userResult[0];
+          
+          // Verify password
+          const isPasswordValid = await verifyPassword(password, user.password_hash);
+          if (!isPasswordValid) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Invalid password.',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 401,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Generate JWT token
+          const token = await generateToken(user);
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            token: token,
+            message: 'User logged in successfully',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error logging in user:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'An error occurred while logging in the user.',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Set reset token endpoint (for admin/manual use)
+      if (path === '/users/reset-token' && request.method === 'POST') {
+        try {
+          const { email, resetToken, resetExpires } = await request.json();
+          
+          // Update user with reset token
+          await env.DB.prepare(
+            'UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE email = ?'
+          ).bind(resetToken, resetExpires, email).run();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: 'Reset token set successfully.',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error setting reset token:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'An error occurred while setting reset token.',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Manual password set endpoint (for admin use)
+            success: false, 
+            error: 'An error occurred while setting password.',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+            transactionData.date,
+            transactionData.description,
             transactionData.category || null,
             transactionData.amount,
             transactionData.type,
@@ -2401,6 +2676,81 @@ export default {
           return new Response(JSON.stringify({ 
             success: false, 
             error: error.message,
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Set reset token endpoint (for admin/manual use)
+      if (path === '/users/reset-token' && request.method === 'POST') {
+        try {
+          const { email, resetToken, resetExpires } = await request.json();
+          
+          // Update user with reset token
+          await env.DB.prepare(
+            'UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE email = ?'
+          ).bind(resetToken, resetExpires, email).run();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: 'Reset token set successfully.',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error setting reset token:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'An error occurred while setting reset token.',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Manual password set endpoint (for admin use)
+      if (path === '/users/set-password' && request.method === 'POST') {
+        try {
+          const { email, password } = await request.json();
+          
+          // Hash the password
+          const passwordHash = await hashPassword(password);
+          
+          // Update user's password directly
+          await env.DB.prepare(
+            'UPDATE users SET password_hash = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE email = ?'
+          ).bind(passwordHash, email).run();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: 'Password set successfully.',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error setting password:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'An error occurred while setting password.',
             timestamp: new Date().toISOString()
           }), {
             status: 500,
