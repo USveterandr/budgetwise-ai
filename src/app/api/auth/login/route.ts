@@ -8,10 +8,6 @@ export const revalidate = 0;
 
 const db = new Database();
 
-  // Apply rate limiting middleware
-  await limiter(req, res, next);
-  
-  try {
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();

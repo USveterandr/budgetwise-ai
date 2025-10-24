@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { isAuthenticated, getCurrentUser } from "@/lib/auth";
+import { isAuthenticated, getCurrentUser } from "@/lib/auth-client";
 
 export default function ProtectedRoute({ 
   children, 

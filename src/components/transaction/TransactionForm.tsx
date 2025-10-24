@@ -9,27 +9,12 @@ import {
   LightBulbIcon
 } from "@heroicons/react/24/outline";
 
-interface Transaction {
-  id?: string;
-  user_id: string;
-  date: string;
-  description: string;
-  category: string;
-  amount: number;
-  type: "income" | "expense";
-  receipt_url: string | null;
-  merchant?: string;
-  tags?: string;
-  notes?: string;
-  currency?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import { Transaction, TransactionFormData } from "@/types/transaction";
 
 interface TransactionFormProps {
   userId: string;
   transaction?: Transaction;
-  onSubmit: (transaction: Omit<Transaction, 'created_at' | 'updated_at'>) => void;
+  onSubmit: (transaction: TransactionFormData) => void;
   onCancel: () => void;
 }
 
@@ -105,7 +90,7 @@ export default function TransactionForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const transactionData: Transaction = {
+    const transactionData: TransactionFormData = {
       user_id: userId,
       date: formData.date,
       description: formData.description,

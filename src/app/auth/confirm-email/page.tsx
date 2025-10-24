@@ -6,7 +6,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { confirmEmail } from "@/lib/auth";
 
 // Dynamically import the client component to avoid SSR issues
 const ConfirmEmailClient = lazy(() => import('@/components/auth/ConfirmEmailClient'));

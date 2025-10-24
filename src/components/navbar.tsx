@@ -16,8 +16,8 @@ import {
   ArrowRightOnRectangleIcon,
   DocumentTextIcon
 } from "@heroicons/react/24/outline";
-import { getCurrentUser } from "@/lib/auth";
-import { logout } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-client";
+import { logout } from "@/lib/auth-client";
 
 interface User {
   id: string;

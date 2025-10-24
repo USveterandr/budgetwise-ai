@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { verifyPasswordResetToken, resetPassword } from "@/lib/auth";
+import { verifyPasswordResetToken, resetPassword } from "@/lib/auth-client";
 
 // Create a separate component for the main content to avoid issues with useSearchParams
 function ResetPasswordContent() {

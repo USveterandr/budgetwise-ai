@@ -10,7 +10,7 @@ import {
   ChartBarIcon
 } from "@heroicons/react/24/outline";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-client";
 
 export default function DashboardPage() {
   const user = getCurrentUser();

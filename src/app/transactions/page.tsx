@@ -11,32 +11,16 @@ import {
   ChartBarIcon,
   CogIcon
 } from "@heroicons/react/24/outline";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-client";
 import TransactionSearch from "@/components/transaction/TransactionSearch";
 import TransactionBulkActions from "@/components/transaction/TransactionBulkActions";
 import CategoryRulesManager from "@/components/transaction/CategoryRulesManager";
 import TransactionAnalytics from "@/components/transaction/TransactionAnalytics";
 import TransactionForm from "@/components/transaction/TransactionForm";
 
-// Define the transaction type
-interface Transaction {
-  id: string;
-  user_id: string;
-  date: string;
-  description: string;
-  category: string;
-  amount: number;
-  type: "income" | "expense";
-  receipt_url: string | null;
-  merchant?: string;
-  tags?: string;
-  notes?: string;
-  currency?: string;
-  created_at: string;
-  updated_at: string;
-}
+import { Transaction, TransactionFormData } from "@/types/transaction";
 
-export default function TransactionsPage() {
+const TransactionsPage = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -218,45 +202,48 @@ export default function TransactionsPage() {
     if (selectedTransactions.length === transactions.length) {
       setSelectedTransactions([]);
     } else {
-      setSelectedTransactions(transactions.map(t => t.id));
+      setSelectedTransactions(transactions.filter(t => t.id !== undefined).map(t => t.id as string));
     }
   };
   
-  const handleSubmitTransaction = async (transactionData: Omit<Transaction, 'created_at' | 'updated_at'>) => {
-    if (!user) return;
-    
-    try {
-      let response;
+  const handleSubmitTransaction = (transactionData: TransactionFormData) => {
+    // Handle the transaction submission asynchronously but don't make the function itself async
+    (async () => {
+      if (!user) return;
       
-      if (transactionData.id) {
-        // Update existing transaction
-        response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions/${transactionData.id}`, {
-          method: 'PUT',
-          headers: getAuthHeaders(),
-          body: JSON.stringify(transactionData),
-        });
-      } else {
-        // Add new transaction
-        response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions`, {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify(transactionData),
-        });
+      try {
+        let response;
+        
+        if (transactionData.id) {
+          // Update existing transaction
+          response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions/${transactionData.id}`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(transactionData),
+          });
+        } else {
+          // Add new transaction
+          response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(transactionData),
+          });
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Refresh transactions
+          await fetchTransactions();
+          setShowForm(false);
+        } else {
+          setError(result.error || "Failed to save transaction");
+        }
+      } catch (err) {
+        setError("Failed to save transaction");
+        console.error("Error saving transaction:", err);
       }
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        // Refresh transactions
-        await fetchTransactions();
-        setShowForm(false);
-      } else {
-        setError(result.error || "Failed to save transaction");
-      }
-    } catch (err) {
-      setError("Failed to save transaction");
-      console.error("Error saving transaction:", err);
-    }
+    })();
   };
   
   const handleRulesChange = () => {
@@ -273,7 +260,7 @@ export default function TransactionsPage() {
   };
 
   const handleEditTransaction = (transaction: Transaction) => {
-    setEditingTransaction(transaction.id);
+    setEditingTransaction(transaction.id || null);
     setShowForm(true);
     setFormData({
       date: transaction.date,
@@ -284,9 +271,27 @@ export default function TransactionsPage() {
     });
   };
   
-  const handleEditTransactionNew = (transaction: Transaction) => {
-    setEditingTransaction(transaction.id);
-    setShowForm(true);
+  const handleDeleteTransaction = async (id: string) => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Refresh transactions
+        await fetchTransactions();
+      } else {
+        setError(result.error || "Failed to delete transaction");
+      }
+    } catch (err) {
+      setError("Failed to delete transaction");
+      console.error("Error deleting transaction:", err);
+    }
   };
   
   const handleCancelTransaction = () => {
@@ -458,3 +463,5 @@ export default function TransactionsPage() {
     </div>
   );
 }
+
+export default TransactionsPage;
