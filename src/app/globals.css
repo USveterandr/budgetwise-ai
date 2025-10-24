@@ -48,6 +48,21 @@ body {
       @apply px-4;
     }
   }
+  
+  /* Responsive image handling */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Aspect ratio utilities */
+  .aspect-square {
+    aspect-ratio: 1 / 1;
+  }
+  
+  .aspect-video {
+    aspect-ratio: 16 / 9;
+  }
 }
 
 /* Fix for safe area on iPhone X and newer */

@@ -18,15 +18,15 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Hero Section */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
         <div className="text-center">
           <h1 
-            className="text-4xl md:text-5xl font-bold text-gray-900 mb-6"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-6"
           >
             Your AI Financial Advisor
           </h1>
           <p 
-            className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-10"
+            className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-8"
           >
             Track, analyze, and grow your wealth with AI-powered insights. 
             Simple, elegant, effective.
@@ -34,12 +34,12 @@ export default function HomePage() {
           <div 
             className="flex flex-col sm:flex-row justify-center gap-4"
           >
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 text-base">
               <Link href="/auth/signup" className="w-full h-full flex items-center justify-center">
                 Get Started
               </Link>
             </Button>
-            <Button variant="outline" className="px-6 py-2.5">
+            <Button variant="outline" className="px-6 py-2.5 text-base">
               <Link href="/auth/login" className="w-full h-full flex items-center justify-center">
                 Sign In
               </Link>
@@ -49,8 +49,8 @@ export default function HomePage() {
       </div>
 
       {/* Mobile App Section */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-white">
-        <div className="text-center mb-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 bg-white">
+        <div className="text-center mb-8 md:mb-12">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Available as a Mobile App</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Get the full BudgetWise AI experience on your mobile device
@@ -71,7 +71,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="md:w-1/2 flex justify-center">
-            <div className="bg-gray-200 border-2 border-dashed rounded-xl w-64 h-64 flex items-center justify-center">
+            <div className="bg-gray-200 border-2 border-dashed rounded-xl w-full max-w-xs aspect-square flex items-center justify-center">
               <DevicePhoneMobileIcon className="h-16 w-16 text-gray-400" />
             </div>
           </div>
@@ -79,14 +79,14 @@ export default function HomePage() {
       </div>
 
       {/* Features Section */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-white">
-        <div className="text-center mb-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 bg-white">
+        <div className="text-center mb-8 md:mb-12">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Financial Tools That Work</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Everything you need to take control of your finances
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <FeatureCard 
             title="Expense Tracking" 
             description="Automatically categorize and track all your spending"
@@ -103,12 +103,12 @@ export default function HomePage() {
       </div>
 
       {/* CTA Section */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 text-center">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Ready to Take Control?</h2>
         <p className="text-gray-600 max-w-2xl mx-auto mb-8">
           Join thousands of users who are already building wealth with BudgetWise AI
         </p>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5">
+        <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 text-base">
           <Link href="/auth/signup" className="w-full h-full flex items-center justify-center">
             Start Free Trial
           </Link>
