@@ -73,7 +73,9 @@ This document outlines the implementation roadmap for BudgetWise AI, detailing t
 - Category management system
 
 **Tasks:**
-- [ ] Design transaction data model
+- [x] Design transaction data model
+- [x] Update database schema for transactions
+- [x] Create migration script for existing data
 - [ ] Implement GET /api/transactions endpoint
 - [ ] Implement POST /api/transactions endpoint
 - [ ] Implement PUT /api/transactions/:id endpoint
@@ -466,28 +468,28 @@ This document outlines the implementation roadmap for BudgetWise AI, detailing t
 
 ### Month 1: Foundation Complete
 - ✅ Authentication system
-- ✅ Transaction management
-- ✅ Budget management
-- ✅ Basic reporting
-- ✅ Subscription management
+- 🔧 Transaction management
+- 🚀 Budget management
+- 🚀 Basic reporting
+- 🚀 Subscription management
 
 ### Month 2: Enhanced Features
-- ✅ Investment tracking
-- ✅ Receipt management
-- ✅ Advanced reporting
-- ✅ Notification system
+- 🚀 Investment tracking
+- 🚀 Receipt management
+- 🚀 Advanced reporting
+- 🚀 Notification system
 
 ### Month 3: AI Integration
-- ✅ AI financial advisor
-- ✅ Advanced insights
-- ✅ Predictive analytics
-- ✅ Personalized recommendations
+- 🚀 AI financial advisor
+- 🚀 Advanced insights
+- 🚀 Predictive analytics
+- 🚀 Personalized recommendations
 
 ### Month 4: Optimization & Launch
-- ✅ Performance optimization
-- ✅ Security enhancements
-- ✅ Documentation completion
-- ✅ UX improvements
+- 🚀 Performance optimization
+- 🚀 Security enhancements
+- 🚀 Documentation completion
+- 🚀 UX improvements
 - 🚀 Production release
 
 ## 8. Budget Considerations
