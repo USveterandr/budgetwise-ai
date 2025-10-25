@@ -250,7 +250,7 @@ export async function resetPassword(token: string, newPassword: string) {
 }
 
 // Real email confirmation
-export async function confirmEmail(token: string) {
+export async function confirmEmail(_token: string) {
   try {
     // For static export, we'll simulate the email confirmation process
     // In a real implementation with a backend, you would make an API call here

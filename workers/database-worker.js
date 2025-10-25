@@ -1,6 +1,156 @@
 // Rate limiting middleware
 const requestCounts = {};
 
+// Budget functions
+async function createBudget(budgetData, userId) {
+  try {
+    // Validate required fields
+    if (!budgetData.category || budgetData.limit_amount === undefined) {
+      throw new Error('Category and limit amount are required');
+    }
+    
+    // Generate unique ID
+    const id = `bud_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Set timestamps
+    const now = new Date().toISOString();
+    
+    // Insert budget into database
+    const result = await env.DB.prepare(
+      'INSERT INTO budgets (id, user_id, category, limit_amount, spent_amount, start_date, end_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(
+      id,
+      userId,
+      budgetData.category,
+      budgetData.limit_amount,
+      budgetData.spent_amount || 0,
+      budgetData.start_date || now,
+      budgetData.end_date || null,
+      now,
+      now
+    ).run();
+    
+    // Return the created budget
+    const newBudget = {
+      id,
+      user_id: userId,
+      category: budgetData.category,
+      limit_amount: budgetData.limit_amount,
+      spent_amount: budgetData.spent_amount || 0,
+      start_date: budgetData.start_date || now,
+      end_date: budgetData.end_date || null,
+      created_at: now,
+      updated_at: now
+    };
+    
+    return { success: true, budget: newBudget };
+  } catch (error) {
+    console.error('Error creating budget:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+async function getUserBudgets(userId) {
+  try {
+    const result = await env.DB.prepare(
+      'SELECT * FROM budgets WHERE user_id = ? ORDER BY category ASC'
+    ).bind(userId).all();
+    
+    return { success: true, budgets: result.results || [] };
+  } catch (error) {
+    console.error('Error getting user budgets:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+async function getBudgetById(budgetId, userId) {
+  try {
+    const budget = await env.DB.prepare(
+      'SELECT * FROM budgets WHERE id = ? AND user_id = ?'
+    ).bind(budgetId, userId).first();
+    
+    if (!budget) {
+      return { success: false, error: 'Budget not found' };
+    }
+    
+    return { success: true, budget };
+  } catch (error) {
+    console.error('Error getting budget:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+async function updateBudget(budgetId, userId, updates) {
+  try {
+    // Check if budget exists and belongs to user
+    const existing = await env.DB.prepare(
+      'SELECT * FROM budgets WHERE id = ? AND user_id = ?'
+    ).bind(budgetId, userId).first();
+    
+    if (!existing) {
+      return { success: false, error: 'Budget not found' };
+    }
+    
+    // Build update query dynamically
+    let query = 'UPDATE budgets SET ';
+    let bindings = [];
+    let fields = [];
+    
+    // Only update fields that are provided
+    const updatableFields = ['category', 'limit_amount', 'spent_amount', 'start_date', 'end_date'];
+    
+    for (const field of updatableFields) {
+      if (updates[field] !== undefined) {
+        fields.push(`${field} = ?`);
+        bindings.push(updates[field]);
+      }
+    }
+    
+    // Always update the updated_at timestamp
+    fields.push('updated_at = ?');
+    bindings.push(new Date().toISOString());
+    
+    query += fields.join(', ');
+    query += ' WHERE id = ? AND user_id = ?';
+    bindings.push(budgetId, userId);
+    
+    await env.DB.prepare(query).bind(...bindings).run();
+    
+    // Get the updated budget
+    const updatedBudget = await env.DB.prepare(
+      'SELECT * FROM budgets WHERE id = ? AND user_id = ?'
+    ).bind(budgetId, userId).first();
+    
+    return { success: true, budget: updatedBudget };
+  } catch (error) {
+    console.error('Error updating budget:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+async function deleteBudget(budgetId, userId) {
+  try {
+    // Check if budget exists and belongs to user
+    const existing = await env.DB.prepare(
+      'SELECT * FROM budgets WHERE id = ? AND user_id = ?'
+    ).bind(budgetId, userId).first();
+    
+    if (!existing) {
+      return { success: false, error: 'Budget not found' };
+    }
+    
+    // Delete the budget
+    await env.DB.prepare(
+      'DELETE FROM budgets WHERE id = ? AND user_id = ?'
+    ).bind(budgetId, userId).run();
+    
+    return { success: true, message: 'Budget deleted successfully' };
+  } catch (error) {
+    console.error('Error deleting budget:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 function rateLimit(request, maxRequests, windowSeconds) {
   const ip = request.headers.get('cf-connecting-ip');
   const now = Date.now();
@@ -563,6 +713,31 @@ export default {
       }
       
       // Manual password set endpoint (for admin use)
+      if (path === '/users/set-password' && request.method === 'POST') {
+        try {
+          const { email, password } = await request.json();
+          
+          // Hash the password
+          const passwordHash = await hashPassword(password);
+          
+          // Update user's password directly
+          await env.DB.prepare(
+            'UPDATE users SET password_hash = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE email = ?'
+          ).bind(passwordHash, email).run();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: 'Password set successfully.',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error setting password:', error);
+          return new Response(JSON.stringify({ 
             success: false, 
             error: 'An error occurred while setting password.',
             timestamp: new Date().toISOString()
@@ -576,7 +751,138 @@ export default {
         }
       }
       
+      if (path === '/transactions' && request.method === 'POST') {
+        console.log('Matched POST /transactions endpoint');
+        // Require authentication for transaction operations
+        const authResult = requireAuth(request);
+        if (!authResult.success) {
+          console.log('Authentication failed for POST /transactions');
+          return authResult.response;
+        }
+        const user = authResult.user;
+        console.log('Authentication successful for POST /transactions, user:', user);
+        
+        try {
+          const transactionData = await request.json();
+          console.log('Transaction data received:', transactionData);
+          
+          // Validate required fields
+          if (!transactionData.user_id || !transactionData.date || !transactionData.description || 
+              transactionData.amount === undefined || !transactionData.type) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Missing required fields: user_id, date, description, amount, type',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Ensure user can only create transactions for themselves
+          if (transactionData.user_id !== user.id) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Unauthorized: Cannot create transaction for another user',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 403,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Validate transaction type
+          if (transactionData.type !== 'income' && transactionData.type !== 'expense' && transactionData.type !== 'transfer') {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Invalid transaction type. Must be "income", "expense", or "transfer"',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Generate unique ID
+          const id = `txn_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+          const now = new Date().toISOString();
+          
+          // Insert transaction into database
+          const result = await env.DB.prepare(
+            'INSERT INTO transactions (id, user_id, date, description, category, amount, type, receipt_url, merchant, tags, notes, currency, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          ).bind(
+            id,
+            transactionData.user_id,
             transactionData.date,
+            transactionData.description,
+            transactionData.category,
+            transactionData.amount,
+            transactionData.type,
+            transactionData.receipt_url,
+            transactionData.merchant,
+            transactionData.tags,
+            transactionData.notes,
+            transactionData.currency,
+            now,
+            now
+          ).run();
+          console.log('Transaction inserted:', result);
+          
+          // Return the created transaction
+          const newTransaction = {
+            id,
+            user_id: transactionData.user_id,
+            date: transactionData.date,
+            description: transactionData.description,
+            category: transactionData.category,
+            amount: transactionData.amount,
+            type: transactionData.type,
+            receipt_url: transactionData.receipt_url,
+            merchant: transactionData.merchant,
+            tags: transactionData.tags,
+            notes: transactionData.notes,
+            currency: transactionData.currency,
+            created_at: now,
+            updated_at: now
+          };
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            transaction: newTransaction,
+            message: 'Transaction created successfully',
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error creating transaction:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'An error occurred while creating the transaction.',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      if (path.startsWith('/transactions/user/') && request.method === 'GET') {
             transactionData.description,
             transactionData.category || null,
             transactionData.amount,
@@ -2752,6 +3058,281 @@ export default {
             success: false, 
             error: 'An error occurred while setting password.',
             timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Budget endpoints
+      // Create budget endpoint
+      if (path === '/budgets' && request.method === 'POST') {
+        try {
+          const rateLimitResult = rateLimit(request, 20, 60); // 20 requests per minute
+          if (!rateLimitResult.success) {
+            return rateLimitResult.response;
+          }
+          
+          const authResult = requireAuth(request);
+          if (!authResult.success) {
+            return authResult.response;
+          }
+          const user = authResult.user;
+          
+          const budgetData = await request.json();
+          
+          // Ensure user can only create budgets for themselves
+          if (budgetData.user_id !== user.id) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Unauthorized: Cannot create budget for another user'
+            }), {
+              status: 403,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          const result = await createBudget(budgetData, user.id);
+          
+          if (!result.success) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: result.error
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            budget: result.budget,
+            message: 'Budget created successfully'
+          }), {
+            status: 201,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error creating budget:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Internal server error'
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Get user budgets endpoint
+      if (path.startsWith('/budgets/user/') && request.method === 'GET') {
+        try {
+          const authResult = requireAuth(request);
+          if (!authResult.success) {
+            return authResult.response;
+          }
+          const user = authResult.user;
+          
+          // Extract user ID from path
+          const pathParts = path.split('/');
+          const userId = pathParts[3];
+          
+          // Ensure user can only access their own budgets
+          if (userId !== user.id) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Unauthorized: Cannot access budgets for another user'
+            }), {
+              status: 403,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          const result = await getUserBudgets(userId);
+          
+          if (!result.success) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: result.error
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            budgets: result.budgets
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error getting budgets:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Internal server error'
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Update budget endpoint
+      if (path.startsWith('/budgets/') && request.method === 'PUT') {
+        try {
+          const authResult = requireAuth(request);
+          if (!authResult.success) {
+            return authResult.response;
+          }
+          const user = authResult.user;
+          
+          // Extract budget ID from path
+          const pathParts = path.split('/');
+          const budgetId = pathParts[2];
+          
+          const { userId, updates } = await request.json();
+          
+          // Ensure user can only update their own budgets
+          if (userId !== user.id) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Unauthorized: Cannot update budgets for another user'
+            }), {
+              status: 403,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          const result = await updateBudget(budgetId, userId, updates);
+          
+          if (!result.success) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: result.error
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            budget: result.budget,
+            message: 'Budget updated successfully'
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error updating budget:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Internal server error'
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Delete budget endpoint
+      if (path.startsWith('/budgets/') && request.method === 'DELETE') {
+        try {
+          const authResult = requireAuth(request);
+          if (!authResult.success) {
+            return authResult.response;
+          }
+          const user = authResult.user;
+          
+          // Extract budget ID from path
+          const pathParts = path.split('/');
+          const budgetId = pathParts[2];
+          
+          const { userId } = await request.json();
+          
+          // Ensure user can only delete their own budgets
+          if (userId !== user.id) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Unauthorized: Cannot delete budgets for another user'
+            }), {
+              status: 403,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          const result = await deleteBudget(budgetId, userId);
+          
+          if (!result.success) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: result.error
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: result.message
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error deleting budget:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Internal server error'
           }), {
             status: 500,
             headers: { 

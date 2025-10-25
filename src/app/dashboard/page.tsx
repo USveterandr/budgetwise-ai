@@ -13,6 +13,11 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { getCurrentUser } from "@/lib/auth-client";
 
 export default function DashboardPage() {
+  // Only render the dashboard content on the client side
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
   const user = getCurrentUser();
   
   const userData = {

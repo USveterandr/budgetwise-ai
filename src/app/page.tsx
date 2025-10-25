@@ -4,17 +4,15 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { 
-  ArrowRightIcon, 
-  ShieldCheckIcon, 
+  ArrowRightIcon,
   ChartBarIcon,
   LightBulbIcon,
-  CreditCardIcon,
-  UserGroupIcon,
-  DevicePhoneMobileIcon,
   SparklesIcon,
+  ShieldCheckIcon,
   CurrencyDollarIcon,
   AcademicCapIcon
 } from "@heroicons/react/24/outline";
+import { getCurrentUser } from '@/lib/auth-client';
 
 export default function HomePage() {
   const [isVisible, setIsVisible] = useState(false);

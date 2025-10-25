@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
-import { Database } from '@/lib/db';
+import { verifyPasswordResetToken, resetPassword } from '@/lib/auth';
 
 // Configure for static export
 export const dynamic = 'force-static';
 export const revalidate = 0;
-
-const db = new Database();
 
 export async function POST(request: Request) {
   try {
@@ -28,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     // Verify token
-    const tokenVerification = await db.verifyPasswordResetToken(token);
+    const tokenVerification = await verifyPasswordResetToken(token);
     if (!tokenVerification.success) {
       return NextResponse.json(
         { error: tokenVerification.error || 'Invalid or expired token' },
@@ -37,7 +35,7 @@ export async function POST(request: Request) {
     }
 
     // Update password
-    const passwordUpdate = await db.resetPassword(token, newPassword);
+    const passwordUpdate = await resetPassword(token, newPassword);
     if (!passwordUpdate.success) {
       return NextResponse.json(
         { error: passwordUpdate.error || 'Failed to update password' },

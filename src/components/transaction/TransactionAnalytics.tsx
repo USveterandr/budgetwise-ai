@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 interface SpendingByCategoryData {
@@ -8,6 +8,7 @@ interface SpendingByCategoryData {
   amount: number;
   count: number;
   percentage: number;
+  [key: string]: string | number; // Add index signature for recharts compatibility
 }
 
 interface MonthlySummaryData {
@@ -15,6 +16,7 @@ interface MonthlySummaryData {
   income: number;
   expense: number;
   net: number;
+  [key: string]: string | number; // Add index signature for recharts compatibility
 }
 
 interface TransactionAnalyticsProps {
@@ -38,7 +40,7 @@ export default function TransactionAnalytics({ userId }: TransactionAnalyticsPro
     };
   };
 
-  const fetchSpendingByCategory = async () => {
+  const fetchSpendingByCategory = useCallback(async () => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions/analytics/spending-by-category?user_id=${userId}`, {
         headers: getAuthHeaders()
@@ -54,9 +56,9 @@ export default function TransactionAnalytics({ userId }: TransactionAnalyticsPro
       setError("Failed to fetch spending data");
       console.error("Error fetching spending data:", err);
     }
-  };
+  }, [userId]);
 
-  const fetchMonthlySummary = async () => {
+  const fetchMonthlySummary = useCallback(async () => {
     try {
       const year = new Date().getFullYear();
       const response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions/analytics/monthly-summary?user_id=${userId}&year=${year}`, {
@@ -73,7 +75,7 @@ export default function TransactionAnalytics({ userId }: TransactionAnalyticsPro
       setError("Failed to fetch monthly summary");
       console.error("Error fetching monthly summary:", err);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     if (userId) {
@@ -84,7 +86,7 @@ export default function TransactionAnalytics({ userId }: TransactionAnalyticsPro
           setError("Failed to load analytics data");
         });
     }
-  }, [userId]);
+  }, [userId, fetchSpendingByCategory, fetchMonthlySummary]);
 
   if (isLoading) {
     return (
@@ -137,7 +139,7 @@ export default function TransactionAnalytics({ userId }: TransactionAnalyticsPro
                     fill="#8884d8"
                     dataKey="amount"
                     nameKey="category"
-                    label={(props: any) => {
+                    label={(props: { name?: string; percent?: number }) => {
                       const name = props.name || '';
                       const percent = props.percent || 0;
                       return `${name}: ${(percent * 100).toFixed(0)}%`;

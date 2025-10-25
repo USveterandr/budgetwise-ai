@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
-  PlusIcon, 
   LightBulbIcon
 } from "@heroicons/react/24/outline";
 
@@ -103,10 +101,6 @@ export default function TransactionForm({
       notes: formData.notes,
       currency: formData.currency
     };
-    
-    if (transaction && transaction.id) {
-      transactionData.id = transaction.id;
-    }
     
     onSubmit(transactionData);
   };

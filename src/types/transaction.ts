@@ -15,4 +15,4 @@ export interface Transaction {
   updated_at?: string;
 }
 
-export type TransactionFormData = Omit<Transaction, 'created_at' | 'updated_at'> & { id?: string };
+export type TransactionFormData = Omit<Transaction, 'id' | 'created_at' | 'updated_at'> & { id?: string };

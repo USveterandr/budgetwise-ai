@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -11,7 +11,6 @@ import {
   ChartBarIcon,
   CogIcon
 } from "@heroicons/react/24/outline";
-import { getCurrentUser } from "@/lib/auth-client";
 import TransactionSearch from "@/components/transaction/TransactionSearch";
 import TransactionBulkActions from "@/components/transaction/TransactionBulkActions";
 import CategoryRulesManager from "@/components/transaction/CategoryRulesManager";
@@ -19,6 +18,23 @@ import TransactionAnalytics from "@/components/transaction/TransactionAnalytics"
 import TransactionForm from "@/components/transaction/TransactionForm";
 
 import { Transaction, TransactionFormData } from "@/types/transaction";
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  plan: string;
+  isAdmin: boolean;
+  emailVerified: boolean;
+}
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('auth-token');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
+};
 
 const TransactionsPage = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -38,24 +54,19 @@ const TransactionsPage = () => {
   const [showCategoryRules, setShowCategoryRules] = useState(false);
   const [searchFilters, setSearchFilters] = useState({});
 
-  const user = getCurrentUser();
+  const [user, setUser] = useState<User | null>(null);
+
+  // Get current user on client side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import('@/lib/auth-client').then((module) => {
+        setUser(module.getCurrentUser());
+      });
+    }
+  }, []);
 
   // Fetch transactions when component mounts
-  useEffect(() => {
-    if (user) {
-      fetchTransactions();
-    }
-  }, [user]);
-
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('auth-token');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    };
-  };
-
-  const fetchTransactions = async (filters = searchFilters) => {
+  const fetchTransactions = useCallback(async (filters = searchFilters) => {
     if (!user) return;
     
     try {
@@ -99,7 +110,16 @@ const TransactionsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, searchFilters]);
+
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window !== 'undefined' && user) {
+      fetchTransactions();
+    } else {
+      setLoading(false);
+    }
+  }, [user, fetchTransactions]);
 
   const handleAddTransaction = () => {
     setShowForm(true);

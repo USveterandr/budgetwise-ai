@@ -79,7 +79,7 @@ function ResetPasswordContent() {
       } else {
         setError(result.error || "Failed to reset password.");
       }
-    } catch (err) {
+    } catch (_err) {
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);

@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
   PlusIcon, 
   PencilIcon, 
-  TrashIcon,
-  ChevronDownIcon
+  TrashIcon
 } from "@heroicons/react/24/outline";
 
 interface CategoryRule {
@@ -44,7 +43,7 @@ export default function CategoryRulesManager({ userId, onRulesChange }: Category
     };
   };
 
-  const fetchRules = async () => {
+  const fetchRules = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/category-rules/user/${userId}`, {
@@ -63,13 +62,13 @@ export default function CategoryRulesManager({ userId, onRulesChange }: Category
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     if (userId) {
       fetchRules();
     }
-  }, [userId]);
+  }, [userId, fetchRules]);
 
   const handleAddRule = () => {
     setEditingRule(null);
@@ -283,7 +282,7 @@ export default function CategoryRulesManager({ userId, onRulesChange }: Category
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Category
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-4 py-33 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Priority
                 </th>
                 <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">

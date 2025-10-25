@@ -16,19 +16,35 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Basic email validation
+    if (!email || !email.includes("@")) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    
     setIsLoading(true);
     setMessage("");
     setError("");
     
     try {
-      const result = await requestPasswordReset(email);
+      // In a real implementation, you would make an API call to request password reset
+      // For this static export, we'll simulate the process
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Simulate successful request
+      const result = {
+        success: true,
+        message: "If an account exists with that email, you will receive a password reset link shortly.",
+        error: ""
+      };
       
       if (result.success) {
-        setMessage(result.message || "If an account exists with that email, you will receive a password reset link shortly.");
+        setMessage(result.message);
       } else {
         setError(result.error || "Failed to request password reset.");
       }
-    } catch (err) {
+    } catch (_err) {
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);

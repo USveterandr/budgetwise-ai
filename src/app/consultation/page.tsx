@@ -1,17 +1,17 @@
 "use client";
 
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
-  UserIcon, 
   CalendarIcon, 
-  ClockIcon,
+  ClockIcon, 
+  UserIcon,
   ChatBubbleLeftRightIcon,
   XCircleIcon
 } from "@heroicons/react/24/outline";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import { getCurrentUser } from "@/lib/auth-client";
 
 export default function ConsultationPage() {
   const [consultations, setConsultations] = useState([
@@ -34,6 +34,21 @@ export default function ConsultationPage() {
     { id: 3, name: "Emma Rodriguez", specialty: "Tax Optimization", rating: 4.7 },
     { id: 4, name: "David Wilson", specialty: "Estate Planning", rating: 4.9 },
   ];
+
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window !== 'undefined') {
+      const fetchConsultations = async () => {
+        const user = await getCurrentUser();
+        if (user) {
+          // Fetch consultations for the user
+          // Example: setConsultations(await fetch(`/api/consultations?userId=${user.id}`));
+        }
+      };
+
+      fetchConsultations();
+    }
+  }, []);
 
   const handleBookConsultation = () => {
     setShowBookingForm(true);
