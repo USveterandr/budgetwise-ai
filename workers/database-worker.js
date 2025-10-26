@@ -16,7 +16,7 @@ async function createBudget(budgetData, userId) {
     const now = new Date().toISOString();
     
     // Insert budget into database
-    const result = await env.DB.prepare(
+    const result = await env.users.prepare(
       'INSERT INTO budgets (id, user_id, category, limit_amount, spent_amount, start_date, end_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).bind(
       id,
@@ -52,7 +52,7 @@ async function createBudget(budgetData, userId) {
 
 async function getUserBudgets(userId) {
   try {
-    const result = await env.DB.prepare(
+    const result = await env.users.prepare(
       'SELECT * FROM budgets WHERE user_id = ? ORDER BY category ASC'
     ).bind(userId).all();
     
@@ -65,7 +65,7 @@ async function getUserBudgets(userId) {
 
 async function getBudgetById(budgetId, userId) {
   try {
-    const budget = await env.DB.prepare(
+    const budget = await env.users.prepare(
       'SELECT * FROM budgets WHERE id = ? AND user_id = ?'
     ).bind(budgetId, userId).first();
     
@@ -83,7 +83,7 @@ async function getBudgetById(budgetId, userId) {
 async function updateBudget(budgetId, userId, updates) {
   try {
     // Check if budget exists and belongs to user
-    const existing = await env.DB.prepare(
+    const existing = await env.users.prepare(
       'SELECT * FROM budgets WHERE id = ? AND user_id = ?'
     ).bind(budgetId, userId).first();
     
@@ -114,10 +114,10 @@ async function updateBudget(budgetId, userId, updates) {
     query += ' WHERE id = ? AND user_id = ?';
     bindings.push(budgetId, userId);
     
-    await env.DB.prepare(query).bind(...bindings).run();
+    await env.users.prepare(query).bind(...bindings).run();
     
     // Get the updated budget
-    const updatedBudget = await env.DB.prepare(
+    const updatedBudget = await env.users.prepare(
       'SELECT * FROM budgets WHERE id = ? AND user_id = ?'
     ).bind(budgetId, userId).first();
     
@@ -131,7 +131,7 @@ async function updateBudget(budgetId, userId, updates) {
 async function deleteBudget(budgetId, userId) {
   try {
     // Check if budget exists and belongs to user
-    const existing = await env.DB.prepare(
+    const existing = await env.users.prepare(
       'SELECT * FROM budgets WHERE id = ? AND user_id = ?'
     ).bind(budgetId, userId).first();
     
@@ -140,7 +140,7 @@ async function deleteBudget(budgetId, userId) {
     }
     
     // Delete the budget
-    await env.DB.prepare(
+    await env.users.prepare(
       'DELETE FROM budgets WHERE id = ? AND user_id = ?'
     ).bind(budgetId, userId).run();
     
@@ -314,7 +314,7 @@ export default {
       if (path === '/test-db') {
         try {
           // Test the database connection with a simple query
-          const result = await env.DB.prepare('SELECT 1 as test').all();
+          const result = await env.users.prepare('SELECT 1 as test').all();
           
           return new Response(JSON.stringify({ 
             success: true, 
@@ -348,7 +348,7 @@ export default {
           const { query } = await request.json();
           
           // Test the database schema with the provided query
-          const result = await env.DB.prepare(query).all();
+          const result = await env.users.prepare(query).all();
           
           return new Response(JSON.stringify({ 
             success: true, 
@@ -446,7 +446,7 @@ export default {
           const now = new Date().toISOString();
           
           // Insert transaction into database
-          const result = await env.DB.prepare(
+          const result = await env.users.prepare(
             'INSERT INTO transactions (id, user_id, date, description, category, amount, type, receipt_url, merchant, tags, notes, currency, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
           ).bind(
             id,
@@ -506,7 +506,7 @@ export default {
         
         try {
           // Fetch transactions for the authenticated user
-          const result = await env.DB.prepare(
+          const result = await env.users.prepare(
             'SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC'
           ).bind(user.id).all();
           console.log('Transactions fetched:', result);
@@ -546,7 +546,7 @@ export default {
           const passwordHash = await hashPassword(password);
           
           // Check if user already exists
-          const userExists = await env.DB.prepare(
+          const userExists = await env.users.prepare(
             'SELECT * FROM users WHERE email = ?'
           ).bind(email).all();
           if (userExists.length > 0) {
@@ -568,7 +568,7 @@ export default {
           const now = new Date().toISOString();
           
           // Insert user into database
-          const result = await env.DB.prepare(
+          const result = await env.users.prepare(
             'INSERT INTO users (id, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
           ).bind(
             id,
@@ -611,7 +611,7 @@ export default {
           const { email, password } = await request.json();
           
           // Fetch user by email
-          const userResult = await env.DB.prepare(
+          const userResult = await env.users.prepare(
             'SELECT * FROM users WHERE email = ?'
           ).bind(email).all();
           if (userResult.length === 0) {
@@ -682,7 +682,7 @@ export default {
           const { email, resetToken, resetExpires } = await request.json();
           
           // Update user with reset token
-          await env.DB.prepare(
+          await env.users.prepare(
             'UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE email = ?'
           ).bind(resetToken, resetExpires, email).run();
           
@@ -721,7 +721,7 @@ export default {
           const passwordHash = await hashPassword(password);
           
           // Update user's password directly
-          await env.DB.prepare(
+          await env.users.prepare(
             'UPDATE users SET password_hash = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE email = ?'
           ).bind(passwordHash, email).run();
           
@@ -817,7 +817,7 @@ export default {
           const now = new Date().toISOString();
           
           // Insert transaction into database
-          const result = await env.DB.prepare(
+          const result = await env.users.prepare(
             'INSERT INTO transactions (id, user_id, date, description, category, amount, type, receipt_url, merchant, tags, notes, currency, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
           ).bind(
             id,
@@ -992,7 +992,7 @@ export default {
           const offset = url.searchParams.get('offset') || 0;
           
           // Query transactions from database
-          const result = await env.DB.prepare(
+          const result = await env.users.prepare(
             'SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC LIMIT ? OFFSET ?'
           ).bind(userId, parseInt(limit), parseInt(offset)).all();
           
@@ -1059,7 +1059,7 @@ export default {
           console.log('Update data received:', updateData);
           
           // Verify the transaction belongs to the user
-          const existingTransaction = await env.DB.prepare(
+          const existingTransaction = await env.users.prepare(
             'SELECT * FROM transactions WHERE id = ? AND user_id = ?'
           ).bind(transactionId, user.id).first();
           
@@ -1079,7 +1079,7 @@ export default {
           
           // Update the transaction
           const now = new Date().toISOString();
-          const result = await env.DB.prepare(
+          const result = await env.users.prepare(
             'UPDATE transactions SET date = ?, description = ?, category = ?, amount = ?, type = ?, receipt_url = ?, merchant = ?, tags = ?, notes = ?, currency = ?, updated_at = ? WHERE id = ?'
           ).bind(
             updateData.date || existingTransaction.date,
@@ -1163,7 +1163,7 @@ export default {
           console.log('Extracted transactionId from path:', transactionId);
           
           // Verify the transaction belongs to the user
-          const existingTransaction = await env.DB.prepare(
+          const existingTransaction = await env.users.prepare(
             'SELECT * FROM transactions WHERE id = ? AND user_id = ?'
           ).bind(transactionId, user.id).first();
           
@@ -1182,7 +1182,7 @@ export default {
           }
           
           // Delete the transaction
-          const result = await env.DB.prepare(
+          const result = await env.users.prepare(
             'DELETE FROM transactions WHERE id = ?'
           ).bind(transactionId).run();
           
@@ -1297,7 +1297,7 @@ export default {
           console.log('Executing search query:', sql, params);
           
           // Execute the query
-          const result = await env.DB.prepare(sql).bind(...params).all();
+          const result = await env.users.prepare(sql).bind(...params).all();
           
           // Get total count for pagination
           let countSql = 'SELECT COUNT(*) as total FROM transactions WHERE user_id = ?';
@@ -1339,7 +1339,7 @@ export default {
             countParams.push(parseFloat(maxAmount));
           }
           
-          const countResult = await env.DB.prepare(countSql).bind(...countParams).first();
+          const countResult = await env.users.prepare(countSql).bind(...countParams).first();
           const totalCount = countResult.total || 0;
           
           return new Response(JSON.stringify({ 
@@ -1405,7 +1405,7 @@ export default {
           const checkQuery = `SELECT COUNT(*) as count FROM transactions WHERE user_id = ? AND id IN (${placeholders})`;
           const checkParams = [user.id, ...transaction_ids];
           
-          const checkResult = await env.DB.prepare(checkQuery).bind(...checkParams).first();
+          const checkResult = await env.users.prepare(checkQuery).bind(...checkParams).first();
           
           if (checkResult.count !== transaction_ids.length) {
             return new Response(JSON.stringify({ 
@@ -1425,7 +1425,7 @@ export default {
           const deleteQuery = `DELETE FROM transactions WHERE user_id = ? AND id IN (${placeholders})`;
           const deleteParams = [user.id, ...transaction_ids];
           
-          const result = await env.DB.prepare(deleteQuery).bind(...deleteParams).run();
+          const result = await env.users.prepare(deleteQuery).bind(...deleteParams).run();
           
           return new Response(JSON.stringify({ 
             success: true, 
@@ -1503,7 +1503,7 @@ export default {
           const checkQuery = `SELECT COUNT(*) as count FROM transactions WHERE user_id = ? AND id IN (${placeholders})`;
           const checkParams = [user.id, ...transaction_ids];
           
-          const checkResult = await env.DB.prepare(checkQuery).bind(...checkParams).first();
+          const checkResult = await env.users.prepare(checkQuery).bind(...checkParams).first();
           
           if (checkResult.count !== transaction_ids.length) {
             return new Response(JSON.stringify({ 
@@ -1554,7 +1554,7 @@ export default {
           const updateQuery = `UPDATE transactions SET ${updateFields.join(', ')} WHERE user_id = ? AND id IN (${placeholders})`;
           const finalParams = [...updateParams, user.id, ...transaction_ids];
           
-          const result = await env.DB.prepare(updateQuery).bind(...finalParams).run();
+          const result = await env.users.prepare(updateQuery).bind(...finalParams).run();
           
           return new Response(JSON.stringify({ 
             success: true, 
@@ -1628,10 +1628,10 @@ export default {
           console.log('Executing spending by category query:', sql, params);
           
           // Execute the query
-          const result = await env.DB.prepare(sql).bind(...params).all();
+          const result = await env.users.prepare(sql).bind(...params).all();
           
           // Calculate total for percentage calculation
-          const totalResult = await env.DB.prepare(
+          const totalResult = await env.users.prepare(
             'SELECT SUM(amount) as total FROM transactions WHERE user_id = ? AND type = ?'
           ).bind(userId, 'expense').first();
           
@@ -1704,7 +1704,7 @@ export default {
           console.log('Executing monthly summary query:', sql, params);
           
           // Execute the query
-          const result = await env.DB.prepare(sql).bind(...params).all();
+          const result = await env.users.prepare(sql).bind(...params).all();
           
           return new Response(JSON.stringify({ 
             success: true, 
@@ -1781,7 +1781,7 @@ export default {
           }
           
           // Query category rules from database
-          const result = await env.DB.prepare(
+          const result = await env.users.prepare(
             'SELECT * FROM category_rules WHERE user_id = ? ORDER BY priority DESC, created_at DESC'
           ).bind(userId).all();
           
@@ -1863,7 +1863,7 @@ export default {
           const now = new Date().toISOString();
           
           // Insert category rule into database
-          const result = await env.DB.prepare(
+          const result = await env.users.prepare(
             'INSERT INTO category_rules (id, user_id, merchant_pattern, category, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
           ).bind(
             id,
@@ -1950,7 +1950,7 @@ export default {
           console.log('Update data received:', updateData);
           
           // Verify the category rule belongs to the user
-          const existingRule = await env.DB.prepare(
+          const existingRule = await env.users.prepare(
             'SELECT * FROM category_rules WHERE id = ? AND user_id = ?'
           ).bind(ruleId, user.id).first();
           
@@ -1970,7 +1970,7 @@ export default {
           
           // Update the category rule
           const now = new Date().toISOString();
-          const result = await env.DB.prepare(
+          const result = await env.users.prepare(
             'UPDATE category_rules SET merchant_pattern = ?, category = ?, priority = ?, updated_at = ? WHERE id = ?'
           ).bind(
             updateData.merchant_pattern || existingRule.merchant_pattern,
@@ -2048,7 +2048,7 @@ export default {
           console.log('Extracted ruleId from path:', ruleId);
           
           // Verify the category rule belongs to the user
-          const existingRule = await env.DB.prepare(
+          const existingRule = await env.users.prepare(
             'SELECT * FROM category_rules WHERE id = ? AND user_id = ?'
           ).bind(ruleId, user.id).first();
           
@@ -2067,7 +2067,7 @@ export default {
           }
           
           // Delete the category rule
-          const result = await env.DB.prepare(
+          const result = await env.users.prepare(
             'DELETE FROM category_rules WHERE id = ?'
           ).bind(ruleId).run();
           
@@ -2128,7 +2128,7 @@ export default {
           }
           
           // Get user's category rules
-          const rulesResult = await env.DB.prepare(
+          const rulesResult = await env.users.prepare(
             'SELECT * FROM category_rules WHERE user_id = ? ORDER BY priority DESC'
           ).bind(user.id).all();
           
@@ -2239,7 +2239,7 @@ export default {
           const emailVerificationExpires = new Date(Date.now() + 86400000); // 24 hours
           
           // Insert user into database with email verification token
-          const result = await env.DB.prepare(
+          const result = await env.users.prepare(
             'INSERT INTO users (id, email, name, password_hash, plan, is_admin, email_verified, trial_ends_at, email_verification_token, email_verification_expires) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
           ).bind(
             userData.id,
@@ -2357,7 +2357,7 @@ export default {
           console.log(`Looking up user with email: ${email}`);
           
           // Query user from database
-          const result = await env.DB.prepare(
+          const result = await env.users.prepare(
             'SELECT * FROM users WHERE email = ?'
           ).bind(email).first();
           
@@ -2413,7 +2413,7 @@ export default {
           const { email, password } = await request.json();
           
           // Query user from database
-          const user = await env.DB.prepare(
+          const user = await env.users.prepare(
             'SELECT * FROM users WHERE email = ?'
           ).bind(email).first();
           
@@ -2519,7 +2519,7 @@ export default {
           }
           
           // Check if user exists
-          const user = await env.DB.prepare(
+          const user = await env.users.prepare(
             'SELECT * FROM users WHERE email = ?'
           ).bind(email).first();
           
@@ -2543,7 +2543,7 @@ export default {
           const resetExpires = new Date(Date.now() + 3600000); // 1 hour
           
           // Update user with reset token
-          await env.DB.prepare(
+          await env.users.prepare(
             'UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE email = ?'
           ).bind(resetToken, resetExpires.toISOString(), email).run();
           
@@ -2642,7 +2642,7 @@ export default {
           }
           
           // Check if token exists and is valid
-          const user = await env.DB.prepare(
+          const user = await env.users.prepare(
             'SELECT * FROM users WHERE password_reset_token = ? AND password_reset_expires > ?'
           ).bind(token, new Date().toISOString()).first();
           
@@ -2739,7 +2739,7 @@ export default {
           }
           
           // Check if token exists and is valid
-          const user = await env.DB.prepare(
+          const user = await env.users.prepare(
             'SELECT * FROM users WHERE password_reset_token = ? AND password_reset_expires > ?'
           ).bind(token, new Date().toISOString()).first();
           
@@ -2761,7 +2761,7 @@ export default {
           const passwordHash = await hashPassword(newPassword);
           
           // Update user's password and clear reset token
-          await env.DB.prepare(
+          await env.users.prepare(
             'UPDATE users SET password_hash = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE id = ?'
           ).bind(passwordHash, user.id).run();
           
@@ -2812,7 +2812,7 @@ export default {
           }
           
           // Look up the user by the verification token
-          const user = await env.DB.prepare(
+          const user = await env.users.prepare(
             'SELECT * FROM users WHERE email_verification_token = ? AND email_verification_expires > ?'
           ).bind(token, new Date().toISOString()).first();
           
@@ -2831,7 +2831,7 @@ export default {
           }
           
           // Update the user's email_verified field to true and clear the verification token
-          await env.DB.prepare(
+          await env.users.prepare(
             'UPDATE users SET email_verified = ?, email_verification_token = NULL, email_verification_expires = NULL WHERE id = ?'
           ).bind(true, user.id).run();
           
@@ -2865,7 +2865,7 @@ export default {
       if (path === '/test-r2') {
         try {
           // Test the R2 connection by listing objects (empty list is fine)
-          const objects = await env.R2_BUCKET.list({ limit: 1 });
+          const objects = await env.budgetwise_storage.list({ limit: 1 });
           
           return new Response(JSON.stringify({ 
             success: true, 
@@ -2916,7 +2916,7 @@ export default {
           }
           
           // Upload file to R2
-          const result = await env.R2_BUCKET.put(key, file);
+          const result = await env.budgetwise_storage.put(key, file);
           
           // Generate public URL
           const url = `https://pub-xxxxxxxxxxxxxxxxxxxxxxxx.r2.dev/${key}`;
@@ -2954,7 +2954,7 @@ export default {
           const key = path.substring(7); // Remove '/files/' prefix
           
           // Get file from R2
-          const object = await env.R2_BUCKET.get(key);
+          const object = await env.budgetwise_storage.get(key);
           
           if (!object) {
             return new Response(JSON.stringify({ 
@@ -2999,7 +2999,7 @@ export default {
           const { email, resetToken, resetExpires } = await request.json();
           
           // Update user with reset token
-          await env.DB.prepare(
+          await env.users.prepare(
             'UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE email = ?'
           ).bind(resetToken, resetExpires, email).run();
           
@@ -3038,7 +3038,7 @@ export default {
           const passwordHash = await hashPassword(password);
           
           // Update user's password directly
-          await env.DB.prepare(
+          await env.users.prepare(
             'UPDATE users SET password_hash = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE email = ?'
           ).bind(passwordHash, email).run();
           
