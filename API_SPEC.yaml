@@ -1,0 +1,138 @@
+openapi: 3.0.3
+info:
+  title: BudgetWise API
+  version: 1.0.0
+paths:
+  /api/expenses:
+    post:
+      summary: Add new expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                date:
+                  type: string
+                  format: date
+                category:
+                  type: string
+                description:
+                  type: string
+                budgetId:
+                  type: string
+      responses:
+        '201':
+          description: Expense created
+
+  /api/goals:
+    get:
+      summary: List user goals
+      responses:
+        '200':
+          description: Goal list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Goal'
+    post:
+      summary: Create new goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                target:
+                  type: number
+                current:
+                  type: number
+                targetDate:
+                  type: string
+                  format: date
+                type:
+                  type: string
+      responses:
+        '201':
+          description: Goal created
+
+  /api/budgets:
+    get:
+      summary: List user budgets
+      responses:
+        '200':
+          description: Budget list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Budget'
+    post:
+      summary: Create new budget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                amount:
+                  type: number
+                period:
+                  type: string
+      responses:
+        '201':
+          description: Budget created
+
+  /api/reports/export:
+    post:
+      summary: Generate and store report (PDF/CSV)
+      responses:
+        '202':
+          description: Export job queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reportUrl:
+                    type: string
+
+components:
+  schemas:
+    Goal:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        target:
+          type: number
+        current:
+          type: number
+        type:
+          type: string
+
+    Budget:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        amount:
+          type: number
+        period:
+          type: string
