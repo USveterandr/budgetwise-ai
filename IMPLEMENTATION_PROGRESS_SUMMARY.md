@@ -70,9 +70,9 @@ As of October 23, 2025, the BudgetWise AI project has successfully completed Pha
 - [x] Investment performance reports
 - [x] Asset allocation reports
 - [x] Data export functionality (CSV)
-- [ ] Income vs. expenses reports
-- [ ] Budget performance reports
-- [ ] Net worth calculation reports
+- [x] Income vs. expenses reports
+- [x] Budget performance reports
+- [x] Net worth calculation reports
 - [ ] PDF export functionality
 - [ ] Custom report builder
 

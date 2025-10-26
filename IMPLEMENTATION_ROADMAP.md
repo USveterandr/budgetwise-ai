@@ -199,20 +199,20 @@ This document outlines the implementation roadmap for BudgetWise AI, detailing t
 - Create report export functionality
 
 **Deliverables:**
-- Advanced reporting API endpoints
-- Report dashboard UI
-- Custom report builder UI
+- ✅ Advanced reporting API endpoints
+- ✅ Report dashboard UI
+- 🚀 Custom report builder UI
 
 **Tasks:**
-- [ ] Implement income vs. expenses report
-- [ ] Implement budget performance report
-- [ ] Implement net worth calculation report
-- [ ] Implement investment performance report
-- [ ] Create report dashboard UI
+- [x] Implement income vs. expenses report
+- [x] Implement budget performance report
+- [x] Implement net worth calculation report
+- [x] Implement investment performance report
+- [x] Create report dashboard UI
 - [ ] Create custom report builder UI
-- [ ] Add charting components
+- [x] Add charting components
 - [ ] Implement PDF export functionality
-- [ ] Implement CSV export functionality
+- [x] Implement CSV export functionality
 - [ ] Add report scheduling capability
 - [ ] Add unit tests for reporting functions
 - [ ] Add integration tests for reporting API

@@ -9,6 +9,7 @@ import {
   CalendarIcon,
   ArrowDownTrayIcon
 } from "@heroicons/react/24/outline";
+import ReportChart from "@/components/reports/ReportChart";
 
 interface User {
   id: string;
@@ -40,9 +41,23 @@ interface IncomeVsExpensesData {
   net: number;
 }
 
+interface BudgetPerformanceData {
+  category: string;
+  budgeted: number;
+  actual: number;
+  difference: number;
+}
+
+interface NetWorthData {
+  date: string;
+  assets: number;
+  liabilities: number;
+  netWorth: number;
+}
+
 interface ReportData {
   reportType: string;
-  data: SpendingByCategoryData[] | IncomeVsExpensesData[];
+  data: SpendingByCategoryData[] | IncomeVsExpensesData[] | BudgetPerformanceData[] | NetWorthData[];
   generatedAt: string;
 }
 
@@ -293,6 +308,13 @@ export default function ReportsPage() {
                   {reportData.reportType === 'spending-by-category' && (
                     <div className="space-y-4">
                       <h3 className="text-lg font-medium">Spending by Category</h3>
+                      <ReportChart 
+                        type="pie" 
+                        data={reportData.data as SpendingByCategoryData[]} 
+                        dataKey="amount" 
+                        nameKey="category" 
+                        title="Spending by Category" 
+                      />
                       <div className="space-y-3">
                         {reportData.data.map((item, index) => (
                           <div key={index} className="space-y-1">
@@ -324,6 +346,13 @@ export default function ReportsPage() {
                           ? 'Income vs Expenses' 
                           : 'Monthly Summary'}
                       </h3>
+                      <ReportChart 
+                        type="line" 
+                        data={reportData.data as IncomeVsExpensesData[]} 
+                        dataKey="net" 
+                        nameKey="month" 
+                        title="Net Income Over Time" 
+                      />
                       <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-gray-50">
@@ -361,6 +390,116 @@ export default function ReportsPage() {
                                 </td>
                               </tr>
                             ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {reportData.reportType === 'budget-performance' && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Budget Performance</h3>
+                      <ReportChart 
+                        type="bar" 
+                        data={reportData.data as BudgetPerformanceData[]} 
+                        dataKey="difference" 
+                        nameKey="category" 
+                        title="Budget vs Actual Spending" 
+                      />
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Category
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Budgeted
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actual
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Difference
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {reportData.data.map((item, index) => {
+                              const budgetItem = item as BudgetPerformanceData;
+                              return (
+                                <tr key={index}>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {budgetItem.category}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    ${budgetItem.budgeted.toFixed(2)}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    ${budgetItem.actual.toFixed(2)}
+                                  </td>
+                                  <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                                    budgetItem.difference >= 0 ? 'text-green-600' : 'text-red-600'
+                                  }`}>
+                                    ${budgetItem.difference.toFixed(2)}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {reportData.reportType === 'net-worth' && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Net Worth</h3>
+                      <ReportChart 
+                        type="line" 
+                        data={reportData.data as NetWorthData[]} 
+                        dataKey="netWorth" 
+                        nameKey="date" 
+                        title="Net Worth Over Time" 
+                      />
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Assets
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Liabilities
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Net Worth
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {reportData.data.map((item, index) => {
+                              const netWorthItem = item as NetWorthData;
+                              return (
+                                <tr key={index}>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {netWorthItem.date}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
+                                    ${netWorthItem.assets.toFixed(2)}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
+                                    ${netWorthItem.liabilities.toFixed(2)}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                                    ${netWorthItem.netWorth.toFixed(2)}
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>
