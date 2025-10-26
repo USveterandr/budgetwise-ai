@@ -1,15 +1,15 @@
 "use client";
 
-import React from "react";
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { 
   PlusIcon, 
   PencilIcon, 
-  TrashIcon
+  TrashIcon,
+  ChartPieIcon
 } from "@heroicons/react/24/outline";
-import { redirect } from 'next/navigation';
+import AssetAllocationChart from "@/components/investment/AssetAllocationChart";
 
 interface Investment {
   id: string;
@@ -26,10 +26,7 @@ interface Investment {
   updated_at: string;
 }
 
-export default function InvestmentsPage() {
-  // Redirect to the dashboard page
-  redirect('/investments/dashboard');
-
+export default function InvestmentDashboardPage() {
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +41,7 @@ export default function InvestmentsPage() {
   });
   const [totalValue, setTotalValue] = useState(0);
   const [totalProfitLoss, setTotalProfitLoss] = useState(0);
+  const [view, setView] = useState<"list" | "chart">("list");
 
   // Fetch investments when component mounts
   useEffect(() => {
@@ -201,7 +199,7 @@ export default function InvestmentsPage() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Investment Portfolio</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Investment Dashboard</h1>
           <p className="text-gray-600">Track and manage your investments</p>
         </div>
 
@@ -253,7 +251,26 @@ export default function InvestmentsPage() {
           </Card>
         </div>
 
-        <div className="mb-6">
+        {/* View Toggle */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex space-x-2">
+            <Button 
+              variant={view === "list" ? "default" : "outline"}
+              onClick={() => setView("list")}
+              className="text-sm"
+            >
+              List View
+            </Button>
+            <Button 
+              variant={view === "chart" ? "default" : "outline"}
+              onClick={() => setView("chart")}
+              className="text-sm flex items-center"
+            >
+              <ChartPieIcon className="h-4 w-4 mr-1" />
+              Asset Allocation
+            </Button>
+          </div>
+          
           <Button 
             onClick={handleAddInvestment}
             className="bg-blue-600 hover:bg-blue-700 text-white flex items-center text-sm"
@@ -356,92 +373,108 @@ export default function InvestmentsPage() {
           </Card>
         )}
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Investment Holdings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {investments.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No investments found. Add your first investment to get started.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Investment
-                      </th>
-                      <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Shares
-                      </th>
-                      <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Purchase
-                      </th>
-                      <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Current
-                      </th>
-                      <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Value
-                      </th>
-                      <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        P/L
-                      </th>
-                      <th scope="col" className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {investments.map((investment) => (
-                      <tr key={investment.id}>
-                        <td className="px-4 py-2 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{investment.asset_name}</div>
-                          <div className="text-xs text-gray-500">{investment.symbol}</div>
-                        </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                          {investment.shares}
-                        </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                          ${investment.purchase_price.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                          ${investment.current_price.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                          ${investment.value.toFixed(2)}
-                        </td>
-                        <td className={`px-4 py-2 whitespace-nowrap text-sm font-medium ${investment.profit_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {investment.profit_loss >= 0 ? '+' : ''}${Math.abs(investment.profit_loss).toFixed(2)}
-                          <div className={`text-xs ${investment.profit_loss_percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            ({investment.profit_loss_percentage >= 0 ? '+' : ''}{investment.profit_loss_percentage.toFixed(2)}%)
-                          </div>
-                        </td>
-                        <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => handleEditInvestment(investment)}
-                            className="text-blue-600 hover:text-blue-900 mr-2"
-                            aria-label="Edit investment"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteInvestment(investment.id)}
-                            className="text-red-600 hover:text-red-900"
-                            aria-label="Delete investment"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        </td>
+        {view === "chart" ? (
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle>Asset Allocation</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AssetAllocationChart 
+                investments={investments.map(inv => ({
+                  asset_name: inv.asset_name,
+                  value: inv.value
+                }))} 
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle>Investment Holdings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {investments.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No investments found. Add your first investment to get started.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Investment
+                        </th>
+                        <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Shares
+                        </th>
+                        <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Purchase
+                        </th>
+                        <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Current
+                        </th>
+                        <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Value
+                        </th>
+                        <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          P/L
+                        </th>
+                        <th scope="col" className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {investments.map((investment) => (
+                        <tr key={investment.id}>
+                          <td className="px-4 py-2 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{investment.asset_name}</div>
+                            <div className="text-xs text-gray-500">{investment.symbol}</div>
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                            {investment.shares}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                            ${investment.purchase_price.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                            ${investment.current_price.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                            ${investment.value.toFixed(2)}
+                          </td>
+                          <td className={`px-4 py-2 whitespace-nowrap text-sm font-medium ${investment.profit_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {investment.profit_loss >= 0 ? '+' : ''}${Math.abs(investment.profit_loss).toFixed(2)}
+                            <div className={`text-xs ${investment.profit_loss_percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              ({investment.profit_loss_percentage >= 0 ? '+' : ''}{investment.profit_loss_percentage.toFixed(2)}%)
+                            </div>
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() => handleEditInvestment(investment)}
+                              className="text-blue-600 hover:text-blue-900 mr-2"
+                              aria-label="Edit investment"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteInvestment(investment.id)}
+                              className="text-red-600 hover:text-red-900"
+                              aria-label="Delete investment"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
