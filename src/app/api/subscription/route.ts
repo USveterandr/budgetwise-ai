@@ -1,12 +1,11 @@
-import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth-client';
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
 
 // Configure for static export
 export const dynamic = 'force-static';
 export const revalidate = 0;
 
-// GET /api/subscription - Get user's current subscription
-export async function GET(request: Request) {
+export async function GET(_request: NextRequest) {
   try {
     // Check authentication
     const user = getCurrentUser();
@@ -17,60 +16,62 @@ export async function GET(request: Request) {
       );
     }
 
-    // In a real implementation, this would fetch from the database
-    // For now, we'll return the user's current plan from their profile
-    const subscriptionData = {
-      plan: user.plan,
+    // In a real implementation, you would fetch user's subscription from the database
+    // For demo purposes, we'll return mock data
+    const mockSubscription = {
+      id: 'sub_1',
+      user_id: user.id,
+      plan_id: 'premium',
       status: 'active',
-      startDate: new Date().toISOString(), // Using current date as we don't have user creation date in client
-      nextBillingDate: null,
-      autoRenew: true,
-      features: getPlanFeatures(user.plan)
+      start_date: new Date().toISOString(),
+      end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     };
 
     return NextResponse.json({ 
-      success: true, 
-      subscription: subscriptionData
+      success: true,
+      subscription: mockSubscription
     });
   } catch (error) {
-    console.error('Error in GET /api/subscription:', error);
+    console.error('Error fetching subscription:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Failed to fetch subscription' },
       { status: 500 }
     );
   }
 }
 
-// Helper function to get plan features
-function getPlanFeatures(plan: string) {
-  switch (plan) {
-    case 'trial':
-      return [
-        'Up to 100 transactions per month',
-        'Basic budgeting tools',
-        'Email support'
-      ];
-    case 'basic':
-      return [
-        'Unlimited transactions',
-        'Advanced budgeting tools',
-        'Receipt storage',
-        'Email support'
-      ];
-    case 'premium':
-    case 'premium-annual':
-      return [
-        'Unlimited transactions',
-        'Advanced budgeting tools',
-        'Investment tracking',
-        'AI financial advisor',
-        'Priority email support'
-      ];
-    default:
-      return [
-        'Up to 100 transactions per month',
-        'Basic budgeting tools',
-        'Email support'
-      ];
+export async function POST(_request: NextRequest) {
+  try {
+    // Check authentication
+    const user = getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // In a real implementation, you would parse the request body and create/update subscription
+    // For demo purposes, we'll return mock data
+    const mockSubscription = {
+      id: `sub_${Date.now()}`,
+      user_id: user.id,
+      plan_id: 'pro',
+      status: 'active',
+      start_date: new Date().toISOString(),
+      end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    };
+
+    return NextResponse.json({ 
+      success: true,
+      subscription: mockSubscription,
+      message: 'Subscription updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating subscription:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update subscription' },
+      { status: 500 }
+    );
   }
 }

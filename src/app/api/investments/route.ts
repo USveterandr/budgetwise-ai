@@ -1,13 +1,12 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
+// import { db } from '@/lib/db'; // Not used in this file
 
 // Configure for static export
 export const dynamic = 'force-static';
 export const revalidate = 0;
 
-// GET /api/investments - Get all investments for the current user
-export async function GET() {
+export async function GET(_request: NextRequest) {
   try {
     // Check authentication
     const user = getCurrentUser();
@@ -18,70 +17,49 @@ export async function GET() {
       );
     }
 
-    // In a real implementation, this would fetch from the database
-    // For now, we'll return mock data
-    const investments = [
+    // In a real implementation, you would fetch investments from the database
+    // For demo purposes, we'll return mock data
+    const mockInvestments = [
       {
         id: 'inv_1',
         user_id: user.id,
-        asset_name: 'Apple Inc.',
-        symbol: 'AAPL',
-        shares: 10,
-        purchase_price: 150.00,
-        current_price: 175.50,
-        value: 1755.00,
-        profit_loss: 255.00,
-        purchase_date: '2023-01-15',
-        created_at: '2023-01-15T10:30:00Z',
-        updated_at: '2023-01-15T10:30:00Z'
+        name: 'Tech Stocks',
+        type: 'Stocks',
+        value: 5000,
+        change: 12.5
       },
       {
         id: 'inv_2',
         user_id: user.id,
-        asset_name: 'Microsoft Corp.',
-        symbol: 'MSFT',
-        shares: 5,
-        purchase_price: 300.00,
-        current_price: 335.25,
-        value: 1676.25,
-        profit_loss: 176.25,
-        purchase_date: '2023-02-20',
-        created_at: '2023-02-20T14:45:00Z',
-        updated_at: '2023-02-20T14:45:00Z'
+        name: 'Bond Fund',
+        type: 'Bonds',
+        value: 3000,
+        change: 3.2
       },
       {
         id: 'inv_3',
         user_id: user.id,
-        asset_name: 'Tesla Inc.',
-        symbol: 'TSLA',
-        shares: 8,
-        purchase_price: 200.00,
-        current_price: 185.75,
-        value: 1486.00,
-        profit_loss: -114.00,
-        purchase_date: '2023-03-10',
-        created_at: '2023-03-10T09:15:00Z',
-        updated_at: '2023-03-10T09:15:00Z'
+        name: 'Real Estate',
+        type: 'REITs',
+        value: 7500,
+        change: 8.7
       }
     ];
 
     return NextResponse.json({ 
-      success: true, 
-      investments,
-      total_value: investments.reduce((sum, inv) => sum + inv.value, 0),
-      total_profit_loss: investments.reduce((sum, inv) => sum + inv.profit_loss, 0)
+      success: true,
+      investments: mockInvestments
     });
   } catch (error) {
-    console.error('Error in GET /api/investments:', error);
+    console.error('Error fetching investments:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Failed to fetch investments' },
       { status: 500 }
     );
   }
 }
 
-// POST /api/investments - Create a new investment
-export async function POST(request: Request) {
+export async function POST(_request: NextRequest) {
   try {
     // Check authentication
     const user = getCurrentUser();
@@ -92,60 +70,26 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
-    
-    // Validate required fields
-    const requiredFields = ['asset_name', 'symbol', 'shares', 'purchase_price', 'purchase_date'];
-    for (const field of requiredFields) {
-      if (body[field] === undefined) {
-        return NextResponse.json(
-          { success: false, error: `Missing required field: ${field}` },
-          { status: 400 }
-        );
-      }
-    }
-    
-    // Validate data types
-    if (typeof body.shares !== 'number' || body.shares <= 0) {
-      return NextResponse.json(
-        { success: false, error: 'Shares must be a positive number' },
-        { status: 400 }
-      );
-    }
-    
-    if (typeof body.purchase_price !== 'number' || body.purchase_price <= 0) {
-      return NextResponse.json(
-        { success: false, error: 'Purchase price must be a positive number' },
-        { status: 400 }
-      );
-    }
-    
-    // In a real implementation, this would insert into the database
-    // For now, we'll return mock data
-    const newInvestment = {
+    // In a real implementation, you would parse the request body and create a new investment
+    // For demo purposes, we'll return mock data
+    const mockInvestment = {
       id: `inv_${Date.now()}`,
       user_id: user.id,
-      asset_name: body.asset_name,
-      symbol: body.symbol,
-      shares: body.shares,
-      purchase_price: body.purchase_price,
-      current_price: body.purchase_price * 1.1, // Simulate 10% gain
-      value: body.shares * body.purchase_price * 1.1,
-      profit_loss: body.shares * body.purchase_price * 0.1,
-      purchase_date: body.purchase_date,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      name: 'New Investment',
+      type: 'Other',
+      value: 1000,
+      change: 0
     };
 
     return NextResponse.json({ 
-      success: true, 
-      investment: newInvestment,
+      success: true,
+      investment: mockInvestment,
       message: 'Investment created successfully'
     });
   } catch (error) {
-    console.error('Error in POST /api/investments:', error);
+    console.error('Error creating investment:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Failed to create investment' },
       { status: 500 }
     );
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,13 +27,7 @@ export default function ReceiptDetailPage() {
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (id) {
-      fetchReceipt();
-    }
-  }, [id]);
-
-  const fetchReceipt = async () => {
+  const fetchReceipt = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/receipts/${id}`);
@@ -71,7 +65,13 @@ export default function ReceiptDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      fetchReceipt();
+    }
+  }, [id, fetchReceipt]);
 
   const deleteReceipt = async () => {
     if (!window.confirm('Are you sure you want to delete this receipt?')) {

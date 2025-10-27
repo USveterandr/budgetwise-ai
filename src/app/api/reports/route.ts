@@ -1,12 +1,11 @@
-import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth-client';
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
 
 // Configure for static export
 export const dynamic = 'force-static';
 export const revalidate = 0;
 
-// GET /api/reports - Get available report types
-export async function GET(request: Request) {
+export async function GET(_request: NextRequest) {
   try {
     // Check authentication
     const user = getCurrentUser();
@@ -17,48 +16,35 @@ export async function GET(request: Request) {
       );
     }
 
-    // Define available report types
-    const reportTypes = [
-      {
-        id: 'spending-by-category',
-        name: 'Spending by Category',
-        description: 'View your spending broken down by category',
-        icon: 'chart-bar'
+    // In a real implementation, you would generate reports based on user data
+    // For demo purposes, we'll return mock data
+    const mockReports = {
+      spendingByCategory: [
+        { category: 'Food & Dining', amount: 420.50 },
+        { category: 'Transportation', amount: 280.75 },
+        { category: 'Entertainment', amount: 150.25 },
+        { category: 'Shopping', amount: 320.00 }
+      ],
+      incomeVsExpenses: {
+        income: 5000,
+        expenses: 3800,
+        savings: 1200
       },
-      {
-        id: 'income-vs-expenses',
-        name: 'Income vs Expenses',
-        description: 'Compare your income and expenses over time',
-        icon: 'scale'
-      },
-      {
-        id: 'monthly-summary',
-        name: 'Monthly Summary',
-        description: 'View monthly income, expenses, and net worth',
-        icon: 'calendar'
-      },
-      {
-        id: 'budget-performance',
-        name: 'Budget Performance',
-        description: 'Compare your actual spending with budgeted amounts',
-        icon: 'chart-bar'
-      },
-      {
-        id: 'net-worth',
-        name: 'Net Worth',
-        description: 'Track your assets and liabilities over time',
-        icon: 'scale'
+      netWorth: {
+        assets: 25000,
+        liabilities: 5000,
+        netWorth: 20000
       }
-    ];
+    };
 
     return NextResponse.json({ 
-      success: true, 
-      reportTypes 
+      success: true,
+      reports: mockReports
     });
   } catch (error) {
-    console.error('Error in GET /api/reports:', error);
+    console.error('Error generating reports:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Failed to generate reports' },
       { status: 500 }
     );
   }

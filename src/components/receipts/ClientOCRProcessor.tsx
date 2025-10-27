@@ -63,8 +63,8 @@ export default function ClientOCRProcessor({ image, onResult, onError }: ClientO
       
       setStatus("Processing complete!");
       onResult(parsedData);
-    } catch (error) {
-      console.error("Error processing receipt:", error);
+    } catch (_error) {  // Fixed unused variable
+      console.error("Error processing receipt:", _error);
       setStatus("OCR processing failed");
       onError("Failed to process receipt. Please try again.");
     } finally {
@@ -145,7 +145,7 @@ export default function ClientOCRProcessor({ image, onResult, onError }: ClientO
             date = parsedDate.toISOString().split('T')[0];
             break;
           }
-        } catch (e) {
+        } catch (_e) {  // Fixed unused variable
           // If parsing fails, use the raw match
           date = match[1];
           break;

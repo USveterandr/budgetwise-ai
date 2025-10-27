@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { signup } from "@/lib/auth-client";
+// import { signup } from "@/lib/auth-client"; // Not used in this file
 
 export default function SignupPage() {
   const [name, setName] = useState("");

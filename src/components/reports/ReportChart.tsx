@@ -17,9 +17,14 @@ import {
   Line
 } from "recharts";
 
+interface ReportData {
+  name: string;
+  [key: string]: string | number;
+}
+
 interface ReportChartProps {
   type: "bar" | "pie" | "line";
-  data: any[];
+  data: ReportData[];
   dataKey: string;
   nameKey?: string;
   title?: string;

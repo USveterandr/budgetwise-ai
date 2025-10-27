@@ -1,12 +1,11 @@
-import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth-client';
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
 
 // Configure for static export
 export const dynamic = 'force-static';
 export const revalidate = 0;
 
-// GET /api/subscription/plans - Get available subscription plans
-export async function GET(request: Request) {
+export async function GET(_request: NextRequest) {
   try {
     // Check authentication
     const user = getCurrentUser();
@@ -17,79 +16,40 @@ export async function GET(request: Request) {
       );
     }
 
-    // Define available plans
-    const plans = [
-      {
-        id: 'trial',
-        name: 'Free Trial',
-        price: 0,
-        period: 'forever',
-        features: [
-          'Up to 100 transactions per month',
-          'Basic budgeting tools',
-          'Email support'
-        ],
-        limitations: [
-          'Limited to 100 transactions per month',
-          'No investment tracking',
-          'No AI financial advisor'
-        ]
-      },
+    // In a real implementation, you would fetch subscription plans from the database
+    // For demo purposes, we'll return mock data
+    const mockPlans = [
       {
         id: 'basic',
-        name: 'Basic Plan',
-        price: 4.99,
+        name: 'Basic',
+        price: 9.99,
         period: 'month',
-        features: [
-          'Unlimited transactions',
-          'Advanced budgeting tools',
-          'Receipt storage',
-          'Email support'
-        ],
-        limitations: [
-          'No investment tracking',
-          'No AI financial advisor'
-        ]
+        features: ['Basic expense tracking', 'Monthly reports', 'Email support']
       },
       {
         id: 'premium',
-        name: 'Premium Plan',
-        price: 9.99,
+        name: 'Premium',
+        price: 19.99,
         period: 'month',
-        features: [
-          'Unlimited transactions',
-          'Advanced budgeting tools',
-          'Investment tracking',
-          'AI financial advisor',
-          'Priority email support'
-        ],
-        limitations: []
+        features: ['Advanced analytics', 'Investment tracking', 'Priority support', 'Budget planning']
       },
       {
-        id: 'premium-annual',
-        name: 'Premium Annual',
-        price: 99.99,
-        period: 'year',
-        features: [
-          'Unlimited transactions',
-          'Advanced budgeting tools',
-          'Investment tracking',
-          'AI financial advisor',
-          'Priority email support',
-          '1 month free compared to monthly'
-        ],
-        limitations: []
+        id: 'pro',
+        name: 'Pro',
+        price: 29.99,
+        period: 'month',
+        features: ['All Premium features', 'AI-powered insights', 'Tax preparation', 'Financial advisor access']
       }
     ];
 
     return NextResponse.json({ 
-      success: true, 
-      plans
+      success: true,
+      plans: mockPlans
     });
   } catch (error) {
-    console.error('Error in GET /api/subscription/plans:', error);
+    console.error('Error fetching subscription plans:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Failed to fetch subscription plans' },
       { status: 500 }
     );
   }

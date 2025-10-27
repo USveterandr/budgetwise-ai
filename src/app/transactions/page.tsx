@@ -42,13 +42,13 @@ const TransactionsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    date: "",
-    description: "",
-    category: "",
-    amount: "",
-    type: "expense" as "income" | "expense"
-  });
+  // const [formData, setFormData] = useState({  // Not used
+  //   date: "",
+  //   description: "",
+  //   category: "",
+  //   amount: "",
+  //   type: "expense" as "income" | "expense"
+  // });
   const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showCategoryRules, setShowCategoryRules] = useState(false);
@@ -124,13 +124,13 @@ const TransactionsPage = () => {
   const handleAddTransaction = () => {
     setShowForm(true);
     setEditingTransaction(null);
-    setFormData({
-      date: new Date().toISOString().split('T')[0],
-      description: "",
-      category: "",
-      amount: "",
-      type: "expense"
-    });
+    // setFormData({  // Not used
+    //   date: new Date().toISOString().split('T')[0],
+    //   description: "",
+    //   category: "",
+    //   amount: "",
+    //   type: "expense"
+    // });
   };
   
   interface SearchFilters {
@@ -210,21 +210,21 @@ const TransactionsPage = () => {
     alert(`Exporting ${transactionIds.length} transactions`);
   };
   
-  const handleSelectTransaction = (id: string) => {
-    if (selectedTransactions.includes(id)) {
-      setSelectedTransactions(selectedTransactions.filter(transactionId => transactionId !== id));
-    } else {
-      setSelectedTransactions([...selectedTransactions, id]);
-    }
-  };
+  // const handleSelectTransaction = (id: string) => {  // Not used
+  //   if (selectedTransactions.includes(id)) {
+  //     setSelectedTransactions(selectedTransactions.filter(transactionId => transactionId !== id));
+  //   } else {
+  //     setSelectedTransactions([...selectedTransactions, id]);
+  //   }
+  // };
   
-  const handleSelectAll = () => {
-    if (selectedTransactions.length === transactions.length) {
-      setSelectedTransactions([]);
-    } else {
-      setSelectedTransactions(transactions.filter(t => t.id !== undefined).map(t => t.id as string));
-    }
-  };
+  // const handleSelectAll = () => {  // Not used
+  //   if (selectedTransactions.length === transactions.length) {
+  //     setSelectedTransactions([]);
+  //   } else {
+  //     setSelectedTransactions(transactions.filter(t => t.id !== undefined).map(t => t.id as string));
+  //   }
+  // };
   
   const handleSubmitTransaction = (transactionData: TransactionFormData) => {
     // Handle the transaction submission asynchronously but don't make the function itself async

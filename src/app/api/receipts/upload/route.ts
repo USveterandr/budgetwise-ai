@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { R2Storage } from '@/lib/r2';
-import { db } from '@/lib/db';
+import { R2Storage, R2Bucket } from '@/lib/r2';
+// import { db } from '@/lib/db'; // Not used in this file
 
 // Configure for static export
 export const dynamic = 'force-static';
 export const revalidate = 0;
 
 // Mock R2 bucket for demonstration
-const mockR2Bucket = {
+const mockR2Bucket: R2Bucket = {
   put: async (key: string, value: ArrayBuffer) => {
     // In a real implementation, this would upload to Cloudflare R2
     console.log(`Uploading file to R2 with key: ${key}`);
@@ -17,10 +17,25 @@ const mockR2Bucket = {
       size: value.byteLength,
       etag: 'mock-etag'
     };
+  },
+  get: async (key: string) => {
+    // Mock implementation
+    return null;
+  },
+  delete: async (key: string) => {
+    // Mock implementation
+    return;
+  },
+  list: async (options?: { prefix?: string; limit?: number }) => {
+    // Mock implementation
+    return {
+      objects: [],
+      truncated: false
+    };
   }
 };
 
-const r2Storage = new R2Storage(mockR2Bucket as any, 'mock-bucket');
+const r2Storage = new R2Storage(mockR2Bucket, 'mock-bucket');
 
 export async function POST(request: NextRequest) {
   try {

@@ -25,7 +25,7 @@ interface R2Object {
 }
 
 // Type definition for R2Bucket (simplified version)
-interface R2Bucket {
+export interface R2Bucket {
   put(
     key: string,
     value: ArrayBuffer | ReadableStream | string,

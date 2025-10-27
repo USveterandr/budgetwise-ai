@@ -5,8 +5,7 @@ import { getCurrentUser } from '@/lib/auth';
 export const dynamic = 'force-static';
 export const revalidate = 0;
 
-// GET /api/receipts/[id] - Get a specific receipt
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Check authentication
     const user = getCurrentUser();
@@ -18,25 +17,21 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     const { id } = params;
-    
-    // In a real implementation, this would:
-    // 1. Query the database for the receipt with the given ID
-    // 2. Verify the receipt belongs to the current user
-    // 3. Return the receipt data
-    
+
+    // In a real implementation, you would fetch the receipt from the database
     // For demo purposes, we'll return mock data
-    const receiptData = {
+    const mockReceipt = {
       id,
       user_id: user.id,
-      transaction_id: null,
-      file_key: `receipts/${id}.jpg`,
-      file_url: `https://example.com/receipts/${id}.jpg`,
-      uploaded_at: new Date().toISOString()
+      merchant: 'Sample Merchant',
+      amount: 42.50,
+      date: new Date().toISOString(),
+      category: 'Food & Dining'
     };
 
     return NextResponse.json({ 
       success: true,
-      receipt: receiptData
+      receipt: mockReceipt
     });
   } catch (error) {
     console.error('Error fetching receipt:', error);
@@ -47,8 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-// PUT /api/receipts/[id] - Update a receipt
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Check authentication
     const user = getCurrentUser();
@@ -60,26 +54,21 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const { id } = params;
-    const body = await request.json();
-    
-    // In a real implementation, this would:
-    // 1. Validate the update data
-    // 2. Update the receipt record in the database
-    // 3. Return the updated receipt data
-    
+
+    // In a real implementation, you would parse the request body and update the receipt
     // For demo purposes, we'll return mock data
-    const updatedReceipt = {
+    const mockReceipt = {
       id,
       user_id: user.id,
-      transaction_id: body.transaction_id || null,
-      file_key: `receipts/${id}.jpg`,
-      file_url: `https://example.com/receipts/${id}.jpg`,
-      uploaded_at: new Date().toISOString()
+      merchant: 'Updated Merchant',
+      amount: 50.00,
+      date: new Date().toISOString(),
+      category: 'Shopping'
     };
 
     return NextResponse.json({ 
       success: true,
-      receipt: updatedReceipt,
+      receipt: mockReceipt,
       message: 'Receipt updated successfully'
     });
   } catch (error) {
@@ -91,8 +80,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-// DELETE /api/receipts/[id] - Delete a receipt
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Check authentication
     const user = getCurrentUser();
@@ -104,14 +92,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     const { id } = params;
-    
-    // In a real implementation, this would:
-    // 1. Query the database for the receipt
-    // 2. Verify the receipt belongs to the current user
-    // 3. Delete the file from R2 storage
-    // 4. Delete the receipt record from the database
-    
-    // For demo purposes, we'll just return success
+
+    // In a real implementation, you would delete the receipt from the database
+    // For demo purposes, we'll just return a success message
     return NextResponse.json({ 
       success: true,
       message: 'Receipt deleted successfully'

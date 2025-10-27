@@ -17,7 +17,7 @@ import {
   BoltIcon,
   GiftIcon
 } from "@heroicons/react/24/outline";
-import { getCurrentUser } from '@/lib/auth-client';
+// import { getCurrentUser } from '@/lib/auth-client'; // Not used in this file
 
 export default function HomePage() {
   const [isVisible, setIsVisible] = useState(false);
