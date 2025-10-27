@@ -282,13 +282,6 @@ const TransactionsPage = () => {
   const handleEditTransaction = (transaction: Transaction) => {
     setEditingTransaction(transaction.id || null);
     setShowForm(true);
-    setFormData({
-      date: transaction.date,
-      description: transaction.description,
-      category: transaction.category,
-      amount: transaction.amount.toString(),
-      type: transaction.type
-    });
   };
   
   const handleDeleteTransaction = async (id: string) => {

@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/lib/auth';
 export const dynamic = 'force-static';
 export const revalidate = 0;
 
-export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Check authentication
     const user = getCurrentUser();
@@ -16,7 +16,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // In a real implementation, you would fetch the receipt from the database
     // For demo purposes, we'll return mock data
@@ -42,7 +42,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
   }
 }
 
-export async function PUT(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Check authentication
     const user = getCurrentUser();
@@ -53,7 +53,7 @@ export async function PUT(_request: NextRequest, { params }: { params: { id: str
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // In a real implementation, you would parse the request body and update the receipt
     // For demo purposes, we'll return mock data
@@ -80,7 +80,7 @@ export async function PUT(_request: NextRequest, { params }: { params: { id: str
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Check authentication
     const user = getCurrentUser();
@@ -91,7 +91,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // In a real implementation, you would delete the receipt from the database
     // For demo purposes, we'll just return a success message

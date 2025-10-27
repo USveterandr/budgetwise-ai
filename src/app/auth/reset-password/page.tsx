@@ -37,7 +37,7 @@ function ResetPasswordContent() {
         
         // Simulate successful verification
         setIsTokenValid(true);
-      } catch (_err) {
+      } catch (_error) {
         setError("Failed to verify reset token. Please try again.");
       } finally {
         setIsTokenChecked(true);
@@ -77,7 +77,7 @@ function ResetPasswordContent() {
       // Simulate successful reset
       setResetSuccess(true);
       setMessage("Password reset successfully. You can now log in with your new password.");
-    } catch (_err) {
+    } catch (_error) {
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);

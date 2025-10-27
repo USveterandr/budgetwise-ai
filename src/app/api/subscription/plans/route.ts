@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/lib/auth';
 export const dynamic = 'force-static';
 export const revalidate = 0;
 
-export async function GET(_request: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     // Check authentication
     const user = getCurrentUser();

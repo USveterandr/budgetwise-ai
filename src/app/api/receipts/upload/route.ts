@@ -8,7 +8,7 @@ export const revalidate = 0;
 
 // Mock R2 bucket for demonstration
 const mockR2Bucket: R2Bucket = {
-  put: async (_key: string, value: ArrayBuffer) => {
+  put: async (_k: string, value: ArrayBuffer) => {
     // In a real implementation, this would upload to Cloudflare R2
     console.log(`Uploading file to R2`);
     return {
@@ -17,15 +17,15 @@ const mockR2Bucket: R2Bucket = {
       etag: 'mock-etag'
     };
   },
-  get: async (_key: string) => {
+  get: async (_k: string) => {
     // Mock implementation
     return null;
   },
-  delete: async (_key: string) => {
+  delete: async (_k: string) => {
     // Mock implementation
     return;
   },
-  list: async (_options?: { prefix?: string; limit?: number }) => {
+  list: async (_opts?: { prefix?: string; limit?: number }) => {
     // Mock implementation
     return {
       objects: [],
@@ -36,7 +36,7 @@ const mockR2Bucket: R2Bucket = {
 
 const r2Storage = new R2Storage(mockR2Bucket, 'mock-bucket');
 
-export async function POST(_request: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     // Check authentication
     const user = getCurrentUser();

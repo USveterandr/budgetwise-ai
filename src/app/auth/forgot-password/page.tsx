@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const router = useRouter();
+  const _router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
       } else {
         setError(result.error || "Failed to request password reset.");
       }
-    } catch (_err) {
+    } catch (_error) {
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);

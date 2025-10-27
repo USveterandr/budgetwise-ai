@@ -175,7 +175,7 @@ export class Database {
     }
   }
 
-  async getUserById(_id: string): Promise<User | null> {
+  async getUserById(_userId: string): Promise<User | null> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return null as this isn't implemented in the worker
@@ -202,7 +202,7 @@ export class Database {
     }
   }
 
-  async updateUser(_id: string, _updates: Partial<Omit<User, 'id' | 'created_at'>>): Promise<User | null> {
+  async updateUser(_userId: string, _userUpdates: Partial<Omit<User, 'id' | 'created_at'>>): Promise<User | null> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return null as this isn't implemented in the worker
@@ -295,7 +295,7 @@ export class Database {
   }
 
   // Budget operations
-  async createBudget(_budget: Omit<Budget, 'id' | 'created_at' | 'updated_at' | 'spent_amount'>): Promise<Budget | null> {
+  async createBudget(_newBudget: Omit<Budget, 'id' | 'created_at' | 'updated_at' | 'spent_amount'>): Promise<Budget | null> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return null as this isn't implemented in the worker
@@ -306,7 +306,7 @@ export class Database {
     }
   }
 
-  async getBudgetsByUser(_userId: string): Promise<Budget[]> {
+  async getBudgetsByUser(_budgetUserId: string): Promise<Budget[]> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return empty array as this isn't implemented in the worker
@@ -318,7 +318,7 @@ export class Database {
   }
 
   // Investment operations
-  async createInvestment(_investment: Omit<Investment, 'id' | 'created_at' | 'updated_at'>): Promise<Investment | null> {
+  async createInvestment(_newInvestment: Omit<Investment, 'id' | 'created_at' | 'updated_at'>): Promise<Investment | null> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return null as this isn't implemented in the worker
@@ -329,7 +329,7 @@ export class Database {
     }
   }
 
-  async getInvestmentsByUser(_userId: string): Promise<Investment[]> {
+  async getInvestmentsByUser(_investmentUserId: string): Promise<Investment[]> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return empty array as this isn't implemented in the worker
@@ -341,7 +341,7 @@ export class Database {
   }
 
   // Subscription operations
-  async createSubscription(_subscription: Omit<Subscription, 'id' | 'created_at' | 'updated_at'>): Promise<Subscription | null> {
+  async createSubscription(_newSubscription: Omit<Subscription, 'id' | 'created_at' | 'updated_at'>): Promise<Subscription | null> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return null as this isn't implemented in the worker
@@ -352,7 +352,7 @@ export class Database {
     }
   }
 
-  async getSubscriptionsByUser(_userId: string): Promise<Subscription[]> {
+  async getSubscriptionsByUser(_subscriptionUserId: string): Promise<Subscription[]> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return empty array as this isn't implemented in the worker
@@ -364,7 +364,7 @@ export class Database {
   }
 
   // Consultation operations
-  async createConsultation(_consultation: Omit<Consultation, 'id' | 'created_at' | 'updated_at'>): Promise<Consultation | null> {
+  async createConsultation(_newConsultation: Omit<Consultation, 'id' | 'created_at' | 'updated_at'>): Promise<Consultation | null> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return null as this isn't implemented in the worker
@@ -375,7 +375,7 @@ export class Database {
     }
   }
 
-  async getConsultationsByUser(_userId: string): Promise<Consultation[]> {
+  async getConsultationsByUser(_consultationUserId: string): Promise<Consultation[]> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return empty array as this isn't implemented in the worker
@@ -387,7 +387,7 @@ export class Database {
   }
 
   // Receipt operations
-  async createReceipt(_receipt: Omit<Receipt, 'id' | 'created_at' | 'updated_at'>): Promise<Receipt | null> {
+  async createReceipt(_newReceipt: Omit<Receipt, 'id' | 'created_at' | 'updated_at'>): Promise<Receipt | null> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return null as this isn't implemented in the worker
@@ -398,7 +398,7 @@ export class Database {
     }
   }
 
-  async getReceiptsByUser(_userId: string): Promise<Receipt[]> {
+  async getReceiptsByUser(_receiptUserId: string): Promise<Receipt[]> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return empty array as this isn't implemented in the worker
@@ -410,7 +410,7 @@ export class Database {
   }
 
   // Category operations
-  async createCategory(_category: Omit<Category, 'id' | 'created_at' | 'updated_at'>): Promise<Category | null> {
+  async createCategory(_newCategory: Omit<Category, 'id' | 'created_at' | 'updated_at'>): Promise<Category | null> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return null as this isn't implemented in the worker
@@ -421,7 +421,7 @@ export class Database {
     }
   }
 
-  async getCategoriesByUser(_userId: string): Promise<Category[]> {
+  async getCategoriesByUser(_categoryUserId: string): Promise<Category[]> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return empty array as this isn't implemented in the worker
@@ -433,7 +433,7 @@ export class Database {
   }
 
   // Category rule operations
-  async createCategoryRule(_categoryRule: Omit<CategoryRule, 'id' | 'created_at' | 'updated_at'>): Promise<CategoryRule | null> {
+  async createCategoryRule(_newCategoryRule: Omit<CategoryRule, 'id' | 'created_at' | 'updated_at'>): Promise<CategoryRule | null> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return null as this isn't implemented in the worker
@@ -444,7 +444,7 @@ export class Database {
     }
   }
 
-  async getCategoryRulesByUser(_userId: string): Promise<CategoryRule[]> {
+  async getCategoryRulesByUser(_categoryRuleUserId: string): Promise<CategoryRule[]> {
     try {
       // This would require a specific endpoint in the worker
       // For now, we'll return empty array as this isn't implemented in the worker

@@ -310,9 +310,14 @@ export default function ReportsPage() {
                       <h3 className="text-lg font-medium">Spending by Category</h3>
                       <ReportChart 
                         type="pie" 
-                        data={reportData.data as SpendingByCategoryData[]} 
+                        data={(reportData.data as SpendingByCategoryData[]).map(item => ({
+                          name: item.category,
+                          amount: item.amount,
+                          count: item.count,
+                          percentage: item.percentage
+                        }))} 
                         dataKey="amount" 
-                        nameKey="category" 
+                        nameKey="name" 
                         title="Spending by Category" 
                       />
                       <div className="space-y-3">
@@ -348,9 +353,14 @@ export default function ReportsPage() {
                       </h3>
                       <ReportChart 
                         type="line" 
-                        data={reportData.data as IncomeVsExpensesData[]} 
+                        data={(reportData.data as IncomeVsExpensesData[]).map(item => ({
+                          name: item.month,
+                          income: item.income,
+                          expense: item.expense,
+                          net: item.net
+                        }))} 
                         dataKey="net" 
-                        nameKey="month" 
+                        nameKey="name" 
                         title="Net Income Over Time" 
                       />
                       <div className="overflow-x-auto">
@@ -401,9 +411,14 @@ export default function ReportsPage() {
                       <h3 className="text-lg font-medium">Budget Performance</h3>
                       <ReportChart 
                         type="bar" 
-                        data={reportData.data as BudgetPerformanceData[]} 
+                        data={(reportData.data as BudgetPerformanceData[]).map(item => ({
+                          name: item.category,
+                          budgeted: item.budgeted,
+                          actual: item.actual,
+                          difference: item.difference
+                        }))} 
                         dataKey="difference" 
-                        nameKey="category" 
+                        nameKey="name" 
                         title="Budget vs Actual Spending" 
                       />
                       <div className="overflow-x-auto">
@@ -457,9 +472,14 @@ export default function ReportsPage() {
                       <h3 className="text-lg font-medium">Net Worth</h3>
                       <ReportChart 
                         type="line" 
-                        data={reportData.data as NetWorthData[]} 
+                        data={(reportData.data as NetWorthData[]).map(item => ({
+                          name: item.date,
+                          assets: item.assets,
+                          liabilities: item.liabilities,
+                          netWorth: item.netWorth
+                        }))} 
                         dataKey="netWorth" 
-                        nameKey="date" 
+                        nameKey="name" 
                         title="Net Worth Over Time" 
                       />
                       <div className="overflow-x-auto">
