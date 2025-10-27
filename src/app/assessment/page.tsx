@@ -5,24 +5,57 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowRightIcon,
-  ChartBarIcon,
   LightBulbIcon,
-  SparklesIcon,
   ShieldCheckIcon,
   CurrencyDollarIcon,
-  AcademicCapIcon,
   CheckCircleIcon,
   DocumentTextIcon,
   ArrowLeftIcon
 } from "@heroicons/react/24/outline";
 import { getCurrentUser } from '@/lib/auth-client';
 
+// Define interfaces for our assessment data
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  // Add other user properties as needed
+}
+
+interface AssessmentData {
+  score: number;
+  recommendations: string[];
+  projectedSavings: number;
+}
+
+interface NumberQuestion {
+  id: string;
+  text: string;
+  type: "number";
+  placeholder: string;
+}
+
+interface SelectQuestion {
+  id: string;
+  text: string;
+  type: "select";
+  options: string[];
+}
+
+type Question = NumberQuestion | SelectQuestion;
+
+interface AssessmentStep {
+  title: string;
+  description: string;
+  questions: Question[];
+}
+
 export default function FinanceAssessmentPage() {
-  const [user, setUser] = useState<any>(null);
-  const [assessmentData, setAssessmentData] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [assessmentData, setAssessmentData] = useState<AssessmentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<any>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -39,10 +72,10 @@ export default function FinanceAssessmentPage() {
     fetchUser();
   }, []);
 
-  const assessmentSteps = [
+  const assessmentSteps: AssessmentStep[] = [
     {
       title: "Financial Overview",
-      description: "Let's understand your current financial situation",
+      description: "Let&apos;s understand your current financial situation",
       questions: [
         {
           id: "income",
@@ -140,7 +173,7 @@ export default function FinanceAssessmentPage() {
     try {
       setLoading(true);
       // In a real implementation, this would send the data to your API
-      // For now, we'll simulate a successful submission
+      // For now, we&apos;ll simulate a successful submission
       setTimeout(() => {
         setAssessmentData({
           score: 78,
@@ -212,7 +245,7 @@ export default function FinanceAssessmentPage() {
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Your Personal Finance Assessment</h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Congratulations! Based on your responses, here's your personalized financial health analysis.
+              Congratulations! Based on your responses, here&apos;s your personalized financial health analysis.
             </p>
           </div>
 
@@ -226,10 +259,10 @@ export default function FinanceAssessmentPage() {
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Financial Health Score</h2>
               <p className="text-gray-600 mb-6">
                 {assessmentData.score >= 80 
-                  ? "Excellent! You're in great financial shape." 
+                  ? "Excellent! You&apos;re in great financial shape." 
                   : assessmentData.score >= 60 
-                    ? "Good! There's room for improvement." 
-                    : "Needs attention. Let's work on your financial health."}
+                    ? "Good! There&apos;s room for improvement." 
+                    : "Needs attention. Let&apos;s work on your financial health."}
               </p>
               
               <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6 mb-6">
@@ -317,31 +350,34 @@ export default function FinanceAssessmentPage() {
           <div className="space-y-8">
             {assessmentSteps[currentStep].questions.map((question) => (
               <div key={question.id} className="space-y-4">
-                <label className="block text-lg font-medium text-gray-900">
+                <label htmlFor={question.id} className="block text-lg font-medium text-gray-900">
                   {question.text}
                 </label>
                 {question.type === "number" ? (
                   <input
+                    id={question.id}
                     type="number"
-                    placeholder={question.placeholder}
+                    placeholder={(question as NumberQuestion).placeholder}
                     value={answers[question.id] || ""}
                     onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   />
-                ) : question.type === "select" ? (
+                ) : (
                   <select
+                    id={question.id}
                     value={answers[question.id] || ""}
                     onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    aria-label={question.text}
                   >
                     <option value="">Select an option</option>
-                    {question.options?.map((option: string, index: number) => (
+                    {(question as SelectQuestion).options.map((option: string, index: number) => (
                       <option key={index} value={option}>
                         {option}
                       </option>
                     ))}
                   </select>
-                ) : null}
+                )}
               </div>
             ))}
           </div>

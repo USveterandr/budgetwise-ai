@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { db } from '@/lib/db';
+// import { db } from '@/lib/db'; // Not used in this file
 
 // Configure for static export
 export const dynamic = 'force-static';

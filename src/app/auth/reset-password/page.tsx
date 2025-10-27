@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-// import { verifyPasswordResetToken, resetPassword } from "@/lib/auth-client"; // Not used directly in this file
+// import { verifyPasswordResetToken, resetPassword } from "@/lib/auth-client"; // Not used in this file
 
 // Create a separate component for the main content to avoid issues with useSearchParams
 function ResetPasswordContent() {
@@ -37,7 +37,7 @@ function ResetPasswordContent() {
         
         // Simulate successful verification
         setIsTokenValid(true);
-      } catch (err) {
+      } catch (_err) {
         setError("Failed to verify reset token. Please try again.");
       } finally {
         setIsTokenChecked(true);
