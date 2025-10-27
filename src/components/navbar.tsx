@@ -14,7 +14,8 @@ import {
   UserIcon,
   ShieldCheckIcon,
   ArrowRightOnRectangleIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  SparklesIcon
 } from "@heroicons/react/24/outline";
 import { getCurrentUser } from "@/lib/auth-client";
 import { logout } from "@/lib/auth-client";
@@ -101,6 +102,13 @@ export function Navbar() {
           </div>
           <div className="flex items-center">
             <div className="hidden md:ml-4 md:flex md:items-center">
+              <Link 
+                href="/assessment" 
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 mr-4"
+              >
+                <SparklesIcon className="h-4 w-4 mr-1.5" />
+                Free Assessment
+              </Link>
               <button
                 type="button"
                 className="relative p-1 text-gray-400 hover:text-gray-500"

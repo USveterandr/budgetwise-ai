@@ -287,7 +287,13 @@ export default function HomePage() {
           <div className="mt-8 p-4 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl border border-yellow-500/30">
             <div className="flex items-center justify-center">
               <GiftIcon className="h-5 w-5 text-yellow-400 mr-2" />
-              <span className="font-bold text-yellow-300">Last Chance: Free Bonus Included - Personal Finance Assessment ($99 Value)</span>
+              <span className="font-bold text-yellow-300">
+                Last Chance: Free Bonus Included -{" "}
+                <Link href="/assessment" className="underline hover:text-yellow-200">
+                  Personal Finance Assessment
+                </Link>{" "}
+                ($99 Value)
+              </span>
             </div>
           </div>
         </div>
