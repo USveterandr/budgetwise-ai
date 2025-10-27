@@ -2254,28 +2254,55 @@ export default {
             emailVerificationExpires.toISOString()
           ).run();
           
-          // Send confirmation email (if HUBSPOT_API_KEY is configured)
-          if (env.HUBSPOT_API_KEY && env.HUBSPOT_TEMPLATE_ID) {
+          // Send confirmation email (if SENDGRID_API_KEY is configured)
+          if (env.SENDGRID_API_KEY) {
             try {
               const confirmationUrl = `https://budgetwise-ai.pages.dev/auth/confirm-email?token=${emailVerificationToken}`;
               
-              const emailResponse = await fetch('https://api.hubapi.com/marketing/v3/transactional/email/single-send', {
+              // Send email via SendGrid
+              const emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${env.HUBSPOT_API_KEY}`
+                  'Authorization': `Bearer ${env.SENDGRID_API_KEY}`
                 },
                 body: JSON.stringify({
-                  emailId: env.HUBSPOT_TEMPLATE_ID,
-                  recipient: {
-                    email: userData.email,
-                    properties: {
-                      firstname: userData.name,
-                      confirmation_link: confirmationUrl
-                    }
-                  }
+                  personalizations: [{
+                    to: [{ email: userData.email, name: userData.name }],
+                    subject: 'Confirm your BudgetWise account'
+                  }],
+                  from: {
+                    email: env.SENDGRID_FROM_EMAIL || 'noreply@budgetwise.ai',
+                    name: 'BudgetWise'
+                  },
+                  content: [{
+                    type: 'text/html',
+                    value: `
+                      <p>Hello ${userData.name},</p>
+                      <p>Thank you for signing up for BudgetWise!</p>
+                      <p>Please click the link below to confirm your email address:</p>
+                      <p><a href="${confirmationUrl}">Confirm Email Address</a></p>
+                      <p>If you didn't create an account with us, you can safely ignore this email.</p>
+                      <p>Best regards,<br>The BudgetWise Team</p>
+                    `
+                  }]
                 })
               });
+              
+              if (!emailResponse.ok) {
+                const errorText = await emailResponse.text();
+                console.error('SendGrid email error:', errorText);
+              } else {
+                console.log('Confirmation email sent successfully to', userData.email);
+              }
+            } catch (emailError) {
+              console.error('Failed to send confirmation email:', emailError);
+            }
+          } else {
+            // Fallback for development - log the confirmation URL
+            const confirmationUrl = `https://budgetwise-ai.pages.dev/auth/confirm-email?token=${emailVerificationToken}`;
+            console.log('SendGrid not configured. Confirmation URL for development:', confirmationUrl);
+          }
               
               if (!emailResponse.ok) {
                 const errorData = await emailResponse.json();
@@ -2548,29 +2575,56 @@ export default {
           ).bind(resetToken, resetExpires.toISOString(), email).run();
           
           // Send reset email (if HUBSPOT_API_KEY is configured)
-          if (env.HUBSPOT_API_KEY && env.HUBSPOT_TEMPLATE_ID) {
+          if (env.SENDGRID_API_KEY) {
+          // Send reset email (if SENDGRID_API_KEY is configured)
+          if (env.SENDGRID_API_KEY) {
             try {
               const resetUrl = `https://budgetwise-ai.pages.dev/auth/reset-password?token=${resetToken}`;
               
-              const emailResponse = await fetch('https://api.hubapi.com/marketing/v3/transactional/email/single-send', {
+              // Send email via SendGrid
+              const emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${env.HUBSPOT_API_KEY}`
+                  'Authorization': `Bearer ${env.SENDGRID_API_KEY}`
                 },
                 body: JSON.stringify({
-                  emailId: env.HUBSPOT_TEMPLATE_ID,
-                  recipient: {
-                    email: user.email,
-                    properties: {
-                      firstname: user.name,
-                      reset_link: resetUrl
-                    }
-                  }
+                  personalizations: [{
+                    to: [{ email: email }],
+                    subject: 'Reset your BudgetWise password'
+                  }],
+                  from: {
+                    email: env.SENDGRID_FROM_EMAIL || 'noreply@budgetwise.ai',
+                    name: 'BudgetWise'
+                  },
+                  content: [{
+                    type: 'text/html',
+                    value: `
+                      <p>Hello,</p>
+                      <p>You requested to reset your BudgetWise password.</p>
+                      <p>Please click the link below to reset your password:</p>
+                      <p><a href="${resetUrl}">Reset Password</a></p>
+                      <p>If you didn't request a password reset, you can safely ignore this email.</p>
+                      <p>Best regards,<br>The BudgetWise Team</p>
+                    `
+                  }]
                 })
               });
               
               if (!emailResponse.ok) {
+                const errorText = await emailResponse.text();
+                console.error('SendGrid email error:', errorText);
+              } else {
+                console.log('Password reset email sent successfully to', email);
+              }
+            } catch (emailError) {
+              console.error('Failed to send password reset email:', emailError);
+            }
+          } else {
+            // Fallback for development - log the reset URL
+            const resetUrl = `https://budgetwise-ai.pages.dev/auth/reset-password?token=${resetToken}`;
+            console.log('SendGrid not configured. Password reset URL for development:', resetUrl);
+          }
                 const errorData = await emailResponse.json();
                 console.error('HubSpot email error:', errorData);
               }

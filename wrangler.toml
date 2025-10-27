@@ -5,10 +5,14 @@ pages_build_output_dir = "out"
 [vars]
 NODE_VERSION = "22"
 ENVIRONMENT = "development"
+# SENDGRID_API_KEY = "your_sendgrid_api_key_here"
+# SENDGRID_FROM_EMAIL = "noreply@budgetwise.ai"
 
 [env.production.vars]
 ENVIRONMENT = "production"
 NODE_VERSION = "22"
+# SENDGRID_API_KEY = "your_sendgrid_api_key_here"
+# SENDGRID_FROM_EMAIL = "noreply@budgetwise.ai"
 
 # D1 Database Bindings
 [[d1_databases]]
