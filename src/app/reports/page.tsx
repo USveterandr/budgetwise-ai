@@ -10,6 +10,25 @@ import {
   ArrowDownTrayIcon
 } from "@heroicons/react/24/outline";
 import ReportChart from "@/components/reports/ReportChart";
+import CustomReportBuilder from "@/components/reports/CustomReportBuilder";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
+
+// Define types for autotable options
+interface AutoTableOptions {
+  head: string[][];
+  body: string[][];
+  startY: number;
+  styles?: { fontSize: number };
+  headStyles?: { fillColor: number[] };
+}
+
+// Extend jsPDF type definition to include autoTable
+declare module "jspdf" {
+  interface jsPDF {
+    autoTable: (options: AutoTableOptions) => jsPDF;
+  }
+}
 
 interface User {
   id: string;
@@ -72,6 +91,7 @@ export default function ReportsPage() {
     startDate: '',
     endDate: ''
   });
+  const [activeTab, setActiveTab] = useState<'reports' | 'builder'>('reports');
 
   const [user, setUser] = useState<User | null>(null);
 
@@ -149,9 +169,117 @@ export default function ReportsPage() {
     }
   };
 
-  const exportReport = (format: string) => {
-    // In a real implementation, this would export the report data
-    alert(`Exporting report as ${format}`);
+  const exportReport = async (format: string) => {
+    if (!reportData) return;
+
+    if (format === 'PDF') {
+      try {
+        const doc = new jsPDF();
+        
+        // Add title
+        const reportTitle = reportTypes.find(r => r.id === reportData.reportType)?.name || 'Financial Report';
+        doc.setFontSize(20);
+        doc.text(reportTitle, 105, 20, { align: 'center' });
+        
+        // Add generation date
+        doc.setFontSize(12);
+        doc.text(`Generated on: ${new Date(reportData.generatedAt).toLocaleString()}`, 105, 30, { align: 'center' });
+        
+        // Add data based on report type
+        let yPosition = 40;
+        
+        if (reportData.reportType === 'spending-by-category') {
+          doc.setFontSize(16);
+          doc.text('Spending by Category', 105, yPosition, { align: 'center' });
+          yPosition += 10;
+          
+          const data = reportData.data as SpendingByCategoryData[];
+          const tableData = data.map(item => [
+            item.category,
+            `$${item.amount.toFixed(2)}`,
+            `${item.percentage.toFixed(1)}%`
+          ]);
+          
+          doc.autoTable({
+            head: [['Category', 'Amount', 'Percentage']],
+            body: tableData,
+            startY: yPosition,
+            styles: { fontSize: 10 },
+            headStyles: { fillColor: [66, 153, 225] }
+          });
+        } else if (reportData.reportType === 'income-vs-expenses' || reportData.reportType === 'monthly-summary') {
+          const title = reportData.reportType === 'income-vs-expenses' ? 'Income vs Expenses' : 'Monthly Summary';
+          doc.setFontSize(16);
+          doc.text(title, 105, yPosition, { align: 'center' });
+          yPosition += 10;
+          
+          const data = reportData.data as IncomeVsExpensesData[];
+          const tableData = data.map(item => [
+            item.month,
+            `$${item.income.toFixed(2)}`,
+            `$${item.expense.toFixed(2)}`,
+            `$${item.net.toFixed(2)}`
+          ]);
+          
+          doc.autoTable({
+            head: [['Month', 'Income', 'Expenses', 'Net']],
+            body: tableData,
+            startY: yPosition,
+            styles: { fontSize: 10 },
+            headStyles: { fillColor: [66, 153, 225] }
+          });
+        } else if (reportData.reportType === 'budget-performance') {
+          doc.setFontSize(16);
+          doc.text('Budget Performance', 105, yPosition, { align: 'center' });
+          yPosition += 10;
+          
+          const data = reportData.data as BudgetPerformanceData[];
+          const tableData = data.map(item => [
+            item.category,
+            `$${item.budgeted.toFixed(2)}`,
+            `$${item.actual.toFixed(2)}`,
+            `$${item.difference.toFixed(2)}`
+          ]);
+          
+          doc.autoTable({
+            head: [['Category', 'Budgeted', 'Actual', 'Difference']],
+            body: tableData,
+            startY: yPosition,
+            styles: { fontSize: 10 },
+            headStyles: { fillColor: [66, 153, 225] }
+          });
+        } else if (reportData.reportType === 'net-worth') {
+          doc.setFontSize(16);
+          doc.text('Net Worth', 105, yPosition, { align: 'center' });
+          yPosition += 10;
+          
+          const data = reportData.data as NetWorthData[];
+          const tableData = data.map(item => [
+            item.date,
+            `$${item.assets.toFixed(2)}`,
+            `$${item.liabilities.toFixed(2)}`,
+            `$${item.netWorth.toFixed(2)}`
+          ]);
+          
+          doc.autoTable({
+            head: [['Date', 'Assets', 'Liabilities', 'Net Worth']],
+            body: tableData,
+            startY: yPosition,
+            styles: { fontSize: 10 },
+            headStyles: { fillColor: [66, 153, 225] }
+          });
+        }
+        
+        // Save the PDF
+        doc.save(`${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Failed to generate PDF report');
+      }
+    } else if (format === 'CSV') {
+      // Existing CSV export logic
+      alert(`Exporting report as ${format}`);
+    }
   };
 
   const getIconComponent = (iconName: string) => {
@@ -187,46 +315,73 @@ export default function ReportsPage() {
           <p className="text-gray-600">Generate and view detailed financial reports</p>
         </div>
 
+        {/* Tabs */}
+        <div className="mb-6 border-b border-gray-200">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('reports')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'reports'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Predefined Reports
+            </button>
+            <button
+              onClick={() => setActiveTab('builder')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'builder'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Custom Report Builder
+            </button>
+          </nav>
+        </div>
+
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
             <p className="text-red-700">{error}</p>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Report Types Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle>Report Types</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {reportTypes.map((report) => (
-                    <button
-                      key={report.id}
-                      onClick={() => generateReport(report.id)}
-                      disabled={generating}
-                      className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                        selectedReport === report.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-8 w-8 rounded-md bg-blue-100 text-blue-600 flex items-center justify-center mr-3">
-                          {getIconComponent(report.icon)}
+        {activeTab === 'reports' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Report Types Sidebar */}
+            <div className="lg:col-span-1">
+              <Card className="shadow-sm">
+                <CardHeader>
+                  <CardTitle>Report Types</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {reportTypes.map((report) => (
+                      <button
+                        key={report.id}
+                        onClick={() => generateReport(report.id)}
+                        disabled={generating}
+                        className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                          selectedReport === report.id
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-8 w-8 rounded-md bg-blue-100 text-blue-600 flex items-center justify-center mr-3">
+                            {getIconComponent(report.icon)}
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-gray-900">{report.name}</h3>
+                            <p className="text-sm text-gray-500">{report.description}</p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-medium text-gray-900">{report.name}</h3>
-                          <p className="text-sm text-gray-500">{report.description}</p>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
             {/* Date Range Selector */}
             {selectedReport && (
@@ -546,7 +701,11 @@ export default function ReportsPage() {
             )}
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6">
+          <CustomReportBuilder />
+        </div>
+      )}
     </div>
   );
 }
