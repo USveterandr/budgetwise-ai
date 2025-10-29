@@ -19,6 +19,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { getCurrentUser } from "@/lib/auth-client";
 import { logout } from "@/lib/auth-client";
+import NotificationBadge from "@/components/notifications/NotificationBadge";
 
 interface User {
   id: string;
@@ -109,13 +110,9 @@ export function Navbar() {
                 <SparklesIcon className="h-4 w-4 mr-1.5" />
                 Free Assessment
               </Link>
-              <button
-                type="button"
-                className="relative p-1 text-gray-400 hover:text-gray-500"
-                aria-label="Notifications"
-              >
-                <BellIcon className="h-5 w-5" />
-              </button>
+              {user && (
+                <NotificationBadge onClick={() => router.push('/notifications')} />
+              )}
               <div className="ml-3 relative flex items-center">
                 {user && (
                   <button
