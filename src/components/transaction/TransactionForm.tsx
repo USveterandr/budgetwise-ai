@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -36,6 +36,20 @@ export default function TransactionForm({
   
   const [suggestedCategory, setSuggestedCategory] = useState("");
   const [isGettingSuggestion, setIsGettingSuggestion] = useState(false);
+  const [showSuggestion, setShowSuggestion] = useState(false);
+
+  // Auto-suggest category when description or merchant changes
+  useEffect(() => {
+    const shouldSuggest = formData.description.length > 3 || formData.merchant.length > 3;
+    
+    if (shouldSuggest && !formData.category) {
+      const timer = setTimeout(() => {
+        getSuggestedCategory();
+      }, 500); // Debounce for 500ms
+      
+      return () => clearTimeout(timer);
+    }
+  }, [formData.description, formData.merchant]);
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('auth-token');
@@ -51,15 +65,15 @@ export default function TransactionForm({
     }
     
     setIsGettingSuggestion(true);
+    setShowSuggestion(true);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_DATABASE_WORKER_URL}/transactions/categorize`, {
+      const response = await fetch('/api/transactions/categorize', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
           description: formData.description,
-          merchant: formData.merchant,
-          amount: parseFloat(formData.amount) || 0
+          merchant: formData.merchant
         }),
       });
       
@@ -67,6 +81,14 @@ export default function TransactionForm({
       
       if (result.success) {
         setSuggestedCategory(result.category);
+        // Auto-apply high confidence suggestions
+        if (result.confidence > 0.8 && !formData.category) {
+          setFormData({
+            ...formData,
+            category: result.category
+          });
+          setShowSuggestion(false);
+        }
       }
     } catch (err) {
       console.error("Error getting category suggestion:", err);
@@ -82,6 +104,7 @@ export default function TransactionForm({
         category: suggestedCategory
       });
       setSuggestedCategory("");
+      setShowSuggestion(false);
     }
   };
 
@@ -187,7 +210,7 @@ export default function TransactionForm({
                   {isGettingSuggestion ? "..." : "Suggest"}
                 </Button>
               </div>
-              {suggestedCategory && (
+              {showSuggestion && suggestedCategory && (
                 <div className="mt-1 p-2 bg-blue-50 border border-blue-200 rounded-md">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-blue-800">

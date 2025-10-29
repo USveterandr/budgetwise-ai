@@ -16,8 +16,10 @@ import TransactionBulkActions from "@/components/transaction/TransactionBulkActi
 import CategoryRulesManager from "@/components/transaction/CategoryRulesManager";
 import TransactionAnalytics from "@/components/transaction/TransactionAnalytics";
 import TransactionForm from "@/components/transaction/TransactionForm";
+import AutoCategorizeButton from "@/components/transaction/AutoCategorizeButton";
 
 import { Transaction, TransactionFormData } from "@/types/transaction";
+import { CategorizationResult } from "@/services/transaction-categorization";
 
 interface User {
   id: string;
@@ -312,9 +314,15 @@ const TransactionsPage = () => {
     setEditingTransaction(null);
   };
   
+  const handleCategorizationComplete = (results: CategorizationResult[]) => {
+    // Refresh transactions to show updated categories
+    fetchTransactions();
+  };
 
-
-
+  const handleCategorizationComplete = (results: CategorizationResult[]) => {
+    // Refresh transactions to show updated categories
+    fetchTransactions();
+  };
 
   if (loading) {
     return (
@@ -381,7 +389,7 @@ const TransactionsPage = () => {
           onExport={handleExport}
         />
         
-        <div className="mb-6">
+        <div className="mb-6 flex gap-2">
           <Button 
             onClick={handleAddTransaction}
             className="bg-blue-600 hover:bg-blue-700 text-white flex items-center text-sm"
@@ -389,6 +397,10 @@ const TransactionsPage = () => {
             <PlusIcon className="h-4 w-4 mr-1" />
             Add Transaction
           </Button>
+          <AutoCategorizeButton 
+            transactions={transactions} 
+            onCategorizationComplete={handleCategorizationComplete} 
+          />
         </div>
 
         {showForm && user && (
