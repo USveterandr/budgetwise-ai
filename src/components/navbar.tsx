@@ -92,7 +92,7 @@ export function Navbar() {
                       isActive
                         ? "text-blue-600 border-b-2 border-blue-600"
                         : "text-gray-500 hover:text-gray-700"
-                    } inline-flex items-center px-1 pt-1 text-sm font-medium`}
+                    } inline-flex items-center px-1 pt-1 text-sm font-medium touch-target`}
                   >
                     <Icon className="h-4 w-4 mr-1.5" />
                     {item.name}
@@ -105,7 +105,7 @@ export function Navbar() {
             <div className="hidden md:ml-4 md:flex md:items-center">
               <Link 
                 href="/assessment" 
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 mr-4"
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 mr-4 mobile-button"
               >
                 <SparklesIcon className="h-4 w-4 mr-1.5" />
                 Free Assessment
@@ -117,13 +117,13 @@ export function Navbar() {
                 {user && (
                   <button
                     onClick={handleLogout}
-                    className="ml-3 p-1 text-gray-400 hover:text-gray-500"
+                    className="ml-3 p-1 text-gray-400 hover:text-gray-500 touch-target"
                     aria-label="Logout"
                   >
                     <ArrowRightOnRectangleIcon className="h-5 w-5" />
                   </button>
                 )}
-                <div className="ml-3 bg-gray-200 rounded-full w-6 h-6 flex items-center justify-center">
+                <div className="ml-3 bg-gray-200 rounded-full w-6 h-6 flex items-center justify-center touch-target">
                   <UserIcon className="h-4 w-4 text-gray-500" />
                 </div>
               </div>
@@ -131,7 +131,7 @@ export function Navbar() {
             <div className="-mr-2 flex items-center md:hidden">
               <button
                 type="button"
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 touch-target"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 aria-label="Open menu"
               >
@@ -161,7 +161,7 @@ export function Navbar() {
                     isActive
                       ? "bg-blue-50 text-blue-700"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
-                  } block pl-3 pr-4 py-2 text-base font-medium`}
+                  } block pl-3 pr-4 py-2 text-base font-medium touch-target`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <Icon className="h-4 w-4 mr-2 inline" />
@@ -175,7 +175,7 @@ export function Navbar() {
                   handleLogout();
                   setIsMenuOpen(false);
                 }}
-                className="text-gray-600 hover:bg-gray-50 hover:text-gray-800 block pl-3 pr-4 py-2 text-base font-medium w-full text-left"
+                className="text-gray-600 hover:bg-gray-50 hover:text-gray-800 block pl-3 pr-4 py-2 text-base font-medium w-full text-left touch-target"
               >
                 <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2 inline" />
                 Logout
