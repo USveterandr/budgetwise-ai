@@ -319,11 +319,6 @@ const TransactionsPage = () => {
     fetchTransactions();
   };
 
-  const handleCategorizationComplete = (results: CategorizationResult[]) => {
-    // Refresh transactions to show updated categories
-    fetchTransactions();
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-4 md:p-6">
