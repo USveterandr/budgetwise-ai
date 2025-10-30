@@ -25,9 +25,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
         <link rel="mask-icon" href="/icon-512x512.png" color="#3b82f6" />
       </head>
-      <body
-        className={`antialiased min-h-screen bg-gray-50 safe-area-top safe-area-bottom`}
-      >
+      <body className="antialiased min-h-screen bg-gray-50 safe-area-top safe-area-bottom">
         <div className="flex flex-col min-h-screen">
           <Navbar />
           <main className="flex-grow">
