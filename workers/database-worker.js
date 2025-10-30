@@ -2275,16 +2275,18 @@ export default {
               </body>
             </html>`;
 
-            // Send email via Cloudflare Email Service
-            await env.SEND_EMAIL.send({
-              to: [{ email: userData.email, name: userData.name }],
-              from: {
-                email: 'noreply@budgetwise.ai',
-                name: 'BudgetWise'
-              },
-              subject: 'Confirm your BudgetWise account',
-              html: html,
-              text: `Hello ${userData.name},
+            // Check if Cloudflare Email Service is available
+            if (env.SEND_EMAIL) {
+              // Send email via Cloudflare Email Service
+              await env.SEND_EMAIL.send({
+                to: [{ email: userData.email, name: userData.name }],
+                from: {
+                  email: 'noreply@budgetwise.ai',
+                  name: 'BudgetWise'
+                },
+                subject: 'Confirm your BudgetWise account',
+                html: html,
+                text: `Hello ${userData.name},
 
 Thank you for signing up for BudgetWise!
 
@@ -2295,9 +2297,13 @@ If you didn't create an account, you can safely ignore this email.
 
 Best regards,
 The BudgetWise Team`
-            });
-            
-            console.log('Confirmation email sent successfully to', userData.email);
+              });
+              
+              console.log('Confirmation email sent successfully to', userData.email);
+            } else {
+              // Fallback for development or when email service is not available
+              console.log('Cloudflare Email Service not available. Confirmation URL for development:', confirmationUrl);
+            }
           } catch (emailError) {
             console.error('Failed to send confirmation email via Cloudflare:', emailError);
           }
@@ -2833,7 +2839,6 @@ The BudgetWise Team`
               ...corsHeaders
             }
           });
-        } catch (error) {
           console.error('Error verifying reset token:', error);
           return new Response(JSON.stringify({ 
             success: false, 
