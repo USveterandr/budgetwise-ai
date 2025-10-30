@@ -107,6 +107,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 /* Minimal card styles */
@@ -196,6 +197,20 @@ body {
     -ms-user-select: none;
     user-select: none;
   }
+  
+  /* Improved responsive handling for background elements */
+  .responsive-bg-element {
+    @apply absolute;
+  }
+  
+  /* Ensure proper overflow handling */
+  .no-overflow-x {
+    overflow-x: hidden;
+  }
+  
+  .no-overflow-y {
+    overflow-y: hidden;
+  }
 }
 
 /* Fix for safe area on iPhone X and newer */
@@ -214,5 +229,27 @@ body {
   
   .safe-area-right {
     padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* Additional responsive utilities */
+@layer utilities {
+  .max-w-none {
+    max-width: none;
+  }
+  
+  .max-h-none {
+    max-height: none;
+  }
+  
+  /* Prevent oversized elements */
+  .max-size-full {
+    max-width: 100%;
+    max-height: 100%;
+  }
+  
+  /* Ensure proper stacking context */
+  .isolate {
+    isolation: isolate;
   }
 }

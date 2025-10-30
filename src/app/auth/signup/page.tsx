@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-// import { signup } from "@/lib/auth-client"; // Not used in this file
+import { signup } from "@/lib/auth-client";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -43,20 +43,18 @@ export default function SignupPage() {
     setIsLoading(true);
     
     try {
-      // In a real implementation, you would make an API call to register the user
-      // For this static export, we'll simulate the process
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simulate successful registration
-      const result = { success: true, error: "" };
+      // Call the real signup function
+      const result = await signup(name, email, password, selectedPlan);
       
       if (result.success) {
+        // The database worker should have sent the confirmation email
         // Show confirmation message instead of redirecting to dashboard
         setShowConfirmationMessage(true);
       } else {
         setError(result.error || "Signup failed");
       }
-    } catch (_error) {
+    } catch (error) {
+      console.error("Signup error:", error);
       setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);

@@ -883,65 +883,6 @@ export default {
       }
       
       if (path.startsWith('/transactions/user/') && request.method === 'GET') {
-            transactionData.description,
-            transactionData.category || null,
-            transactionData.amount,
-            transactionData.type,
-            transactionData.receipt_url || null,
-            transactionData.merchant || null,
-            transactionData.tags || null,
-            transactionData.notes || null,
-            transactionData.currency || 'USD',
-            now,
-            now
-          ).run();
-          
-          // Return the created transaction
-          const newTransaction = {
-            id,
-            user_id: transactionData.user_id,
-            date: transactionData.date,
-            description: transactionData.description,
-            category: transactionData.category || null,
-            amount: transactionData.amount,
-            type: transactionData.type,
-            receipt_url: transactionData.receipt_url || null,
-            merchant: transactionData.merchant || null,
-            tags: transactionData.tags || null,
-            notes: transactionData.notes || null,
-            currency: transactionData.currency || 'USD',
-            created_at: now,
-            updated_at: now
-          };
-          
-          return new Response(JSON.stringify({ 
-            success: true, 
-            transaction: newTransaction,
-            message: 'Transaction created successfully',
-            timestamp: new Date().toISOString()
-          }), {
-            headers: { 
-              'Content-Type': 'application/json',
-              ...corsHeaders
-            }
-          });
-        } catch (error) {
-          console.error('Error creating transaction:', error);
-          return new Response(JSON.stringify({ 
-            success: false, 
-            error: error.message,
-            timestamp: new Date().toISOString()
-          }), {
-            status: 500,
-            headers: { 
-              'Content-Type': 'application/json',
-              ...corsHeaders
-            }
-          });
-        }
-      }
-      
-      if (path.startsWith('/transactions/user/') && request.method === 'GET') {
         console.log('Matched GET /transactions/user/{userId} endpoint');
         // Require authentication for transaction operations
         const authResult = requireAuth(request);
@@ -1913,6 +1854,40 @@ export default {
         }
       }
       
+      // Test SendGrid configuration endpoint
+      if (path === '/test-sendgrid' && request.method === 'GET') {
+        try {
+          // Check if SendGrid is configured
+          const isSendGridConfigured = !!(env.SENDGRID_API_KEY && env.SENDGRID_API_KEY !== 'your_sendgrid_api_key_here');
+          
+          return new Response(JSON.stringify({ 
+            success: true,
+            sendgridConfigured: isSendGridConfigured,
+            hasApiKey: !!env.SENDGRID_API_KEY,
+            isPlaceholder: env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here',
+            message: isSendGridConfigured 
+              ? 'SendGrid is properly configured' 
+              : 'SendGrid is not configured or using placeholder values'
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ 
+            success: false,
+            error: error.message
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+
       // Update category rule
       if (path.startsWith('/category-rules/') && request.method === 'PUT') {
         console.log('Matched PUT /category-rules/{ruleId} endpoint');
@@ -2254,63 +2229,77 @@ export default {
             emailVerificationExpires.toISOString()
           ).run();
           
-          // Send confirmation email (if SENDGRID_API_KEY is configured)
-          if (env.SENDGRID_API_KEY) {
-            try {
-              const confirmationUrl = `https://budgetwise-ai.pages.dev/auth/confirm-email?token=${emailVerificationToken}`;
-              
-              // Send email via SendGrid
-              const emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${env.SENDGRID_API_KEY}`
-                },
-                body: JSON.stringify({
-                  personalizations: [{
-                    to: [{ email: userData.email, name: userData.name }],
-                    subject: 'Confirm your BudgetWise account'
-                  }],
-                  from: {
-                    email: env.SENDGRID_FROM_EMAIL || 'noreply@budgetwise.ai',
-                    name: 'BudgetWise'
-                  },
-                  content: [{
-                    type: 'text/html',
-                    value: `
-                      <p>Hello ${userData.name},</p>
-                      <p>Thank you for signing up for BudgetWise!</p>
-                      <p>Please click the link below to confirm your email address:</p>
-                      <p><a href="${confirmationUrl}">Confirm Email Address</a></p>
-                      <p>If you didn't create an account with us, you can safely ignore this email.</p>
-                      <p>Best regards,<br>The BudgetWise Team</p>
-                    `
-                  }]
-                })
-              });
-              
-              if (!emailResponse.ok) {
-                const errorText = await emailResponse.text();
-                console.error('SendGrid email error:', errorText);
-              } else {
-                console.log('Confirmation email sent successfully to', userData.email);
-              }
-            } catch (emailError) {
-              console.error('Failed to send confirmation email:', emailError);
-            }
-          } else {
-            // Fallback for development - log the confirmation URL
+          // Send confirmation email using Cloudflare Email Service
+          try {
             const confirmationUrl = `https://budgetwise-ai.pages.dev/auth/confirm-email?token=${emailVerificationToken}`;
-            console.log('SendGrid not configured. Confirmation URL for development:', confirmationUrl);
-          }
-              
-              if (!emailResponse.ok) {
-                const errorData = await emailResponse.json();
-                console.error('HubSpot email error:', errorData);
-              }
-            } catch (emailError) {
-              console.error('Failed to send confirmation email:', emailError);
-            }
+            
+            // Create a nice HTML email template
+            const html = `
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Confirm your BudgetWise account</title>
+                <style>
+                  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }
+                  .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 40px; }
+                  .header { text-align: center; margin-bottom: 30px; }
+                  .logo { width: 40px; height: 40px; margin: 0 auto; }
+                  h1 { color: #333; font-size: 24px; margin: 20px 0; }
+                  p { color: #666; font-size: 16px; line-height: 1.5; margin: 15px 0; }
+                  .button { display: inline-block; background: #000; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+                  .footer { margin-top: 30px; text-align: center; color: #999; font-size: 14px; }
+                  .url { word-break: break-all; color: #0066cc; font-size: 14px; }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <div class="header">
+                    <div class="logo">💰</div>
+                    <h1>Welcome to BudgetWise!</h1>
+                  </div>
+                  <p>Hello ${userData.name},</p>
+                  <p>Thank you for signing up for BudgetWise! We're excited to help you take control of your finances with our AI-powered platform.</p>
+                  <p>Please click the button below to confirm your email address:</p>
+                  <div style="text-align: center;">
+                    <a href="${confirmationUrl}" class="button">Confirm Email Address</a>
+                  </div>
+                  <p>Or copy and paste this URL into your browser:</p>
+                  <p class="url">${confirmationUrl}</p>
+                  <p>If you didn't create an account with us, you can safely ignore this email.</p>
+                  <div class="footer">
+                    <p>Best regards,<br>The BudgetWise Team</p>
+                  </div>
+                </div>
+              </body>
+            </html>`;
+
+            // Send email via Cloudflare Email Service
+            await env.SEND_EMAIL.send({
+              to: [{ email: userData.email, name: userData.name }],
+              from: {
+                email: 'noreply@budgetwise.ai',
+                name: 'BudgetWise'
+              },
+              subject: 'Confirm your BudgetWise account',
+              html: html,
+              text: `Hello ${userData.name},
+
+Thank you for signing up for BudgetWise!
+
+Please click the link below to confirm your email address:
+${confirmationUrl}
+
+If you didn't create an account, you can safely ignore this email.
+
+Best regards,
+The BudgetWise Team`
+            });
+            
+            console.log('Confirmation email sent successfully to', userData.email);
+          } catch (emailError) {
+            console.error('Failed to send confirmation email via Cloudflare:', emailError);
           }
           
           return new Response(JSON.stringify({ 
@@ -2574,10 +2563,8 @@ export default {
             'UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE email = ?'
           ).bind(resetToken, resetExpires.toISOString(), email).run();
           
-          // Send reset email (if HUBSPOT_API_KEY is configured)
-          if (env.SENDGRID_API_KEY) {
-          // Send reset email (if SENDGRID_API_KEY is configured)
-          if (env.SENDGRID_API_KEY) {
+          // Send reset email (if SENDGRID_API_KEY is configured and is not a placeholder)
+          if (env.SENDGRID_API_KEY && env.SENDGRID_API_KEY !== 'your_sendgrid_api_key_here') {
             try {
               const resetUrl = `https://budgetwise-ai.pages.dev/auth/reset-password?token=${resetToken}`;
               
@@ -2624,13 +2611,6 @@ export default {
             // Fallback for development - log the reset URL
             const resetUrl = `https://budgetwise-ai.pages.dev/auth/reset-password?token=${resetToken}`;
             console.log('SendGrid not configured. Password reset URL for development:', resetUrl);
-          }
-                const errorData = await emailResponse.json();
-                console.error('HubSpot email error:', errorData);
-              }
-            } catch (emailError) {
-              console.error('Failed to send reset email:', emailError);
-            }
           }
           
           return new Response(JSON.stringify({ 
@@ -2690,10 +2670,138 @@ export default {
               status: 400,
               headers: { 
                 'Content-Type': 'application/json',
+              }
+            });
+          }
+          
+          const user = await env.users.prepare(
+            'SELECT * FROM users WHERE password_reset_token = ? AND password_reset_expires > ?'
+          ).bind(token, new Date().toISOString()).first();
+          
+          if (!user) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Invalid or expired token.',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 401,
+              headers: { 
+                'Content-Type': 'application/json',
                 ...corsHeaders
               }
             });
           }
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: 'Token is valid.',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 200,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error during password reset token verification:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'An error occurred while verifying your token. Please try again.',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+      
+      // Reset password endpoint
+      if (path === '/auth/reset-password' && request.method === 'POST') {
+        try {
+          let token;
+          let password;
+          try {
+            const body = await request.json();
+            token = body.token;
+            password = body.password;
+          } catch (parseError) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Token and password are required.',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          if (!token || !password) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Token and password are required.',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 400,
+              headers: { 
+                'Content-Type': 'application/json',
+              }
+            });
+          }
+          
+          const user = await env.users.prepare(
+            'SELECT * FROM users WHERE password_reset_token = ? AND password_reset_expires > ?'
+          ).bind(token, new Date().toISOString()).first();
+          
+          if (!user) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'Invalid or expired token.',
+              timestamp: new Date().toISOString()
+            }), {
+              status: 401,
+              headers: { 
+                'Content-Type': 'application/json',
+                ...corsHeaders
+              }
+            });
+          }
+          
+          // Update user with new password and clear reset token
+          await env.users.prepare(
+            'UPDATE users SET password = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE id = ?'
+          ).bind(await bcrypt.hash(password), user.id).run();
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: 'Your password has been reset successfully.',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 200,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          console.error('Error during password reset:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'An error occurred while resetting your password. Please try again.',
+            timestamp: new Date().toISOString()
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
           
           // Check if token exists and is valid
           const user = await env.users.prepare(
@@ -3397,6 +3505,40 @@ export default {
         }
       }
       
+      // Test SendGrid configuration endpoint
+      if (path === '/test-sendgrid' && request.method === 'GET') {
+        try {
+          // Check if SendGrid is configured
+          const isSendGridConfigured = !!(env.SENDGRID_API_KEY && env.SENDGRID_API_KEY !== 'your_sendgrid_api_key_here');
+          
+          return new Response(JSON.stringify({ 
+            success: true,
+            sendgridConfigured: isSendGridConfigured,
+            hasApiKey: !!env.SENDGRID_API_KEY,
+            isPlaceholder: env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here',
+            message: isSendGridConfigured 
+              ? 'SendGrid is properly configured' 
+              : 'SendGrid is not configured or using placeholder values'
+          }), {
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ 
+            success: false,
+            error: error.message
+          }), {
+            status: 500,
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders
+            }
+          });
+        }
+      }
+
       return new Response('Not Found', { 
         status: 404,
         headers: corsHeaders

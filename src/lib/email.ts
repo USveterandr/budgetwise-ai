@@ -1,4 +1,6 @@
 // Email utility functions
+import { render } from '@react-email/render';
+import ConfirmationEmail from '@/emails/confirmation-email';
 
 // Check if we're running on the client side
 const isClient = typeof window !== 'undefined';
@@ -12,61 +14,33 @@ const HUBSPOT_TEMPLATE_ID = isClient
   ? (window as unknown as { env?: { HUBSPOT_TEMPLATE_ID?: string } }).env?.HUBSPOT_TEMPLATE_ID || process.env.NEXT_PUBLIC_HUBSPOT_TEMPLATE_ID
   : process.env.HUBSPOT_TEMPLATE_ID;
 
+const SENDGRID_API_KEY = isClient
+  ? (window as unknown as { env?: { SENDGRID_API_KEY?: string } }).env?.SENDGRID_API_KEY || process.env.NEXT_PUBLIC_SENDGRID_API_KEY
+  : process.env.SENDGRID_API_KEY;
+
+// Email utility functions for Cloudflare Email Service
+
 // Send confirmation email
 export async function sendConfirmationEmail(email: string, name: string, confirmationToken: string) {
   try {
-    // In a real implementation, you would send an actual email
-    // For now, we'll just log that we would send an email
-    console.log(`Would send confirmation email to ${email} with token ${confirmationToken}`);
-    
-    // If we have HubSpot configured, send via HubSpot
-    if (HUBSPOT_API_KEY && HUBSPOT_TEMPLATE_ID) {
-      return await sendViaHubSpot(email, name, confirmationToken);
-    }
-    
-    // Fallback for development
-    console.log('Email would contain confirmation link:', 
-      `https://budgetwise-ai.pages.dev/auth/confirm-email?token=${confirmationToken}`);
-    return { success: true, message: 'Confirmation email sent successfully' };
-  } catch (error) {
-    console.error('Email sending error:', error);
-    return { success: false, error: 'Failed to send confirmation email' };
-  }
-}
-
-// Send via HubSpot Transactional API
-async function sendViaHubSpot(email: string, name: string, confirmationToken: string) {
-  try {
-    const confirmationUrl = `https://budgetwise-ai.pages.dev/auth/confirm-email?token=${confirmationToken}`;
-    
-    const response = await fetch('https://api.hubapi.com/marketing/v3/transactional/email/single-send', {
+    // For Cloudflare Email Service, we'll make a request to our own API endpoint
+    const response = await fetch('/api/send-confirmation-email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${HUBSPOT_API_KEY}`
       },
       body: JSON.stringify({
-        emailId: HUBSPOT_TEMPLATE_ID,
-        recipient: {
-          email: email,
-          properties: {
-            firstname: name,
-            confirmation_link: confirmationUrl
-          }
-        }
+        email,
+        name,
+        confirmationToken
       })
     });
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`HubSpot API error: ${JSON.stringify(errorData)}`);
-    }
-    
     const result = await response.json();
-    return { success: true, message: 'Confirmation email sent successfully via HubSpot', result };
+    return result;
   } catch (error) {
-    console.error('HubSpot email error:', error);
-    throw error;
+    console.error('Email sending error:', error);
+    return { success: false, error: 'Failed to send confirmation email' };
   }
 }
 
