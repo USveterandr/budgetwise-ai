@@ -56,6 +56,9 @@
     },
     "runtimeVersion": {
       "policy": "sdkVersion"
+    },
+    "extra": {
+      "clerkPublishableKey": "pk_test_YWN0aXZlLWVmdC0xNC5jbGVyay5hY2NvdW50cy5kZXYk"
     }
   }
 }

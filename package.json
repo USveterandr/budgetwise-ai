@@ -12,6 +12,7 @@
     "build": "npx expo export --platform web --clear"
   },
   "dependencies": {
+    "@clerk/clerk-expo": "^2.19.8",
     "@expo/metro-runtime": "~3.2.0",
     "@expo/vector-icons": "^15.0.2",
     "@react-navigation/bottom-tabs": "^7.3.10",

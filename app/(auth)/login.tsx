@@ -7,9 +7,11 @@ import { Colors } from '../../constants/Colors';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
+import { useSignIn } from '@clerk/clerk-expo';
 
 export default function LoginScreen() {
   const { login } = useAuth();
+  const { signIn, setActive, isLoaded } = useSignIn();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,27 +22,42 @@ export default function LoginScreen() {
       setError('Please fill in all fields');
       return;
     }
+    
+    if (!isLoaded) {
+      return;
+    }
+    
     setLoading(true);
     setError('');
+    
     try {
-      const success = await login(email, password);
-      setLoading(false);
-      if (success) {
-        router.replace('/(tabs)/dashboard');
+      // First try Clerk authentication
+      const signInAttempt = await signIn.create({
+        identifier: email,
+        password,
+      });
+      
+      if (signInAttempt.status === 'complete') {
+        await setActive({ session: signInAttempt.createdSessionId });
+        // Also authenticate with our backend
+        const success = await login(email, password);
+        setLoading(false);
+        if (success) {
+          router.replace('/(tabs)/dashboard');
+        }
+      } else {
+        setLoading(false);
+        setError('Invalid credentials');
       }
     } catch (err: any) {
       setLoading(false);
-      if (err.message === 'Please verify your email before logging in') {
-        Alert.alert(
-          'Email Verification Required',
-          'Please verify your email address before logging in. Check your inbox for the verification email.',
-          [
-            { text: 'Resend Verification Email', onPress: () => resendVerificationEmail() },
-            { text: 'OK' }
-          ]
-        );
-      } else {
+      console.error('Clerk sign in error:', err);
+      if (err.errors?.[0]?.code === 'form_identifier_not_found' || err.errors?.[0]?.code === 'form_password_incorrect') {
         setError('Invalid credentials');
+      } else if (err.errors?.[0]?.longMessage) {
+        setError(err.errors[0].longMessage);
+      } else {
+        setError('An error occurred during sign in');
       }
     }
   };

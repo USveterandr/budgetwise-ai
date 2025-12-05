@@ -7,9 +7,11 @@ import { Colors } from '../../constants/Colors';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
+import { useSignUp } from '@clerk/clerk-expo';
 
 export default function SignupScreen() {
   const { signup } = useAuth();
+  const { signUp, setActive, isLoaded } = useSignUp();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,19 +27,50 @@ export default function SignupScreen() {
       setError('Password must be at least 6 characters');
       return;
     }
+    
+    if (!isLoaded) {
+      return;
+    }
+    
     setLoading(true);
     setError('');
-    const success = await signup(name, email, password);
-    setLoading(false);
-    if (success) {
-      // Show alert informing user to check their email
-      Alert.alert(
-        'Account Created!',
-        'Please check your email to verify your account before logging in.',
-        [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
-      );
-    } else {
-      setError('Signup failed. Please try again.');
+    
+    try {
+      // First create user in Clerk
+      const signUpAttempt = await signUp.create({
+        emailAddress: email,
+        password,
+        firstName: name.split(' ')[0],
+        lastName: name.split(' ').slice(1).join(' ') || '',
+      });
+      
+      // Prepare email verification
+      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      
+      // Also create user in our backend
+      const success = await signup(name, email, password);
+      
+      setLoading(false);
+      if (success) {
+        // Show alert informing user to check their email
+        Alert.alert(
+          'Account Created!',
+          'Please check your email to verify your account before logging in.',
+          [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
+        );
+      } else {
+        setError('Signup failed. Please try again.');
+      }
+    } catch (err: any) {
+      setLoading(false);
+      console.error('Clerk sign up error:', err);
+      if (err.errors?.[0]?.code === 'form_identifier_exists') {
+        setError('An account with this email already exists');
+      } else if (err.errors?.[0]?.longMessage) {
+        setError(err.errors[0].longMessage);
+      } else {
+        setError('An error occurred during sign up');
+      }
     }
   };
 
