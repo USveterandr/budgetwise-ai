@@ -71,7 +71,7 @@ export default function LandingPage() {
           <Button title="Learn More" onPress={() => {}} variant="outline" size="large" style={{ marginTop: 12 }} />
         </View>
 
-        <Image source={{ uri: HERO_IMAGE }} style={styles.heroImage} contentFit="cover" />
+        <Image source={{ uri: HERO_IMAGE }} style={styles.heroImage} contentFit="contain" />
 
         <Text style={styles.sectionTitle}>Why Choose BudgetWise?</Text>
         {features.map((f, i) => <FeatureCard key={i} {...f} />)}
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 36, fontWeight: '800', color: Colors.text, textAlign: 'center', lineHeight: 44, marginBottom: 16 },
   subtitle: { fontSize: 16, color: Colors.textSecondary, textAlign: 'center', lineHeight: 24, marginBottom: 32, paddingHorizontal: 10 },
   ctas: { marginBottom: 40 },
-  heroImage: { width: '100%', height: 200, borderRadius: 16, marginBottom: 40 },
+  heroImage: { width: '100%', height: 200, borderRadius: 16, marginBottom: 40, resizeMode: 'contain' },
   sectionTitle: { fontSize: 24, fontWeight: '700', color: Colors.text, marginBottom: 20 },
   stats: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 20, marginBottom: 40 },
   statItem: { alignItems: 'center' },
