@@ -27,4 +27,10 @@ config.resolver.nodeModulesPaths = [
   path.resolve(__dirname, 'node_modules'),
 ];
 
+// Add resolver for expo-crypto
+config.resolver.extraNodeModules = {
+  ...config.resolver.extraNodeModules,
+  'expo-crypto': path.resolve(__dirname, 'shims/crypto.js'),
+};
+
 module.exports = config;
