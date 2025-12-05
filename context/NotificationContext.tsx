@@ -34,11 +34,13 @@ interface NotificationContextType {
   sendLocalNotification: (title: string, body: string) => Promise<void>;
 }
 
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+export const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
+
+  console.log('NotificationProvider initialized');
 
   // Request notification permissions
   useEffect(() => {
@@ -69,6 +71,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshNotifications = async (userId: string) => {
+    console.log('Refreshing notifications for user:', userId);
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -92,6 +95,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       console.error('Error fetching notifications:', e);
     } finally {
       setLoading(false);
+      console.log('Notification refresh complete');
     }
   };
 
@@ -149,6 +153,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  console.log('NotificationProvider rendering with notifications:', notifications.length);
 
   return (
     <NotificationContext.Provider value={{ 

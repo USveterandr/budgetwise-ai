@@ -36,6 +36,7 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     minWidth: 150,
+    maxWidth: '48%', // Ensure cards don't take more than half the width minus gap
   },
   header: {
     flexDirection: 'row',

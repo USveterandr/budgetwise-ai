@@ -141,7 +141,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold', 
     color: '#FFFFFF'
   },
-  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 },
+  summaryGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 12, 
+    marginBottom: 20,
+    justifyContent: 'space-between'
+  },
   section: { marginTop: 16 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   sectionTitle: { fontSize: 17, fontWeight: '600', color: DashboardColors.text, marginLeft: 10 },

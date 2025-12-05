@@ -51,10 +51,8 @@ export default function SubscriptionScreen() {
             const isHigherPlan = index > getCurrentPlanIndex();
             
             return (
-              <Card key={plan.name} style={[
-                styles.planCard, 
-                isCurrentPlan && styles.currentPlanCard
-              ]}>
+              <Card key={plan.name} style={styles.planCard}>
+                <View style={[styles.planContent, isCurrentPlan && styles.currentPlanCard]}>
                 <View style={styles.planHeader}>
                   <Text style={styles.planName}>{plan.name}</Text>
                   {isCurrentPlan && (
@@ -85,6 +83,7 @@ export default function SubscriptionScreen() {
                     disabled={!isHigherPlan} // For now, only allow upgrades
                   />
                 )}
+                </View>
               </Card>
             );
           })}
@@ -115,6 +114,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, color: DashboardColors.textSecondary, marginTop: 4 },
   plansContainer: { marginBottom: 24 },
   planCard: { marginBottom: 16 },
+  planContent: {},
   currentPlanCard: { borderColor: Colors.primary, borderWidth: 1 },
   planHeader: { 
     flexDirection: 'row', 

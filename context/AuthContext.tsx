@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { supabase } from '../app/lib/supabase';
 import bcrypt from 'bcryptjs';
 
@@ -29,6 +29,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
+  initialized: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -42,19 +43,35 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
+  console.log('AuthProvider initialized');
+
+  // Check for existing session on app start
+  useEffect(() => {
+    const initializeAuth = async () => {
+      // In a real app, you might check for a stored session token
+      // For now, we'll just mark as initialized
+      setInitialized(true);
+    };
+    
+    initializeAuth();
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setLoading(true);
     try {
+      console.log('Attempting login for:', email);
       // First check if user exists in profiles table
       const { data: profileData } = await supabase.from('profiles').select('*').eq('email', email).single();
       
       if (profileData) {
+        console.log('Profile found:', profileData);
         // Check if user has verified their email
-        if (!profileData.email_verified) {
+        if (!profileData?.email_verified) {
           setLoading(false);
           throw new Error('Please verify your email before logging in');
         }
@@ -74,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               emailVerified: profileData.email_verified || false
             });
             setLoading(false);
+            console.log('Login successful for:', email);
             return true;
           }
         }
@@ -104,10 +122,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         await createDefaultBudgets(userId);
         setLoading(false);
+        console.log('Demo user created for:', email);
         return true;
       }
     } catch (e) { 
-      console.error(e); 
+      console.error('Login error:', e); 
     }
     setLoading(false);
     return false;
@@ -116,12 +135,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = async (name: string, email: string, password: string): Promise<boolean> => {
     setLoading(true);
     try {
+      console.log('Attempting signup for:', email);
       // Check if user already exists
       const { data: existingUser } = await supabase.from('profiles').select('*').eq('email', email).single();
       
       if (existingUser) {
         // User already exists
         setLoading(false);
+        console.log('User already exists:', email);
         return false;
       }
       
@@ -152,10 +173,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await sendVerificationEmail(email, userId);
         await createDefaultBudgets(userId);
         setLoading(false);
+        console.log('Signup successful for:', email);
         return true;
       }
     } catch (e) { 
-      console.error(e); 
+      console.error('Signup error:', e); 
     }
     setLoading(false);
     return false;
@@ -346,23 +368,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.from('budgets').insert(defaultBudgets);
   };
 
-  const logout = () => setUser(null);
+  const logout = () => {
+    console.log('User logged out');
+    setUser(null);
+  };
+
+  console.log('AuthProvider rendering with user:', user);
+
+  const contextValue = useMemo(() => ({
+    user, 
+    isAuthenticated: !!user, 
+    loading, 
+    initialized,
+    login, 
+    signup, 
+    logout,
+    sendPasswordResetEmail,
+    resetPassword,
+    upgradePlan,
+    getSubscriptionPlans,
+    sendVerificationEmail,
+    verifyEmail
+  }), [user, loading, initialized]);
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated: !!user, 
-      loading, 
-      login, 
-      signup, 
-      logout,
-      sendPasswordResetEmail,
-      resetPassword,
-      upgradePlan,
-      getSubscriptionPlans,
-      sendVerificationEmail,
-      verifyEmail
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

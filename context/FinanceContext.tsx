@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../app/lib/supabase';
-import { useNotification } from './NotificationContext';
+import { NotificationContext } from './NotificationContext';
 
 export interface Transaction {
   id: string;
@@ -54,9 +54,23 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string>('');
-  const { sendLocalNotification } = useNotification();
+  const notificationContext = useContext(NotificationContext);
+
+  console.log('FinanceProvider initialized');
+
+  // Helper function to safely send notifications
+  const sendLocalNotification = async (title: string, body: string) => {
+    if (notificationContext) {
+      try {
+        await notificationContext.sendLocalNotification(title, body);
+      } catch (error) {
+        console.error('Error sending notification:', error);
+      }
+    }
+  };
 
   const refreshData = async (uid: string) => {
+    console.log('Refreshing data for user:', uid);
     setUserId(uid);
     setLoading(true);
     try {
@@ -92,6 +106,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       })));
     } catch (e) { console.error(e); }
     setLoading(false);
+    console.log('Data refresh complete');
   };
 
   const checkBudgetAlerts = async (uid: string, budgets: Budget[]) => {
@@ -256,6 +271,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   // Calculate investment value for net worth
   const investmentValue = investments.reduce((sum, investment) => sum + (investment.quantity * investment.currentPrice), 0);
   const netWorth = 125000 + monthlyIncome - monthlyExpenses + investmentValue;
+
+  console.log('FinanceProvider rendering with data:', { transactions: transactions.length, budgets: budgets.length, investments: investments.length });
 
   return (
     <FinanceContext.Provider value={{ 

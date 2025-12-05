@@ -3,8 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert 
 import { Ionicons } from '@expo/vector-icons';
 import { DashboardColors, Colors } from '../../constants/Colors';
 import { Button } from '../ui/Button';
-import { useFinance } from '../../context/FinanceContext';
-import { Investment } from '../../context/FinanceContext';
+import { useFinance, Investment } from '../../context/FinanceContext';
 
 interface EditInvestmentModalProps {
   visible: boolean;
@@ -43,9 +42,9 @@ export function EditInvestmentModal({ visible, onClose, investment, onUpdate }: 
       await updateInvestment(investment.id, {
         name,
         symbol,
-        quantity: parseFloat(quantity),
-        purchasePrice: parseFloat(purchasePrice),
-        currentPrice: parseFloat(currentPrice),
+        quantity: Number.parseFloat(quantity),
+        purchasePrice: Number.parseFloat(purchasePrice),
+        currentPrice: Number.parseFloat(currentPrice),
         purchaseDate,
         type,
       });
@@ -53,6 +52,7 @@ export function EditInvestmentModal({ visible, onClose, investment, onUpdate }: 
       onUpdate();
       onClose();
     } catch (error) {
+      console.error('Failed to update investment:', error);
       Alert.alert('Error', 'Failed to update investment');
     }
   };
@@ -72,6 +72,7 @@ export function EditInvestmentModal({ visible, onClose, investment, onUpdate }: 
               onUpdate();
               onClose();
             } catch (error) {
+              console.error('Failed to delete investment:', error);
               Alert.alert('Error', 'Failed to delete investment');
             }
           },

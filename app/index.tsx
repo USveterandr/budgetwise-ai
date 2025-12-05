@@ -14,12 +14,13 @@ import { useAuth } from '../context/AuthContext';
 const HERO_IMAGE = 'https://d64gsuwffb70l.cloudfront.net/6931d42fc95edfeb0aaaa606_1764873445881_ef508941.webp';
 
 export default function LandingPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, initialized } = useAuth();
   const [timeLeft, setTimeLeft] = useState({ hours: 11, minutes: 59, seconds: 59 });
 
   useEffect(() => {
-    if (isAuthenticated) router.replace('/(tabs)/dashboard');
-  }, [isAuthenticated]);
+    // Only redirect if auth context is initialized and user is authenticated
+    if (initialized && isAuthenticated) router.replace('/(tabs)/dashboard');
+  }, [isAuthenticated, initialized]);
 
   useEffect(() => {
     const timer = setInterval(() => {

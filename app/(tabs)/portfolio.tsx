@@ -5,13 +5,11 @@ import { useRouter } from 'expo-router';
 import { DashboardColors, Colors } from '../../constants/Colors';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { useFinance } from '../../context/FinanceContext';
-import { Investment } from '../../context/FinanceContext';
+import { useFinance, Investment } from '../../context/FinanceContext';
 import { AddInvestmentModal } from '../../components/investments/AddInvestmentModal';
 import { EditInvestmentModal } from '../../components/investments/EditInvestmentModal';
 
 export default function PortfolioScreen() {
-  const router = useRouter();
   const { investments } = useFinance();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -96,10 +94,10 @@ export default function PortfolioScreen() {
           <Text style={styles.sectionTitle}>By Asset Type</Text>
         </View>
         <View style={styles.typesGrid}>
-          {investmentTypes.map((item, index) => {
+          {investmentTypes.map((item) => {
             const stats = getTypeStats(item.type);
             return (
-              <Card key={index} style={styles.typeCard}>
+              <Card key={item.type} style={styles.typeCard}>
                 <View style={styles.typeHeader}>
                   <Ionicons name={item.icon as any} size={24} color={Colors.primary} />
                   <Text style={styles.typeLabel}>{item.label}</Text>
