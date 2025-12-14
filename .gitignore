@@ -1,0 +1,29 @@
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+metro-cache/
+.metro-cache-*/
+
+
+
+
+ios
+android
+
+# macOS
+.DS_Store
+
+# Temporary files created by Metro to check the health of the file watcher
+.metro-health-check*
+
+expo-env.d.ts
+*.aab
+play_store_assets/budgetwise-ai-play-services-f6c2ac7e34f1.json
