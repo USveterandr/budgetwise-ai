@@ -110,16 +110,22 @@ export default function SignupScreen() {
       } else if (verifyResult.status === 'missing_requirements') {
         // This is the specific error we're seeing
         console.log('Missing requirements:', verifyResult.missingFields);
-        setError(`Verification incomplete. Missing: ${verifyResult.missingFields?.join(', ') || 'unknown requirements'}. Trying alternative approach...`);
         
-        // Try to complete the sign up with the missing fields
+        // More robust handling of missing requirements
         try {
-          const completeResult = await signUp.update({
+          // First, let's try to complete the sign up with all required fields
+          const updateData: any = {
             emailAddress: email,
             password: password,
-            firstName: name.split(' ')[0],
-            lastName: name.split(' ').slice(1).join(' ') || '',
-          });
+          };
+          
+          // Add name fields if they were part of the missing requirements
+          if (name) {
+            updateData.firstName = name.split(' ')[0];
+            updateData.lastName = name.split(' ').slice(1).join(' ') || '';
+          }
+          
+          const completeResult = await signUp.update(updateData);
           
           console.log('Update result:', completeResult);
           
@@ -127,12 +133,20 @@ export default function SignupScreen() {
             await setActive({ session: completeResult.createdSessionId });
             router.replace('/(tabs)/dashboard');
           } else {
-            setError('Unable to complete registration. Please try signing up again.');
-            setPendingVerification(false);
+            // If still not complete, try to prepare verification again
+            console.log('Still incomplete, preparing verification again');
+            await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+            setError('Additional verification required. Please check your email for a new code.');
           }
-        } catch (updateError) {
+        } catch (updateError: any) {
           console.error('Update error:', updateError);
-          setError('Unable to complete registration. Please try signing up again.');
+          
+          // Check if this is an environment variable issue
+          if (updateError?.message?.includes('publishableKey') || updateError?.message?.includes('API key')) {
+            setError('Authentication service is not properly configured. Please contact support.');
+          } else {
+            setError('Unable to complete registration. Please try signing up again or contact support if the problem persists.');
+          }
           setPendingVerification(false);
         }
       } else {

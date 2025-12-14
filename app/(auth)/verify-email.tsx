@@ -58,9 +58,12 @@ export default function VerifyEmailScreen() {
       } else if (completeSignUp.status === 'missing_requirements') {
         // Handle missing requirements specifically
         console.log('Missing requirements:', completeSignUp.missingFields);
-        setError(`Verification incomplete. Missing: ${completeSignUp.missingFields?.join(', ') || 'unknown requirements'}. Please contact support.`);
+        
+        // Provide more helpful error message and suggest next steps
+        const missingFields = completeSignUp.missingFields?.join(', ') || 'unknown requirements';
+        setError(`Verification incomplete. Missing: ${missingFields}. This may be due to an authentication configuration issue. Please contact support or try the login page.`);
       } else {
-        setError(`Verification status: ${completeSignUp.status}. Please try again.`);
+        setError(`Verification status: ${completeSignUp.status}. Please try again or contact support if the problem persists.`);
       }
     } catch (err: any) {
       console.error('Verification error:', err);
