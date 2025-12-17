@@ -70,6 +70,21 @@ export default function VerifyEmailScreen() {
       console.error('Error details:', JSON.stringify(err, null, 2));
       
       // Handle various verification error cases
+      // Special handling: Clerk sometimes responds with a generic longMessage
+      // "Additional verification required. Please check your email for a new code."
+      // When that happens, proactively trigger a new code and guide the user.
+      const longMessage = err?.errors?.[0]?.longMessage as string | undefined;
+      if (longMessage && longMessage.toLowerCase().includes('additional verification required')) {
+        try {
+          await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+          setError('A new verification code was sent. Please use the latest code from your email.');
+        } catch (prepareErr: any) {
+          console.error('Auto-resend prepare error:', prepareErr);
+          setError(longMessage);
+        }
+        return;
+      }
+
       if (err.errors?.[0]?.code === 'verification_already_verified') {
         // If already verified, try to sign in directly
         if (isSignInLoaded && signIn) {

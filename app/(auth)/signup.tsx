@@ -158,6 +158,19 @@ export default function SignupScreen() {
       console.error('Error details:', JSON.stringify(err, null, 2));
       
       // Handle specific error cases
+      // Proactively handle Clerk's "Additional verification required" by sending a fresh code
+      const longMessage = err?.errors?.[0]?.longMessage as string | undefined;
+      if (longMessage && longMessage.toLowerCase().includes('additional verification required')) {
+        try {
+          await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+          setError('A new verification code was sent. Please use the latest code from your email.');
+        } catch (prepareErr: any) {
+          console.error('Auto-resend prepare error:', prepareErr);
+          setError(longMessage);
+        }
+        setLoading(false);
+        return;
+      }
       if (err.errors?.[0]?.code === 'verification_already_verified') {
         // If already verified, try to sign in directly
         if (isSignInLoaded && signIn) {
