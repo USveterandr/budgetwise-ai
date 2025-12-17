@@ -4,6 +4,7 @@ import { FinanceProvider } from "../context/FinanceContext";
 import { NotificationProvider } from "../context/NotificationContext";
 import { StatusBar } from "expo-status-bar";
 import { ClerkAuthProvider } from "../context/ClerkProvider";
+import { InstallPrompt } from "../components/InstallPrompt";
 
 export default function RootLayout() {
   return (
@@ -17,6 +18,7 @@ export default function RootLayout() {
               <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
               <Stack.Screen name="(tabs)" />
             </Stack>
+            <InstallPrompt />
           </FinanceProvider>
         </NotificationProvider>
       </AuthProvider>
