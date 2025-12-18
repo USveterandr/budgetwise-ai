@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "budgetwise-ai-88101",
+    "deploy": "budgetwise-ai-88101"
+  },
+  "targets": {},
+  "etags": {}
+}
