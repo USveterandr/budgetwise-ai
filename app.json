@@ -81,7 +81,7 @@
       "policy": "sdkVersion"
     },
     "extra": {
-      "clerkPublishableKey": "pk_test_YWN0aXZlLWVmdC0xNC5jbGVyay5hY2NvdW50cy5kZXYk",
+      "clerkPublishableKey": "pk_live_Y2xlcmsuYnVkZ2V0d2lzZS1haS5jb20k",
       "router": {},
       "eas": {
         "projectId": "41079632-3bca-44cd-b03a-488aba1ca818"
