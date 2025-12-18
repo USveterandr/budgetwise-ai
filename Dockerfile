@@ -22,4 +22,4 @@ ENV PORT=8080
 EXPOSE 8080
 
 # Start the server
-CMD ["npm", "run", "start"]
+CMD ["sh", "-c", "serve -s dist -l $PORT"]
