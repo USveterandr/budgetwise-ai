@@ -7,6 +7,8 @@ This guide explains how to distribute your Android builds (`.aab` or `.apk`) to 
 - **Package Name:** `com.budgetwise.financeai`
 - **Firebase App ID:** `1:141407074198:android:280929fe5fd0a29ccd8fb7` ✅
 
+> ⚠️ **IMPORTANT:** To distribute `.aab` (App Bundles), your Firebase project **must** be linked to Google Play in Project Settings > Integrations.
+
 ---
 
 ## 🚀 Step 1: Build Your App
