@@ -60,12 +60,13 @@ export default function OnboardingScreen() {
       if (result.success) {
         // Refresh the global auth state
         await refreshProfile();
-        console.log('Profile refreshed in AuthContext');
+        console.log('Profile refreshed in AuthContext. Waiting for state update...');
         
-        // Give a small delay to ensure state updates before navigation
-        setTimeout(() => {
-          router.replace('/(tabs)/dashboard');
-        }, 500);
+        // Use a clearer navigation action
+        // We add a small alert to give visual feedback that it worked before moving
+        Alert.alert("Success", "Profile updated! Taking you to your dashboard...", [
+            { text: "OK", onPress: () => router.replace('/(tabs)/dashboard') }
+        ]);
       } else {
         throw new Error(result.error || 'Server returned failure');
       }

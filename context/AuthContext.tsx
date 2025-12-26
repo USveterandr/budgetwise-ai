@@ -184,18 +184,26 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     try {
       const idToken = await getToken();
       if (idToken) {
+        console.log('[AuthContext] Fetching profile for refresh...');
         const profile = await cloudflare.getProfile(userId, idToken);
+        console.log('[AuthContext] Refreshed profile data:', JSON.stringify(profile));
+        
         if (profile && profile.user_id) {
+          const newOnboardingStatus = !!(profile.monthly_income && profile.monthly_income > 0);
+          console.log(`[AuthContext] Updating user state. Monthly Income: ${profile.monthly_income}, Onboarding Complete: ${newOnboardingStatus}`);
+          
           setUser(prev => prev ? {
             ...prev,
             name: profile.name || prev.name,
             plan: (profile.plan || prev.plan) as any,
-            onboardingComplete: !!(profile.monthly_income && profile.monthly_income > 0)
+            onboardingComplete: newOnboardingStatus
           } : null);
+        } else {
+            console.warn('[AuthContext] Profile refresh returned empty or invalid data');
         }
       }
     } catch (e) {
-      console.error('Error refreshing profile:', e);
+      console.error('[AuthContext] Error refreshing profile:', e);
     } finally {
       setProfileLoading(false);
     }
