@@ -124,7 +124,11 @@ export default function OnboardingScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
         >
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ScrollView 
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.header}>
               <Text style={styles.title}>Welcome to Budgetwise</Text>
               <Text style={styles.subtitle}>Let's set up your profile to give you personalized financial insights.</Text>
@@ -185,8 +189,12 @@ export default function OnboardingScreen() {
 
               <TouchableOpacity 
                 style={[styles.button, loading && styles.buttonDisabled]} 
-                onPress={handleComplete}
+                onPress={() => {
+                  console.log('Button pressed!');
+                  handleComplete();
+                }}
                 disabled={loading}
+                activeOpacity={0.8}
               >
                 <LinearGradient
                   colors={[Colors.primary, '#6366F1']}
