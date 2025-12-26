@@ -1,10 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { cloudflare } from '../app/lib/cloudflare';
-import { auth } from '../firebase';
+import { useAuth } from './AuthContext';
 import { NotificationContext } from './NotificationContext';
 import { Transaction, Budget, Investment, UserProfile } from '../types';
-
-// Types are now imported from ../types
 
 interface FinanceContextType {
   transactions: Transaction[];
@@ -16,7 +14,7 @@ interface FinanceContextType {
   deleteTransaction: (id: string) => Promise<void>;
   updateBudget: (id: string, spent: number) => Promise<void>;
   addBudget: (b: Omit<Budget, 'id'> & { month: string }) => Promise<void>;
-  refreshData: (userId: string) => Promise<void>;
+  refreshData: () => Promise<void>;
   netWorth: number;
   monthlyIncome: number;
   monthlyExpenses: number;
@@ -27,7 +25,8 @@ interface FinanceContextType {
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
-export function FinanceProvider({ children }: { children: ReactNode }) {
+export function FinanceProvider({ children }: Readonly<{ children: ReactNode }>) {
+  const { user, getToken, isAuthenticated } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [investments, setInvestments] = useState<Investment[]>([]);
@@ -39,13 +38,10 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     businessIndustry: 'General'
   });
   const [loading, setLoading] = useState(false);
-  const [userId, setUserId] = useState<string>('');
   const notificationContext = useContext(NotificationContext);
 
-  console.log('FinanceProvider initialized');
-
   // Helper function to safely send notifications
-  const sendLocalNotification = async (title: string, body: string) => {
+  const sendLocalNotification = useCallback(async (title: string, body: string) => {
     if (notificationContext) {
       try {
         await notificationContext.sendLocalNotification(title, body);
@@ -53,9 +49,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         console.error('Error sending notification:', error);
       }
     }
-  };
+  }, [notificationContext]);
 
-  const checkBudgetAlerts = async (uid: string, budgetsList: Budget[], idToken: string) => {
+  const checkBudgetAlerts = useCallback(async (uid: string, budgetsList: Budget[], idToken: string) => {
     for (const budget of budgetsList) {
       const percentage = (budget.spent / budget.limit) * 100;
       
@@ -111,18 +107,20 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         }
       }
     }
-  };
+  }, [sendLocalNotification]);
 
-  const refreshData = async (uid: string) => {
-    console.log('Refreshing data for user:', uid);
-    setUserId(uid);
+  const refreshData = useCallback(async () => {
+    if (!isAuthenticated || !user) return;
+    
     setLoading(true);
     try {
-      const idToken = await auth.currentUser?.getIdToken();
+      const idToken = await getToken();
       if (!idToken) {
         setLoading(false);
         return;
       }
+
+      const uid = user.id;
 
       // Fetch user profile
       const profileData = await cloudflare.getProfile(uid, idToken);
@@ -179,16 +177,21 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-    console.log('Data refresh complete');
-  };
+  }, [isAuthenticated, user, getToken, checkBudgetAlerts]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      refreshData();
+    }
+  }, [isAuthenticated, refreshData]);
 
   const addTransaction = async (t: Omit<Transaction, 'id'>) => {
-    const idToken = await auth.currentUser?.getIdToken();
-    if (!idToken) return;
+    const idToken = await getToken();
+    if (!idToken || !user) return;
 
     try {
       const data = await cloudflare.addTransaction({ 
-        user_id: userId, 
+        user_id: user.id, 
         description: t.description, 
         amount: t.amount, 
         category: t.category, 
@@ -207,7 +210,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
             await updateBudget(budget.id, newSpent);
             
             // Refresh data to trigger budget alerts
-            await refreshData(userId);
+            await refreshData();
           }
         }
       }
@@ -217,8 +220,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteTransaction = async (id: string) => {
-    const idToken = await auth.currentUser?.getIdToken();
-    if (!idToken) return;
+    const idToken = await getToken();
+    if (!idToken || !user) return;
 
     try {
       const transaction = transactions.find(t => t.id === id);
@@ -231,7 +234,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         if (budget) {
           const newSpent = budget.spent - transaction.amount;
           await updateBudget(budget.id, newSpent);
-          await refreshData(userId);
+          await refreshData();
         }
       }
     } catch (e) {
@@ -240,7 +243,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   };
 
   const updateBudget = async (id: string, spent: number) => {
-    const idToken = await auth.currentUser?.getIdToken();
+    const idToken = await getToken();
     if (!idToken) return;
 
     try {
@@ -252,12 +255,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   };
 
   const addBudget = async (b: Omit<Budget, 'id'> & { month: string }) => {
-    const idToken = await auth.currentUser?.getIdToken();
-    if (!idToken) return;
+    const idToken = await getToken();
+    if (!idToken || !user) return;
 
     try {
       const data = await cloudflare.addBudget({
-        user_id: userId,
+        user_id: user.id,
         category: b.category,
         budget_limit: b.limit,
         spent: b.spent,
@@ -278,12 +281,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   };
 
   const addInvestment = async (investment: Omit<Investment, 'id'>) => {
-    const idToken = await auth.currentUser?.getIdToken();
-    if (!idToken) return;
+    const idToken = await getToken();
+    if (!idToken || !user) return;
 
     try {
       const data = await cloudflare.addInvestment({
-        user_id: userId,
+        user_id: user.id,
         name: investment.name,
         symbol: investment.symbol,
         quantity: investment.quantity,
@@ -306,7 +309,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   };
 
   const updateInvestment = async (id: string, investment: Partial<Investment>) => {
-    const idToken = await auth.currentUser?.getIdToken();
+    const idToken = await getToken();
     if (!idToken) return;
 
     try {
@@ -327,7 +330,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteInvestment = async (id: string) => {
-    const idToken = await auth.currentUser?.getIdToken();
+    const idToken = await getToken();
     if (!idToken) return;
 
     try {
@@ -338,14 +341,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const monthlyIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const monthlyExpenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const monthlyIncomeTotal = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const monthlyExpensesTotal = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   
   // Calculate investment value for net worth
-  const investmentValue = investments.reduce((sum, investment) => sum + (investment.quantity * investment.currentPrice), 0);
-  const netWorth = 125000 + monthlyIncome - monthlyExpenses + investmentValue;
-
-  console.log('FinanceProvider rendering with data:', { transactions: transactions.length, budgets: budgets.length, investments: investments.length });
+  const investmentValue = investments.reduce((sum, investment) => sum + (investment.quantity * (investment.currentPrice || 0)), 0);
+  const netWorth = 125000 + monthlyIncomeTotal - monthlyExpensesTotal + investmentValue;
 
   return (
     <FinanceContext.Provider value={{ 
@@ -360,8 +361,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       addBudget,
       refreshData, 
       netWorth, 
-      monthlyIncome, 
-      monthlyExpenses,
+      monthlyIncome: monthlyIncomeTotal, 
+      monthlyExpenses: monthlyExpensesTotal,
       addInvestment,
       updateInvestment,
       deleteInvestment

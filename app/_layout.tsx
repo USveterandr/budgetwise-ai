@@ -46,16 +46,20 @@ function RootLayoutNav() {
   );
 }
 
+import { ClerkAuthProvider } from "../context/ClerkProvider";
+
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <FinanceProvider>
-          <StatusBar style="light" />
-          <RootLayoutNav />
-          <InstallPrompt />
-        </FinanceProvider>
-      </NotificationProvider>
-    </AuthProvider>
+    <ClerkAuthProvider>
+      <AuthProvider>
+        <NotificationProvider>
+          <FinanceProvider>
+            <StatusBar style="light" />
+            <RootLayoutNav />
+            <InstallPrompt />
+          </FinanceProvider>
+        </NotificationProvider>
+      </AuthProvider>
+    </ClerkAuthProvider>
   );
 }

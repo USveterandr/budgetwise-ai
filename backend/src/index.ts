@@ -5,8 +5,9 @@ export interface Env {
     R2: R2Bucket;
 }
 
-const FIREBASE_PROJECT_ID = "budgetwise-ai-88101";
-const GOOGLE_JWK_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
+// Clerk configuration
+const CLERK_ISSUER = "https://clerk.budgetwise.isaac-trinidad.com";
+const CLERK_JWKS_URL = "https://clerk.budgetwise.isaac-trinidad.com/.well-known/jwks.json";
 
 let cachedJWKs: any = null;
 let lastFetchTime = 0;
@@ -14,14 +15,14 @@ let lastFetchTime = 0;
 async function fetchJWKs() {
     const now = Date.now();
     if (!cachedJWKs || now - lastFetchTime > 3600000) { // Cache for 1 hour
-        const response = await fetch(GOOGLE_JWK_URL);
+        const response = await fetch(CLERK_JWKS_URL);
         cachedJWKs = await response.json();
         lastFetchTime = now;
     }
     return cachedJWKs;
 }
 
-async function verifyFirebaseToken(token: string): Promise<string | null> {
+async function verifyClerkToken(token: string): Promise<string | null> {
     try {
         const parts = token.split('.');
         if (parts.length !== 3) return null;
@@ -32,9 +33,9 @@ async function verifyFirebaseToken(token: string): Promise<string | null> {
 
         // Basic claim validation
         const now = Math.floor(Date.now() / 1000);
-        if (payload.aud !== FIREBASE_PROJECT_ID) return null;
-        if (payload.iss !== `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`) return null;
+        if (payload.iss !== CLERK_ISSUER) return null;
         if (payload.exp < now) return null;
+        if (payload.nbf && payload.nbf > now) return null;
 
         // Full signature verification
         const jwks = await fetchJWKs();
@@ -62,7 +63,7 @@ async function verifyFirebaseToken(token: string): Promise<string | null> {
 
         return isValid ? payload.sub : null;
     } catch (e) {
-        console.error("Token verification error:", e);
+        console.error("Clerk token verification error:", e);
         return null;
     }
 }
@@ -86,7 +87,7 @@ export default {
 
         // Root / Health check
         if (path === "/" || path === "/api/health") {
-            return Response.json({ status: "ok", message: "Budgetwise AI API", version: "1.0.0" }, { headers: corsHeaders });
+            return Response.json({ status: "ok", message: "Budgetwise AI API (Clerk Enabled)", version: "1.1.0" }, { headers: corsHeaders });
         }
 
         // Authenticate request
@@ -96,7 +97,7 @@ export default {
         }
 
         const token = authHeader.split(" ")[1];
-        const verifiedUserId = await verifyFirebaseToken(token);
+        const verifiedUserId = await verifyClerkToken(token);
 
         if (!verifiedUserId) {
             return new Response("Invalid Token", { status: 401, headers: corsHeaders });
@@ -113,13 +114,13 @@ export default {
                 }
 
                 if (method === "POST" || method === "PUT") {
-                    const body = await request.json();
+                    const body = await request.json() as any;
                     const user_id = verifiedUserId;
                     const name = body.name || null;
                     const email = body.email || null;
-                    const plan = body.plan || null;
-                    const monthly_income = body.monthly_income !== undefined ? body.monthly_income : null;
-                    const savings_rate = body.savings_rate !== undefined ? body.savings_rate : null;
+                    const plan = body.plan || 'Starter';
+                    const monthly_income = body.monthly_income !== undefined ? body.monthly_income : 0;
+                    const savings_rate = body.savings_rate !== undefined ? body.savings_rate : 0;
                     const currency = body.currency || 'USD';
                     const bio = body.bio || null;
                     const business_industry = body.business_industry || 'General';
@@ -152,8 +153,8 @@ export default {
                 }
 
                 if (method === "POST") {
-                    const body = await request.json();
-                    const id = crypto.randomUUID();
+                    const body = await request.json() as any;
+                    const id = body.id || crypto.randomUUID();
                     await env.DB.prepare(`
             INSERT INTO transactions (id, user_id, description, amount, category, type, date)
             VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -164,7 +165,9 @@ export default {
 
             if (path.startsWith("/api/transactions/") && method === "DELETE") {
                 const id = path.split("/").pop();
-                await env.DB.prepare("DELETE FROM transactions WHERE id = ?").bind(id).run();
+                await env.DB.prepare("DELETE FROM transactions WHERE id = ? AND user_id = ?")
+                    .bind(id, verifiedUserId)
+                    .run();
                 return Response.json({ success: true }, { headers: corsHeaders });
             }
 
@@ -179,19 +182,19 @@ export default {
                 }
 
                 if (method === "POST") {
-                    const body = await request.json();
-                    const id = crypto.randomUUID();
+                    const body = await request.json() as any;
+                    const id = body.id || crypto.randomUUID();
                     await env.DB.prepare(`
             INSERT INTO budgets (id, user_id, category, budget_limit, spent, month)
             VALUES (?, ?, ?, ?, ?, ?)
-          `).bind(id, verifiedUserId, body.category, body.budget_limit, body.spent, body.month).run();
+          `).bind(id, verifiedUserId, body.category, body.budget_limit, body.spent || 0, body.month).run();
                     return Response.json({ id, success: true }, { headers: corsHeaders });
                 }
 
                 if (method === "PUT") {
-                    const body = await request.json();
-                    await env.DB.prepare("UPDATE budgets SET spent = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-                        .bind(body.spent, body.id)
+                    const body = await request.json() as any;
+                    await env.DB.prepare("UPDATE budgets SET spent = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?")
+                        .bind(body.spent, body.id, verifiedUserId)
                         .run();
                     return Response.json({ success: true }, { headers: corsHeaders });
                 }
@@ -207,8 +210,8 @@ export default {
                 }
 
                 if (method === "POST") {
-                    const body = await request.json();
-                    const id = crypto.randomUUID();
+                    const body = await request.json() as any;
+                    const id = body.id || crypto.randomUUID();
                     await env.DB.prepare(`
             INSERT INTO investments (id, user_id, name, symbol, quantity, purchase_price, current_price, purchase_date, type)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -219,49 +222,24 @@ export default {
 
             if (path.startsWith("/api/investments/") && method === "PUT") {
                 const id = path.split("/").pop();
-                const body = await request.json();
+                const body = await request.json() as any;
                 const fields = Object.keys(body).map(k => `${k} = ?`).join(", ");
                 const values = Object.values(body);
-                await env.DB.prepare(`UPDATE investments SET ${fields} WHERE id = ?`)
-                    .bind(...values, id)
+                await env.DB.prepare(`UPDATE investments SET ${fields} WHERE id = ? AND user_id = ?`)
+                    .bind(...values, id, verifiedUserId)
                     .run();
                 return Response.json({ success: true }, { headers: corsHeaders });
             }
 
             if (path.startsWith("/api/investments/") && method === "DELETE") {
                 const id = path.split("/").pop();
-                await env.DB.prepare("DELETE FROM investments WHERE id = ?").bind(id).run();
+                await env.DB.prepare("DELETE FROM investments WHERE id = ? AND user_id = ?")
+                    .bind(id, verifiedUserId)
+                    .run();
                 return Response.json({ success: true }, { headers: corsHeaders });
             }
 
-            // Notifications API
-            if (path === "/api/notifications") {
-                if (method === "GET") {
-                    const { results } = await env.DB.prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC")
-                        .bind(verifiedUserId)
-                        .all();
-                    return Response.json(results, { headers: corsHeaders });
-                }
-
-                if (method === "POST") {
-                    const body = await request.json();
-                    const id = crypto.randomUUID();
-                    await env.DB.prepare(`
-            INSERT INTO notifications (id, user_id, title, message, category, read)
-            VALUES (?, ?, ?, ?, ?, ?)
-          `).bind(id, verifiedUserId, body.title, body.message, body.category, body.read ? 1 : 0).run();
-                    return Response.json({ id, success: true }, { headers: corsHeaders });
-                }
-            }
-
-            if (path.endsWith("/read") && method === "PUT") {
-                const parts = path.split("/");
-                const id = parts[parts.length - 2];
-                await env.DB.prepare("UPDATE notifications SET read = 1 WHERE id = ?").bind(id).run();
-                return Response.json({ success: true }, { headers: corsHeaders });
-            }
-
-            // R2 Storage (Receipts)
+            // Storage
             if (path.startsWith("/api/storage/upload")) {
                 if (method === "POST") {
                     const filename = url.searchParams.get("filename") || `receipt_${Date.now()}.jpg`;
@@ -274,6 +252,11 @@ export default {
 
             if (path === "/api/storage/view") {
                 const key = url.searchParams.get("key");
+                // Safety check: ensure the key belongs to the verified user
+                if (!key?.startsWith(`users/${verifiedUserId}/`)) {
+                    return new Response("Forbidden", { status: 403, headers: corsHeaders });
+                }
+
                 const object = await env.R2.get(key);
                 if (!object) return new Response("Not Found", { status: 404 });
 

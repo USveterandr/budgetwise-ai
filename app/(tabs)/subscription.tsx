@@ -16,30 +16,23 @@ export default function SubscriptionScreen() {
   const handleUpgrade = async (planName: 'Starter' | 'Professional' | 'Business' | 'Enterprise') => {
     Alert.alert(
       'Upgrade Plan',
-      `Are you sure you want to upgrade to the ${planName} plan?`,
+      `Securely upgrade to the ${planName} plan via Clerk Billing?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Upgrade Now',
+          text: 'Proceed to Checkout',
           onPress: async () => {
-            // In a real app, this would integrate with a payment processor
-            Alert.alert(
-              'Payment Required', 
-              'In a production environment, you would be redirected to our secure payment processor to complete your subscription.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { 
-                  text: 'Proceed to Payment', 
-                  onPress: () => {
-                    Alert.alert(
-                      'Success!', 
-                      `Thank you for choosing the ${planName} plan! Your subscription is now active.`,
-                      [{ text: 'Continue', onPress: () => router.replace('/(tabs)/dashboard') }]
-                    );
-                  }
-                }
-              ]
-            );
+             // In a production app, Clerk redirects to a Stripe-hosted checkout or portal
+             const success = await upgradePlan(planName);
+             if (success) {
+                Alert.alert(
+                  'Success!', 
+                  `Thank you for choosing the ${planName} plan! Your subscription has been activated via Clerk and synchronized with Cloudflare.`,
+                  [{ text: 'Continue', onPress: () => router.replace('/(tabs)/dashboard') }]
+                );
+             } else {
+               Alert.alert('Error', 'Failed to process upgrade. Please try again.');
+             }
           }
         }
       ]
@@ -143,7 +136,7 @@ export default function SubscriptionScreen() {
             <Card style={styles.faqCard}>
               <Text style={styles.faqQuestion}>Is my data secure?</Text>
               <Text style={styles.faqAnswer}>
-                Absolutely. We use bank-grade encryption and Firebase security protocols to keep your data private.
+                Absolutely. We use bank-grade encryption and Cloudflare D1/R2 protocols to keep your data private and secure.
               </Text>
             </Card>
           </View>

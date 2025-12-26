@@ -268,7 +268,7 @@ export function Profile() {
 
   return (
     <View style={styles.mainContainer}>
-      <LinearGradient colors={['#0F172A', '#1E1B4B', '#0F172A']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#020617', '#0F172A', '#020617']} style={StyleSheet.absoluteFill} />
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
@@ -495,12 +495,12 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   header: {
-    backgroundColor: 'rgba(30, 41, 59, 0.7)',
-    borderRadius: 24,
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    borderRadius: 32,
     padding: 24,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   avatarContainer: {
     flexDirection: 'row',
@@ -552,8 +552,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   card: {
-    backgroundColor: 'rgba(30, 41, 59, 0.5)',
-    borderRadius: 24,
+    backgroundColor: 'rgba(15, 23, 42, 0.3)',
+    borderRadius: 32,
     padding: 24,
     marginBottom: 20,
     borderWidth: 1,

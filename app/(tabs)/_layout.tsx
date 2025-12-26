@@ -8,61 +8,50 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: DashboardColors.textSecondary,
+        tabBarInactiveTintColor: Colors.textMuted,
+        tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: 'rgba(15, 23, 42, 0.95)',
-          borderTopColor: 'rgba(255, 255, 255, 0.1)',
+          backgroundColor: 'rgba(15, 23, 42, 0.7)',
+          borderTopWidth: 0,
           paddingTop: 8,
           paddingBottom: 8,
-          height: 70, // Slightly taller for better ergonomics
+          height: 64,
           position: 'absolute',
-          borderTopWidth: 1,
+          bottom: 25,
+          left: 40,
+          right: 40,
+          borderRadius: 32,
           elevation: 0,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '700',
-          paddingBottom: 4,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.3,
+          shadowRadius: 20,
         },
       }}
     >
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={26} color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="apps" size={28} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="finance"
+        name="strategy"
         options={{
-          title: 'Finance',
-          tabBarIcon: ({ color, size }) => <Ionicons name="wallet" size={26} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="growth"
-        options={{
-          title: 'Growth',
-          tabBarIcon: ({ color, size }) => <Ionicons name="trending-up" size={26} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="tools"
-        options={{
-          title: 'Tools',
-          tabBarIcon: ({ color, size }) => <Ionicons name="hammer" size={26} color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="flash" size={28} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={26} color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="person" size={28} color={color} />,
         }}
       />
 
-      {/* Hidden Screens - Accessible via Hubs */}
+      {/* Hidden Screens - Accessible via Strategy Hub */}
+      <Tabs.Screen name="finance" options={{ href: null }} />
+      <Tabs.Screen name="growth" options={{ href: null }} />
+      <Tabs.Screen name="tools" options={{ href: null }} />
       <Tabs.Screen name="transactions" options={{ href: null }} />
       <Tabs.Screen name="budget" options={{ href: null }} />
       <Tabs.Screen name="budget-planning" options={{ href: null }} />

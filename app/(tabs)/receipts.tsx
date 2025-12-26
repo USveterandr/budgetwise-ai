@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Alert, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,11 +10,13 @@ import { Button } from '../../components/ui/Button';
 import { performOCR, parseReceiptText, ReceiptData } from '../../utils/ocrUtils';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
+import { cloudflare } from '../../app/lib/cloudflare';
 
 interface Receipt {
   id: string;
   userId: string;
   imageUrl: string;
+  r2Key?: string;
   ocrText: string;
   parsedData: ReceiptData;
   createdAt: string;
@@ -22,7 +24,7 @@ interface Receipt {
 }
 
 export default function ReceiptsScreen() {
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const { addTransaction } = useFinance();
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [scanning, setScanning] = useState(false);
@@ -30,11 +32,7 @@ export default function ReceiptsScreen() {
 
   const RECEIPTS_FILE = `${(FileSystem as any).documentDirectory}receipts.json`;
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const fileInfo = await FileSystem.getInfoAsync(RECEIPTS_FILE);
       if (fileInfo.exists) {
@@ -54,7 +52,11 @@ export default function ReceiptsScreen() {
     } catch (error) {
       console.error('Error loading receipts data:', error);
     }
-  };
+  }, [RECEIPTS_FILE]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const saveData = async (newReceipts: Receipt[], newMonthlyScans: number) => {
     try {
@@ -83,6 +85,23 @@ export default function ReceiptsScreen() {
     return monthlyScans >= limit;
   };
 
+  const uploadToR2 = async (uri: string) => {
+    if (!user?.id) return null;
+    const idToken = await getToken();
+    if (!idToken) return null;
+
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const filename = `receipt_${Date.now()}.jpg`;
+      const result = await cloudflare.uploadFile(user.id, blob, filename, idToken);
+      return result;
+    } catch (error) {
+      console.error('Error uploading to R2:', error);
+      return null;
+    }
+  };
+
   const scanReceipt = async () => {
     if (checkScanLimit()) {
       Alert.alert(
@@ -90,13 +109,12 @@ export default function ReceiptsScreen() {
         'You have reached your monthly receipt scan limit. Upgrade your plan for unlimited scans.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Upgrade Plan', onPress: () => {} } // Would navigate to subscription page
+          { text: 'Upgrade Plan', onPress: () => {} }
         ]
       );
       return;
     }
 
-    // Request camera permission
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission required', 'Camera permission is required to scan receipts.');
@@ -106,28 +124,28 @@ export default function ReceiptsScreen() {
     setScanning(true);
     
     try {
-      // Launch camera to capture receipt
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
+        quality: 0.5, // Reduced quality for faster R2 upload
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const imageUri = result.assets[0].uri;
         
-        // Perform OCR on the captured image
+        // 1. Perform OCR
         const ocrText = await performOCR(imageUri);
-        
-        // Parse the OCR text to extract receipt data
         const parsedData = parseReceiptText(ocrText);
         
-        // Create new receipt object
+        // 2. Upload to R2
+        const r2Response = await uploadToR2(imageUri);
+        
+        // 3. Create new receipt object
         const newReceipt: Receipt = {
           id: `receipt_${Date.now()}`,
           userId: user?.id || '',
-          imageUrl: imageUri,
+          imageUrl: r2Response?.url ? `https://budgetwise-api.isaactrinidadllc.workers.dev${r2Response.url}` : imageUri,
+          r2Key: r2Response?.key,
           ocrText,
           parsedData,
           createdAt: new Date().toISOString(),
@@ -142,20 +160,18 @@ export default function ReceiptsScreen() {
         setMonthlyScans(updatedMonthlyScans);
         await saveData(updatedReceipts, updatedMonthlyScans);
         
-        // Show confirmation
         Alert.alert(
           'Receipt Scanned',
-          'Your receipt has been scanned and processed successfully.',
+          'Your receipt has been scanned and stored securely in Cloudflare R2.',
           [
             { text: 'Add to Transactions', onPress: () => addReceiptToTransactions(newReceipt) },
-            { text: 'View Details', onPress: () => viewReceiptDetails(newReceipt) },
             { text: 'Dismiss', style: 'cancel' }
           ]
         );
       }
     } catch (error) {
       console.error('Error scanning receipt:', error);
-      Alert.alert('Error', 'Failed to scan receipt. Please try again.');
+      Alert.alert('Error', 'Failed to scan and upload receipt. Please check your connection.');
     } finally {
       setScanning(false);
     }
@@ -163,27 +179,27 @@ export default function ReceiptsScreen() {
 
   const addReceiptToTransactions = async (receipt: Receipt) => {
     try {
-      // Add the parsed receipt data as a transaction
       await addTransaction({
         description: receipt.parsedData.description,
         amount: receipt.parsedData.amount,
         category: receipt.parsedData.category,
         date: receipt.parsedData.date,
         type: 'expense',
-        icon: 'receipt' // Default icon for receipt-based transactions
+        icon: 'receipt'
       });
       
-      // Update receipt status
       setReceipts(prev => prev.map(r => 
         r.id === receipt.id 
           ? { ...r, status: 'added_to_transactions' } 
           : r
       ));
       
+      await saveData(receipts.map(r => r.id === receipt.id ? { ...r, status: 'added_to_transactions' } as Receipt : r), monthlyScans);
+      
       Alert.alert('Success', 'Receipt added to transactions successfully!');
     } catch (error) {
       console.error('Error adding receipt to transactions:', error);
-      Alert.alert('Error', 'Failed to add receipt to transactions. Please try again.');
+      Alert.alert('Error', 'Failed to add receipt. Please try again.');
     }
   };
 
@@ -205,16 +221,9 @@ Status: ${receipt.status}`,
   };
 
   const getScanLimitMessage = () => {
-    if (!user) return '';
-    
-    const planLimits = {
-      'Starter': 50,
-      'Professional': 'Unlimited',
-      'Business': 'Unlimited',
-      'Enterprise': 'Unlimited'
-    };
-    
-    const limit = planLimits[user.plan as keyof typeof planLimits] || 50;
+    if (!user?.plan) return '';
+    const planLimits: any = { 'Starter': 50, 'Professional': 'Unlimited', 'Business': 'Unlimited' };
+    const limit = planLimits[user.plan] || 50;
     return ` (${monthlyScans}/${limit} scans used)`;
   };
 
@@ -236,25 +245,17 @@ Status: ${receipt.status}`,
               <View style={{ flex: 1 }}>
                 <Text style={styles.sectionTitle}>Scan New Receipt</Text>
                 <Text style={styles.scanDescription}>
-                  Take a photo of your receipt to automatically extract transaction details
+                  Your receipts are now backed up to Cloudflare R2 object storage.
                 </Text>
               </View>
             </View>
             <Button 
-              title={scanning ? "Scanning..." : "Scan Receipt"} 
+              title={scanning ? "Uploading to R2..." : "Scan Receipt"} 
               onPress={scanReceipt} 
               loading={scanning}
               disabled={scanning || checkScanLimit()}
               style={styles.scanButton}
             />
-            {checkScanLimit() && (
-              <View style={styles.limitBadge}>
-                <Ionicons name="alert-circle" size={16} color="#EF4444" />
-                <Text style={styles.limitReachedText}>
-                  Monthly scan limit reached. Upgrade for more.
-                </Text>
-              </View>
-            )}
           </Card>
 
           <View style={styles.section}>
@@ -263,7 +264,6 @@ Status: ${receipt.status}`,
               <Card style={styles.emptyCard}>
                 <Ionicons name="receipt-outline" size={64} color="rgba(255, 255, 255, 0.1)" />
                 <Text style={styles.emptyText}>No receipts scanned yet</Text>
-                <Text style={styles.emptySubtext}>Tap "Scan Receipt" to get started</Text>
               </Card>
             ) : (
               receipts.map((receipt) => (
@@ -275,17 +275,13 @@ Status: ${receipt.status}`,
                     </View>
                     <View style={[
                       styles.statusBadge,
-                      receipt.status === 'added_to_transactions' ? styles.addedStatus :
-                      receipt.status === 'processed' ? styles.processedStatus :
-                      styles.scannedStatus
+                      receipt.status === 'added_to_transactions' ? styles.addedStatus : styles.scannedStatus
                     ]}>
                       <Text style={[
                         styles.statusText,
-                        { color: receipt.status === 'added_to_transactions' ? '#10B981' :
-                                 receipt.status === 'processed' ? '#F59E0B' : '#3B82F6' }
+                        { color: receipt.status === 'added_to_transactions' ? '#10B981' : '#3B82F6' }
                       ]}>
-                        {receipt.status === 'added_to_transactions' ? 'Added' :
-                         receipt.status === 'processed' ? 'Processed' : 'Scanned'}
+                        {receipt.status === 'added_to_transactions' ? 'Added' : 'Stored (R2)'}
                       </Text>
                     </View>
                   </View>
@@ -302,24 +298,14 @@ Status: ${receipt.status}`,
                   </View>
                   
                   <View style={styles.receiptActions}>
-                    <TouchableOpacity 
-                      style={styles.actionButton}
-                      onPress={() => viewReceiptDetails(receipt)}
-                    >
-                      <Text style={styles.actionText}>View Details</Text>
+                    <TouchableOpacity style={styles.actionButton} onPress={() => viewReceiptDetails(receipt)}>
+                      <Text style={styles.actionText}>Info</Text>
                     </TouchableOpacity>
                     
                     {receipt.status !== 'added_to_transactions' && (
-                      <Button 
-                        title="Add Transaction"
-                        onPress={() => addReceiptToTransactions(receipt)}
-                        style={styles.primaryActionButton}
-                        textStyle={styles.primaryActionText}
-                      />
+                      <Button title="Sync to Finance" onPress={() => addReceiptToTransactions(receipt)} style={styles.primaryActionButton} />
                     )}
                   </View>
-                  
-                  <Text style={styles.timestamp}>Scanned: {formatDate(receipt.createdAt)}</Text>
                 </Card>
               ))
             )}
@@ -344,11 +330,8 @@ const styles = StyleSheet.create({
   scanIconContainer: { width: 64, height: 64, borderRadius: 20, backgroundColor: 'rgba(124, 58, 237, 0.1)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(124, 58, 237, 0.2)' },
   scanDescription: { color: '#94A3B8', fontSize: 14, lineHeight: 22, marginTop: 4 },
   scanButton: { width: '100%', height: 56 },
-  limitBadge: { flexDirection: 'row', alignItems: 'center', marginTop: 16, backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 12, borderRadius: 12, gap: 8 },
-  limitReachedText: { color: '#EF4444', fontSize: 13, fontWeight: '600' },
   emptyCard: { padding: 60, alignItems: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
   emptyText: { color: '#F8FAFC', fontSize: 18, fontWeight: '700', marginTop: 20 },
-  emptySubtext: { color: '#64748B', fontSize: 14, marginTop: 8, textAlign: 'center' },
   receiptCard: { marginBottom: 16, padding: 20 },
   receiptHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
   storeInfo: { flex: 1 },
@@ -356,7 +339,6 @@ const styles = StyleSheet.create({
   receiptAmount: { fontSize: 24, fontWeight: '800', color: '#EF4444' },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
   scannedStatus: { backgroundColor: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.2)' },
-  processedStatus: { backgroundColor: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.2)' },
   addedStatus: { backgroundColor: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.2)' },
   statusText: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   receiptDetails: { marginBottom: 24, gap: 10 },
@@ -367,6 +349,4 @@ const styles = StyleSheet.create({
   actionButton: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', backgroundColor: 'rgba(255, 255, 255, 0.05)' },
   primaryActionButton: { height: 44, paddingHorizontal: 16, borderRadius: 12 },
   actionText: { color: '#F1F5F9', fontSize: 14, fontWeight: '700' },
-  primaryActionText: { fontSize: 14, fontWeight: '700' },
-  timestamp: { color: '#64748B', fontSize: 12, marginTop: 20, textAlign: 'right', fontWeight: '500' },
 });
