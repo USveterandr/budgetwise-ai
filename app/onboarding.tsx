@@ -37,7 +37,7 @@ export default function OnboardingScreen() {
   // Auto navigate if already completed
   useEffect(() => {
     if (user?.onboardingComplete) {
-      router.replace('/(tabs)/dashboard');
+      router.replace('/(tabs)/receipts');
     }
   }, [user?.onboardingComplete]);
 
@@ -82,12 +82,14 @@ export default function OnboardingScreen() {
       }
 
       await refreshProfile();
+      console.log('Profile refreshed in AuthContext.');
 
+      // Navigate directly to Scan Receipts
       if (Platform.OS !== 'web') {
-        Alert.alert('Success', 'Profile updated! Redirecting to dashboard...');
+        Alert.alert("Success", "Profile updated! Let's scan your receipts...");
       }
 
-      router.replace('/(tabs)/dashboard');
+      router.replace('/(tabs)/receipts');
     } catch (err: any) {
       let msg = err?.message ?? 'Unexpected error occurred';
 
