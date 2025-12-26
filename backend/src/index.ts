@@ -8,21 +8,27 @@ export interface Env {
 // Clerk configuration
 const CLERK_ISSUER = "https://clerk.budgetwise.isaac-trinidad.com";
 const CLERK_JWKS_URL = "https://clerk.budgetwise.isaac-trinidad.com/.well-known/jwks.json";
+const AUTHORIZED_PARTIES = [
+    "https://budgetwise-ai.pages.dev",
+    "https://clerk.budgetwise.isaac-trinidad.com",
+    "http://localhost:8081",
+    "http://localhost:19006"
+];
 
 let cachedJWKs: any = null;
 let lastFetchTime = 0;
 
-async function fetchJWKs() {
+async function fetchJWKs(jwksUrl: string) {
     const now = Date.now();
     if (!cachedJWKs || now - lastFetchTime > 3600000) { // Cache for 1 hour
-        const response = await fetch(CLERK_JWKS_URL);
+        const response = await fetch(jwksUrl);
         cachedJWKs = await response.json();
         lastFetchTime = now;
     }
     return cachedJWKs;
 }
 
-async function verifyClerkToken(token: string): Promise<string | null> {
+async function verifyClerkToken(token: string, env: any): Promise<string | null> {
     try {
         const parts = token.split('.');
         if (parts.length !== 3) return null;
@@ -31,14 +37,28 @@ async function verifyClerkToken(token: string): Promise<string | null> {
         const header = JSON.parse(atob(headerB64));
         const payload = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
 
+        // Environment-specific configuration
+        const issuer = env.CLERK_ISSUER || CLERK_ISSUER;
+        const jwksUrl = env.CLERK_JWKS_URL || CLERK_JWKS_URL;
+        const authorizedParties = env.AUTHORIZED_PARTIES ? JSON.parse(env.AUTHORIZED_PARTIES) : AUTHORIZED_PARTIES;
+
         // Basic claim validation
         const now = Math.floor(Date.now() / 1000);
-        if (payload.iss !== CLERK_ISSUER) return null;
+        if (payload.iss !== issuer) {
+            console.error("Invalid issuer:", payload.iss, "Expected:", issuer);
+            return null;
+        }
         if (payload.exp < now) return null;
         if (payload.nbf && payload.nbf > now) return null;
 
+        // Secure request authorization (authorizedParties)
+        if (payload.azp && !authorizedParties.includes(payload.azp)) {
+            console.error("Unauthorized party (azp):", payload.azp);
+            return null;
+        }
+
         // Full signature verification
-        const jwks = await fetchJWKs();
+        const jwks = await fetchJWKs(jwksUrl);
         const key = jwks.keys.find((k: any) => k.kid === header.kid);
         if (!key) return null;
 
@@ -97,7 +117,7 @@ export default {
         }
 
         const token = authHeader.split(" ")[1];
-        const verifiedUserId = await verifyClerkToken(token);
+        const verifiedUserId = await verifyClerkToken(token, env);
 
         if (!verifiedUserId) {
             return new Response("Invalid Token", { status: 401, headers: corsHeaders });

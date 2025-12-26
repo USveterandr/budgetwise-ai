@@ -28,18 +28,18 @@ CLERK_SECRET_KEY=sk_live_YOUR_ACTUAL_SECRET_KEY
 EXPO_PUBLIC_GEMINI_API_KEY=YOUR_ACTUAL_GEMINI_API_KEY
 ```
 
-### 3. Final .env Configuration
+### 3. Backend (Cloudflare Worker) Variables
 
-Your final `.env` file should look like this:
+1. Go to your [Cloudflare Dashboard](https://dash.cloudflare.com/)
+2. Navigate to **Workers & Pages** -> **budgetwise-api** -> **Settings** -> **Variables**
+3. Add the following:
 
-```env
-# Clerk API Keys (get from https://dashboard.clerk.dev/)
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_YOUR_ACTUAL_PUBLISHABLE_KEY
-CLERK_SECRET_KEY=sk_live_YOUR_ACTUAL_SECRET_KEY
+- `CLERK_SECRET_KEY`: `sk_live_...`
+- `AUTHORIZED_PARTIES`: `["https://budgetwise-ai.pages.dev", "https://clerk.budgetwise.isaac-trinidad.com"]` (JSON string)
+- `CLERK_ISSUER`: `https://your-production-clerk-issuer.com`
+- `CLERK_JWKS_URL`: `https://your-production-clerk-issuer.com/.well-known/jwks.json`
 
-# Google Gemini API Key (get from https://aistudio.google.com/)
-EXPO_PUBLIC_GEMINI_API_KEY=YOUR_ACTUAL_GEMINI_API_KEY
-```
+### 4. Final .env Configuration
 
 ## Deployment Steps
 
