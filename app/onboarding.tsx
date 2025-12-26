@@ -62,11 +62,21 @@ export default function OnboardingScreen() {
         await refreshProfile();
         console.log('Profile refreshed in AuthContext. Waiting for state update...');
         
-        // Use a clearer navigation action
-        // We add a small alert to give visual feedback that it worked before moving
-        Alert.alert("Success", "Profile updated! Taking you to your dashboard...", [
-            { text: "OK", onPress: () => router.replace('/(tabs)/dashboard') }
-        ]);
+        // Navigation Logic
+        if (Platform.OS === 'web') {
+            const confirmed = window.confirm("Profile updated! Click OK to go to your dashboard.");
+            if (confirmed) {
+                router.replace('/(tabs)/dashboard');
+            } else {
+                 // Even if they cancel, we should probably still go since it's done. 
+                 // But let's respect the confirm dialog flow or fallback.
+                 router.replace('/(tabs)/dashboard');
+            }
+        } else {
+            Alert.alert("Success", "Profile updated! Taking you to your dashboard...", [
+                { text: "OK", onPress: () => router.replace('/(tabs)/dashboard') }
+            ]);
+        }
       } else {
         throw new Error(result.error || 'Server returned failure');
       }
