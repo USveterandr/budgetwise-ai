@@ -71,7 +71,16 @@ export default function OnboardingScreen() {
       }
     } catch (error: any) {
       console.error('Onboarding error details:', error);
-      Alert.alert('Setup Failed', `We couldn't save your profile: ${error.message || 'Network error'}. Please try again.`);
+      
+      let errorMsg = error.message || 'Unknown error';
+      if (error.response) {
+        try {
+          const body = await error.response.json();
+          errorMsg = body.message || body.error || errorMsg;
+        } catch (e) {}
+      }
+      
+      Alert.alert('Setup Failed', `Error: ${errorMsg}. Please check your connection or contact support.`);
     } finally {
       setLoading(false);
     }

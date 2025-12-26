@@ -45,16 +45,18 @@ async function verifyClerkToken(token: string, env: any): Promise<string | null>
         // Basic claim validation
         const now = Math.floor(Date.now() / 1000);
         if (payload.iss !== issuer) {
-            console.error("Invalid issuer:", payload.iss, "Expected:", issuer);
-            return null;
+            throw new Error(`Auth Error: Invalid token issuer. Expected: ${issuer}. Check your backend environment variables.`);
         }
-        if (payload.exp < now) return null;
-        if (payload.nbf && payload.nbf > now) return null;
+        if (payload.exp < now) {
+            throw new Error(`Auth Error: Token expired. Please refresh your session.`);
+        }
+        if (payload.nbf && payload.nbf > now) {
+            throw new Error(`Auth Error: Token not yet valid.`);
+        }
 
         // Secure request authorization (authorizedParties)
         if (payload.azp && !authorizedParties.includes(payload.azp)) {
-            console.error("Unauthorized party (azp):", payload.azp);
-            return null;
+            throw new Error(`Auth Error: Unauthorized origin (${payload.azp}). Please add this to AUTHORIZED_PARTIES in your backend.`);
         }
 
         // Full signature verification
@@ -117,10 +119,15 @@ export default {
         }
 
         const token = authHeader.split(" ")[1];
-        const verifiedUserId = await verifyClerkToken(token, env);
+        let verifiedUserId: string | null = null;
+        try {
+            verifiedUserId = await verifyClerkToken(token, env);
+        } catch (e: any) {
+            return new Response(JSON.stringify({ error: e.message }), { status: 401, headers: corsHeaders });
+        }
 
         if (!verifiedUserId) {
-            return new Response("Invalid Token", { status: 401, headers: corsHeaders });
+            return new Response(JSON.stringify({ error: "Authentication failed" }), { status: 401, headers: corsHeaders });
         }
 
         try {
@@ -135,6 +142,8 @@ export default {
 
                 if (method === "POST" || method === "PUT") {
                     const body = await request.json() as any;
+                    console.log(`[API] Updating profile for user ${verifiedUserId}. Data:`, JSON.stringify(body));
+
                     const user_id = verifiedUserId;
                     const name = body.name || null;
                     const email = body.email || null;
@@ -144,10 +153,11 @@ export default {
                     const currency = body.currency || 'USD';
                     const bio = body.bio || null;
                     const business_industry = body.business_industry || 'General';
+                    const onboarding_complete = (monthly_income > 0) ? 1 : 0;
 
                     await env.DB.prepare(`
-            INSERT INTO profiles (user_id, name, email, plan, monthly_income, savings_rate, currency, bio, business_industry)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO profiles (user_id, name, email, plan, monthly_income, savings_rate, currency, bio, business_industry, onboarding_complete)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
               name = COALESCE(excluded.name, profiles.name),
               plan = COALESCE(excluded.plan, profiles.plan),
@@ -156,10 +166,11 @@ export default {
               currency = COALESCE(excluded.currency, profiles.currency),
               bio = COALESCE(excluded.bio, profiles.bio),
               business_industry = COALESCE(excluded.business_industry, profiles.business_industry),
+              onboarding_complete = COALESCE(excluded.onboarding_complete, profiles.onboarding_complete),
               updated_at = CURRENT_TIMESTAMP
-          `).bind(user_id, name, email, plan, monthly_income, savings_rate, currency, bio, business_industry).run();
+          `).bind(user_id, name, email, plan, monthly_income, savings_rate, currency, bio, business_industry, onboarding_complete).run();
 
-                    return Response.json({ success: true }, { headers: corsHeaders });
+                    return Response.json({ success: true, onboarding_complete: !!onboarding_complete }, { headers: corsHeaders });
                 }
             }
 
