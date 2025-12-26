@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   currency TEXT DEFAULT 'USD',
   bio TEXT,
   business_industry TEXT DEFAULT 'General',
+  onboarding_complete INTEGER DEFAULT 0,
   email_verified BOOLEAN DEFAULT FALSE,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

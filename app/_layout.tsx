@@ -48,6 +48,8 @@ function RootLayoutNav() {
 
 import { ClerkAuthProvider } from "../context/ClerkProvider";
 
+import { WebContainer } from "../components/WebContainer";
+
 export default function RootLayout() {
   return (
     <ClerkAuthProvider>
@@ -55,7 +57,9 @@ export default function RootLayout() {
         <NotificationProvider>
           <FinanceProvider>
             <StatusBar style="light" />
-            <RootLayoutNav />
+            <WebContainer>
+                <RootLayoutNav />
+            </WebContainer>
             <InstallPrompt />
           </FinanceProvider>
         </NotificationProvider>

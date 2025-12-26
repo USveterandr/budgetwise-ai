@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
-import { useAuth as useClerkAuth, useUser, useClerk } from '@clerk/clerk-expo';
+import { useAuth as useClerkAuth, useUser, useClerk, useSignIn, useSignUp } from '@clerk/clerk-expo';
 import { cloudflare } from '../app/lib/cloudflare';
 import { User, SubscriptionPlan } from '../types';
 
@@ -22,18 +22,26 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
+  /* 
+     We use the dedicated hooks from Clerk instead of accessing client directly.
+     This prevents "Cannot read properties of undefined (reading 'signUp')" errors
+     if the client object is not yet fully initialized.
+  */
   const { isLoaded: clerkLoaded, userId, getToken, signOut } = useClerkAuth();
   const { user: clerkUser, isLoaded: userLoaded } = useUser();
-  const { client, setActive } = useClerk();
+  const { signIn, isLoaded: signInLoaded, setActive } = useSignIn();
+  const { signUp, isLoaded: signUpLoaded } = useSignUp();
   
   const [user, setUser] = useState<User | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
   const isAuthenticated = !!userId;
-  const loading = !clerkLoaded || !userLoaded || profileLoading;
+  // Wait for all Clerk hooks to be loaded
+  const loading = !clerkLoaded || !userLoaded || !signInLoaded || !signUpLoaded || profileLoading;
 
   useEffect(() => {
+    // ... (rest of profile sync logic remains same)
     const syncProfile = async () => {
       if (clerkLoaded && userId && clerkUser) {
         setProfileLoading(true);
@@ -91,12 +99,14 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   }, [clerkLoaded, userId, clerkUser]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    if (!signInLoaded || !signIn) return false;
     try {
-      const result = await client.signIn.create({
+      const result = await signIn.create({
         identifier: email,
         password,
       });
       if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId });
         return true;
       }
       return false;
@@ -107,14 +117,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   };
 
   const signup = async (name: string, email: string, password: string): Promise<boolean> => {
+    if (!signUpLoaded || !signUp) return false;
     try {
-      const result = await client.signUp.create({
+      const result = await signUp.create({
         emailAddress: email,
         password,
         firstName: name.split(' ')[0],
         lastName: name.split(' ').slice(1).join(' '),
       });
       if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId });
         return true;
       }
       return false;
@@ -125,13 +137,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   };
 
   const logout = async () => {
-    await signOut();
+    if (signOut) {
+        await signOut();
+    }
     setUser(null);
   };
 
   const sendPasswordResetEmail = async (email: string): Promise<boolean> => {
+    if (!signInLoaded || !signIn) return false;
     try {
-      await client.signIn.create({
+      await signIn.create({
         identifier: email,
         strategy: 'reset_password_email_code',
       });
@@ -143,8 +158,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   };
 
   const resetPassword = async (code: string, newPassword: string): Promise<boolean> => {
+    if (!signInLoaded || !signIn) return false;
     try {
-      const result = await client.signIn.attemptFirstFactor({
+      const result = await signIn.attemptFirstFactor({
         strategy: 'reset_password_email_code',
         code,
         password: newPassword,
@@ -287,7 +303,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     getSubscriptionPlans,
     refreshProfile,
     getToken
-  }), [user, isAuthenticated, loading, initialized, getToken, client]);
+  }), [user, isAuthenticated, loading, initialized, getToken]);
 
   return (
     <AuthContext.Provider value={contextValue}>
