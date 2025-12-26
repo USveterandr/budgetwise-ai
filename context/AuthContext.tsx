@@ -12,6 +12,7 @@ interface AuthContextType {
   signup: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   sendPasswordResetEmail: (email: string) => Promise<boolean>;
+  resetPassword: (code: string, newPassword: string) => Promise<boolean>;
   upgradePlan: (newPlan: 'Starter' | 'Professional' | 'Business' | 'Enterprise') => Promise<boolean>;
   getSubscriptionPlans: () => SubscriptionPlan[];
   refreshProfile: () => Promise<void>;
@@ -23,7 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const { isLoaded: clerkLoaded, userId, getToken, signOut } = useClerkAuth();
   const { user: clerkUser, isLoaded: userLoaded } = useUser();
-  const { client } = useClerk();
+  const { client, setActive } = useClerk();
   
   const [user, setUser] = useState<User | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -126,6 +127,39 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const logout = async () => {
     await signOut();
     setUser(null);
+  };
+
+  const sendPasswordResetEmail = async (email: string): Promise<boolean> => {
+    try {
+      await client.signIn.create({
+        identifier: email,
+        strategy: 'reset_password_email_code',
+      });
+      return true;
+    } catch (error) {
+      console.error('Clerk forgot password error:', error);
+      throw error;
+    }
+  };
+
+  const resetPassword = async (code: string, newPassword: string): Promise<boolean> => {
+    try {
+      const result = await client.signIn.attemptFirstFactor({
+        strategy: 'reset_password_email_code',
+        code,
+        password: newPassword,
+      });
+
+      if (result.status === 'complete') {
+        // Automatically sign in the user after password reset
+        await setActive({ session: result.createdSessionId });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Clerk reset password error:', error);
+      throw error;
+    }
   };
 
   const upgradePlan = async (newPlan: 'Starter' | 'Professional' | 'Business' | 'Enterprise'): Promise<boolean> => {
@@ -239,12 +273,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     login,
     signup,
     logout,
-    sendPasswordResetEmail: async () => true, // Clerk handles this differently
+    sendPasswordResetEmail,
+    resetPassword,
     upgradePlan,
     getSubscriptionPlans,
     refreshProfile,
     getToken
-  }), [user, isAuthenticated, loading, initialized, getToken]);
+  }), [user, isAuthenticated, loading, initialized, getToken, client]);
 
   return (
     <AuthContext.Provider value={contextValue}>
