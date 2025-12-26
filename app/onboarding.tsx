@@ -84,12 +84,14 @@ export default function OnboardingScreen() {
       await refreshProfile();
       console.log('Profile refreshed in AuthContext.');
 
-      // Navigate directly to Scan Receipts
       if (Platform.OS !== 'web') {
-        Alert.alert("Success", "Profile updated! Let's scan your receipts...");
+        Alert.alert("Success", "Profile updated! Redirecting...");
       }
 
-      router.replace('/(tabs)/receipts');
+      // Delay to ensure context updates THEN navigate
+      setTimeout(() => {
+        router.replace('/(tabs)/receipts');
+      }, 500);
     } catch (err: any) {
       let msg = err?.message ?? 'Unexpected error occurred';
 
