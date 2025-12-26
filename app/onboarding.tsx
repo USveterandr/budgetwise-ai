@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Alert, Modal, FlatList } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,7 +15,15 @@ export default function OnboardingScreen() {
   const [income, setIncome] = useState('');
   const [currency, setCurrency] = useState('USD');
   const [industry, setIndustry] = useState('General');
+  const [showIndustryPicker, setShowIndustryPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const INDUSTRIES = [
+    "Plumber", "Electrician", "Truck Driver", "Insurance Agent",
+    "Real Estate Agent", "Graphic Designer", "Software Developer",
+    "Restaurant Owner", "Retail Store", "Construction", "Consultant",
+    "Landscaping", "Auto Mechanic", "Other"
+  ];
 
   // Sync name from user object if it becomes available after mount
   React.useEffect(() => {
@@ -23,6 +31,13 @@ export default function OnboardingScreen() {
       setName(user.name);
     }
   }, [user?.name]);
+
+  // Navigate to dashboard when onboarding is complete
+  React.useEffect(() => {
+    if (user?.onboardingComplete) {
+      router.replace('/(tabs)/dashboard');
+    }
+  }, [user?.onboardingComplete]);
 
   const handleComplete = async () => {
     // Sanitize income (remove commas, currency symbols, etc.)
@@ -38,13 +53,18 @@ export default function OnboardingScreen() {
       return;
     }
 
+    if (!user?.id) {
+      Alert.alert('Error', 'User information missing. Please try logging in again.');
+      return;
+    }
+
     setLoading(true);
     try {
-      console.log('Completing onboarding for user:', user?.id);
+      console.log('Completing onboarding for user:', user.id);
       const updateData = {
-        user_id: user?.id,
+        user_id: user.id,
         name: name.trim(),
-        email: user?.email,
+        email: user.email,
         monthly_income: incomeVal,
         currency,
         business_industry: industry,
@@ -60,22 +80,12 @@ export default function OnboardingScreen() {
       if (result.success) {
         // Refresh the global auth state
         await refreshProfile();
-        console.log('Profile refreshed in AuthContext. Waiting for state update...');
+        console.log('Profile refreshed in AuthContext.');
         
-        // Navigation Logic
-        if (Platform.OS === 'web') {
-            const confirmed = window.confirm("Profile updated! Click OK to go to your dashboard.");
-            if (confirmed) {
-                router.replace('/(tabs)/dashboard');
-            } else {
-                 // Even if they cancel, we should probably still go since it's done. 
-                 // But let's respect the confirm dialog flow or fallback.
-                 router.replace('/(tabs)/dashboard');
-            }
-        } else {
-            Alert.alert("Success", "Profile updated! Taking you to your dashboard...", [
-                { text: "OK", onPress: () => router.replace('/(tabs)/dashboard') }
-            ]);
+        // We rely on the useEffect above or RootLayout to handle navigation
+        // once the user state is updated.
+        if (Platform.OS !== 'web') {
+            Alert.alert("Success", "Profile updated! Taking you to your dashboard...");
         }
       } else {
         throw new Error(result.error || 'Server returned failure');
@@ -156,23 +166,14 @@ export default function OnboardingScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Business or Profession</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.industrySelector}>
-                  {[
-                    "Plumber", "Electrician", "Truck Driver", "Insurance Agent",
-                    "Real Estate Agent", "Graphic Designer", "Software Developer",
-                    "Restaurant Owner", "Retail Store", "Construction", "Consultant",
-                    "Landscaping", "Auto Mechanic", "Other"
-                  ].map((ind) => (
-                    <TouchableOpacity 
-                      key={ind}
-                      style={[styles.industryChip, industry === ind && styles.activeChip]}
-                      onPress={() => setIndustry(ind)}
-                    >
-                      <Text style={[styles.chipText, industry === ind && styles.activeChipText]}>{ind}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                <Text style={styles.label}>Profession / Industry</Text>
+                <TouchableOpacity 
+                  style={styles.dropdownButton}
+                  onPress={() => setShowIndustryPicker(true)}
+                >
+                  <Text style={styles.dropdownButtonText}>{industry}</Text>
+                  <Ionicons name="chevron-down" size={20} color="#94A3B8" />
+                </TouchableOpacity>
               </View>
 
               <TouchableOpacity 
@@ -196,6 +197,41 @@ export default function OnboardingScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+        <Modal
+          visible={showIndustryPicker}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowIndustryPicker(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Select Profession</Text>
+                <TouchableOpacity onPress={() => setShowIndustryPicker(false)} style={styles.closeButton}>
+                  <Ionicons name="close" size={24} color="#FFF" />
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                data={INDUSTRIES}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableOpacity 
+                    style={[styles.modalItem, industry === item && styles.modalItemActive]}
+                    onPress={() => {
+                      setIndustry(item);
+                      setShowIndustryPicker(false);
+                    }}
+                  >
+                    <Text style={[styles.modalItemText, industry === item && styles.modalItemTextActive]}>{item}</Text>
+                    {industry === item && <Ionicons name="checkmark" size={20} color={Colors.primary} />}
+                  </TouchableOpacity>
+                )}
+                contentContainerStyle={styles.modalListContent}
+              />
+            </View>
+          </View>
+        </Modal>
     </View>
   );
 }
@@ -249,6 +285,74 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
     fontWeight: '600',
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  dropdownButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#0F172A',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalListContent: {
+    padding: 20,
+  },
+  modalItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  modalItemActive: {
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+  },
+  modalItemText: {
+    fontSize: 16,
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+  modalItemTextActive: {
+    color: Colors.primary,
+    fontWeight: '700',
   },
   incomeInputContainer: {
     flexDirection: 'row',
