@@ -71,7 +71,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
           // Sync with Cloudflare profiles table
           try {
-            const existingProfile = await cloudflare.getProfile(firebaseUser.uid);
+            const idToken = await firebaseUser.getIdToken();
+            const existingProfile = await cloudflare.getProfile(firebaseUser.uid, idToken);
             if (!existingProfile || !existingProfile.user_id) {
               await cloudflare.updateProfile({
                 user_id: firebaseUser.uid,
@@ -79,13 +80,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
                 email: firebaseUser.email,
                 plan,
                 email_verified: emailVerified
-              });
+              }, idToken);
             } else {
               if (existingProfile.plan !== plan) {
                 await cloudflare.updateProfile({ 
                   ...existingProfile,
                   plan 
-                });
+                }, idToken);
               }
               // If monthly_income exists and is > 0, consider onboarding complete
               if (existingProfile.monthly_income && existingProfile.monthly_income > 0) {
@@ -185,8 +186,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setUser(prev => prev ? { ...prev, plan: newPlan } : null);
       
       // Sync to Cloudflare
-      const profile = await cloudflare.getProfile(auth.currentUser.uid);
-      await cloudflare.updateProfile({ ...profile, plan: newPlan });
+      const idToken = await auth.currentUser.getIdToken();
+      const profile = await cloudflare.getProfile(auth.currentUser.uid, idToken);
+      await cloudflare.updateProfile({ ...profile, plan: newPlan }, idToken);
       
       return true;
     } catch (e) {
@@ -301,8 +303,11 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       { user_id: userId, category: 'Utilities', budget_limit: 250, spent: 0, month },
     ];
 
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) return;
+
     for (const budget of defaultBudgets) {
-      await cloudflare.addBudget(budget);
+      await cloudflare.addBudget(budget, idToken);
     }
     
     try {
@@ -339,7 +344,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       }
 
       let onboardingComplete = false;
-      const profile = await cloudflare.getProfile(firebaseUser.uid);
+      const idToken = await firebaseUser.getIdToken();
+      const profile = await cloudflare.getProfile(firebaseUser.uid, idToken);
       if (profile && profile.monthly_income && profile.monthly_income > 0) {
         onboardingComplete = true;
       }

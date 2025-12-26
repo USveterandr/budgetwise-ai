@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { cloudflare } from '../app/lib/cloudflare';
+import { auth } from '../firebase';
 import { NotificationContext } from './NotificationContext';
 import { Transaction, Budget, Investment, UserProfile } from '../types';
 
@@ -54,72 +55,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const refreshData = async (uid: string) => {
-    console.log('Refreshing data for user:', uid);
-    setUserId(uid);
-    setLoading(true);
-    try {
-      // Fetch user profile
-      const profileData = await cloudflare.getProfile(uid);
-      if (profileData && profileData.user_id) {
-        setUserProfile({
-          monthlyIncome: profileData.monthly_income || 0,
-          savingsRate: profileData.savings_rate || 0,
-          currency: profileData.currency || 'USD',
-          bio: profileData.bio || '',
-          business_industry: profileData.business_industry || 'General'
-        } as any);
-      }
-      
-      const txData = await cloudflare.getTransactions(uid);
-      if (txData) setTransactions(txData.map((t: any) => ({ 
-        id: t.id, 
-        description: t.description, 
-        amount: Number(t.amount), 
-        category: t.category, 
-        date: t.date, 
-        type: t.type, 
-        icon: t.category === 'Food' ? 'restaurant' : t.category === 'Transport' ? 'car' : t.category === 'Utilities' ? 'zap' : t.category === 'Entertainment' ? 'film' : t.category === 'Shopping' ? 'shopping-cart' : 'wallet' 
-      })));
-      
-      const month = new Date().toISOString().slice(0, 7);
-      const budgetData = await cloudflare.getBudgets(uid, month);
-      if (budgetData) {
-        const updatedBudgets = budgetData.map((b: any) => ({ 
-          id: b.id, 
-          category: b.category, 
-          limit: Number(b.budget_limit), 
-          spent: Number(b.spent) 
-        }));
-        
-        setBudgets(updatedBudgets);
-        
-        // Check for budget alerts
-        checkBudgetAlerts(uid, updatedBudgets);
-      }
-      
-      const investmentData = await cloudflare.getInvestments(uid);
-      if (investmentData) setInvestments(investmentData.map((i: any) => ({
-        id: i.id,
-        name: i.name,
-        symbol: i.symbol,
-        quantity: Number(i.quantity),
-        costBasis: Number(i.purchase_price * i.quantity),
-        currentPrice: Number(i.current_price),
-        type: i.type
-      })));
-    } catch (e) { console.error(e); }
-    setLoading(false);
-    console.log('Data refresh complete');
-  };
-
-  const checkBudgetAlerts = async (uid: string, budgets: Budget[]) => {
-    for (const budget of budgets) {
+  const checkBudgetAlerts = async (uid: string, budgetsList: Budget[], idToken: string) => {
+    for (const budget of budgetsList) {
       const percentage = (budget.spent / budget.limit) * 100;
       
       // Check for 80% alert
       if (percentage >= 80 && percentage < 100) {
-        const notifications = await cloudflare.getNotifications(uid);
+        const notifications = await cloudflare.getNotifications(uid, idToken);
         const existing80Alert = notifications?.filter((n: any) => 
           n.category === 'budget_alert' && 
           n.title.includes(budget.category) && 
@@ -137,7 +79,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
             message,
             category: 'budget_alert',
             read: false
-          });
+          }, idToken);
           
           sendLocalNotification(title, message);
         }
@@ -145,7 +87,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       
       // Check for 100% alert
       if (percentage >= 100) {
-        const notifications = await cloudflare.getNotifications(uid);
+        const notifications = await cloudflare.getNotifications(uid, idToken);
         const existing100Alert = notifications?.filter((n: any) => 
           n.category === 'budget_alert' && 
           n.title.includes(budget.category) && 
@@ -163,7 +105,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
             message,
             category: 'budget_alert',
             read: false
-          });
+          }, idToken);
           
           sendLocalNotification(title, message);
         }
@@ -171,111 +113,229 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addTransaction = async (t: Omit<Transaction, 'id'>) => {
-    const data = await cloudflare.addTransaction({ 
-      user_id: userId, 
-      description: t.description, 
-      amount: t.amount, 
-      category: t.category, 
-      type: t.type, 
-      date: t.date 
-    });
-    
-    if (data && data.success) {
-      setTransactions(prev => [{ id: data.id, ...t }, ...prev]);
+  const refreshData = async (uid: string) => {
+    console.log('Refreshing data for user:', uid);
+    setUserId(uid);
+    setLoading(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) {
+        setLoading(false);
+        return;
+      }
+
+      // Fetch user profile
+      const profileData = await cloudflare.getProfile(uid, idToken);
+      if (profileData && profileData.user_id) {
+        setUserProfile({
+          monthlyIncome: profileData.monthly_income || 0,
+          savingsRate: profileData.savings_rate || 0,
+          currency: profileData.currency || 'USD',
+          bio: profileData.bio || '',
+          businessIndustry: profileData.business_industry || 'General'
+        } as any);
+      }
       
-      // Update budget spent amount if this is an expense
-      if (t.type === 'expense') {
-        const budget = budgets.find(b => b.category === t.category);
-        if (budget) {
-          const newSpent = budget.spent + t.amount;
-          await updateBudget(budget.id, newSpent);
-          
-          // Refresh data to trigger budget alerts
-          await refreshData(userId);
+      const txData = await cloudflare.getTransactions(uid, idToken);
+      if (txData) setTransactions(txData.map((t: any) => ({ 
+        id: t.id, 
+        description: t.description, 
+        amount: Number(t.amount), 
+        category: t.category, 
+        date: t.date, 
+        type: t.type, 
+        icon: t.category === 'Food' ? 'restaurant' : t.category === 'Transport' ? 'car' : t.category === 'Utilities' ? 'zap' : t.category === 'Entertainment' ? 'film' : t.category === 'Shopping' ? 'shopping-cart' : 'wallet' 
+      })));
+      
+      const month = new Date().toISOString().slice(0, 7);
+      const budgetData = await cloudflare.getBudgets(uid, month, idToken);
+      if (budgetData) {
+        const updatedBudgets = budgetData.map((b: any) => ({ 
+          id: b.id, 
+          category: b.category, 
+          limit: Number(b.budget_limit), 
+          spent: Number(b.spent) 
+        }));
+        
+        setBudgets(updatedBudgets);
+        
+        // Check for budget alerts
+        await checkBudgetAlerts(uid, updatedBudgets, idToken);
+      }
+      
+      const investmentData = await cloudflare.getInvestments(uid, idToken);
+      if (investmentData) setInvestments(investmentData.map((i: any) => ({
+        id: i.id,
+        name: i.name,
+        symbol: i.symbol,
+        quantity: Number(i.quantity),
+        purchasePrice: Number(i.purchase_price),
+        costBasis: Number(i.purchase_price * i.quantity),
+        currentPrice: Number(i.current_price),
+        type: i.type
+      })));
+    } catch (e) { 
+      console.error('Error refreshing data:', e); 
+    } finally {
+      setLoading(false);
+    }
+    console.log('Data refresh complete');
+  };
+
+  const addTransaction = async (t: Omit<Transaction, 'id'>) => {
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) return;
+
+    try {
+      const data = await cloudflare.addTransaction({ 
+        user_id: userId, 
+        description: t.description, 
+        amount: t.amount, 
+        category: t.category, 
+        type: t.type, 
+        date: t.date 
+      }, idToken);
+      
+      if (data && data.success) {
+        setTransactions(prev => [{ id: data.id, ...t }, ...prev]);
+        
+        // Update budget spent amount if this is an expense
+        if (t.type === 'expense') {
+          const budget = budgets.find(b => b.category === t.category);
+          if (budget) {
+            const newSpent = budget.spent + t.amount;
+            await updateBudget(budget.id, newSpent);
+            
+            // Refresh data to trigger budget alerts
+            await refreshData(userId);
+          }
         }
       }
+    } catch (e) {
+      console.error('Error adding transaction:', e);
     }
   };
 
   const deleteTransaction = async (id: string) => {
-    const transaction = transactions.find(t => t.id === id);
-    await cloudflare.deleteTransaction(id);
-    setTransactions(prev => prev.filter(t => t.id !== id));
-    
-    // Adjust budget spent amount if this was an expense
-    if (transaction && transaction.type === 'expense') {
-      const budget = budgets.find(b => b.category === transaction.category);
-      if (budget) {
-        const newSpent = budget.spent - transaction.amount;
-        await updateBudget(budget.id, newSpent);
-        await refreshData(userId);
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) return;
+
+    try {
+      const transaction = transactions.find(t => t.id === id);
+      await cloudflare.deleteTransaction(id, idToken);
+      setTransactions(prev => prev.filter(t => t.id !== id));
+      
+      // Adjust budget spent amount if this was an expense
+      if (transaction && transaction.type === 'expense') {
+        const budget = budgets.find(b => b.category === transaction.category);
+        if (budget) {
+          const newSpent = budget.spent - transaction.amount;
+          await updateBudget(budget.id, newSpent);
+          await refreshData(userId);
+        }
       }
+    } catch (e) {
+      console.error('Error deleting transaction:', e);
     }
   };
 
   const updateBudget = async (id: string, spent: number) => {
-    await cloudflare.updateBudget(id, spent);
-    setBudgets(prev => prev.map(b => b.id === id ? { ...b, spent } : b));
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) return;
+
+    try {
+      await cloudflare.updateBudget(id, spent, idToken);
+      setBudgets(prev => prev.map(b => b.id === id ? { ...b, spent } : b));
+    } catch (e) {
+      console.error('Error updating budget:', e);
+    }
   };
 
   const addBudget = async (b: Omit<Budget, 'id'> & { month: string }) => {
-    const data = await cloudflare.addBudget({
-      user_id: userId,
-      category: b.category,
-      budget_limit: b.limit,
-      spent: b.spent,
-      month: b.month
-    });
-    
-    if (data && data.success) {
-      setBudgets(prev => [...prev, {
-        id: data.id,
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) return;
+
+    try {
+      const data = await cloudflare.addBudget({
+        user_id: userId,
         category: b.category,
-        limit: Number(b.limit),
-        spent: Number(b.spent)
-      }]);
+        budget_limit: b.limit,
+        spent: b.spent,
+        month: b.month
+      }, idToken);
+      
+      if (data && data.success) {
+        setBudgets(prev => [...prev, {
+          id: data.id,
+          category: b.category,
+          limit: Number(b.limit),
+          spent: Number(b.spent)
+        }]);
+      }
+    } catch (e) {
+      console.error('Error adding budget:', e);
     }
   };
 
   const addInvestment = async (investment: Omit<Investment, 'id'>) => {
-    const data = await cloudflare.addInvestment({
-      user_id: userId,
-      name: investment.name,
-      symbol: investment.symbol,
-      quantity: investment.quantity,
-      purchase_price: investment.costBasis / investment.quantity,
-      current_price: investment.currentPrice,
-      purchase_date: new Date().toISOString(),
-      type: investment.type
-    });
-    
-    if (data && data.success) {
-      setInvestments(prev => [...prev, {
-        id: data.id,
-        ...investment,
-        costBasis: Number(investment.costBasis)
-      }]);
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) return;
+
+    try {
+      const data = await cloudflare.addInvestment({
+        user_id: userId,
+        name: investment.name,
+        symbol: investment.symbol,
+        quantity: investment.quantity,
+        purchase_price: investment.purchasePrice || (investment.costBasis / investment.quantity),
+        current_price: investment.currentPrice,
+        purchase_date: new Date().toISOString(),
+        type: investment.type
+      }, idToken);
+      
+      if (data && data.success) {
+        setInvestments(prev => [...prev, {
+          id: data.id,
+          ...investment,
+          costBasis: Number(investment.costBasis)
+        }]);
+      }
+    } catch (e) {
+      console.error('Error adding investment:', e);
     }
   };
 
   const updateInvestment = async (id: string, investment: Partial<Investment>) => {
-    const updates: any = {};
-    if (investment.name !== undefined) updates.name = investment.name;
-    if (investment.symbol !== undefined) updates.symbol = investment.symbol;
-    if (investment.quantity !== undefined) updates.quantity = investment.quantity;
-    if (investment.costBasis !== undefined) updates.purchase_price = investment.costBasis / (investment.quantity || 1);
-    if (investment.currentPrice !== undefined) updates.current_price = investment.currentPrice;
-    if (investment.type !== undefined) updates.type = investment.type;
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) return;
 
-    await cloudflare.updateInvestment(id, updates);
-    
-    setInvestments(prev => prev.map(inv => inv.id === id ? { ...inv, ...investment } : inv));
+    try {
+      const updates: any = {};
+      if (investment.name !== undefined) updates.name = investment.name;
+      if (investment.symbol !== undefined) updates.symbol = investment.symbol;
+      if (investment.quantity !== undefined) updates.quantity = investment.quantity;
+      if (investment.purchasePrice !== undefined) updates.purchase_price = investment.purchasePrice;
+      else if (investment.costBasis !== undefined) updates.purchase_price = investment.costBasis / (investment.quantity || 1);
+      if (investment.currentPrice !== undefined) updates.current_price = investment.currentPrice;
+      if (investment.type !== undefined) updates.type = investment.type;
+
+      await cloudflare.updateInvestment(id, updates, idToken);
+      setInvestments(prev => prev.map(inv => inv.id === id ? { ...inv, ...investment } : inv));
+    } catch (e) {
+      console.error('Error updating investment:', e);
+    }
   };
 
   const deleteInvestment = async (id: string) => {
-    await cloudflare.deleteInvestment(id);
-    setInvestments(prev => prev.filter(i => i.id !== id));
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) return;
+
+    try {
+      await cloudflare.deleteInvestment(id, idToken);
+      setInvestments(prev => prev.filter(i => i.id !== id));
+    } catch (e) {
+      console.error('Error deleting investment:', e);
+    }
   };
 
   const monthlyIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);

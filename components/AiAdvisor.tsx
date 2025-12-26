@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, ActivityIndicator, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { geminiService, ChatMessage } from '../services/geminiService';
 import { useFinance } from '../context/FinanceContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface Message {
   id: string;
@@ -81,13 +82,6 @@ export function AiAdvisor() {
     }
   };
 
-  const handleKeyDown = (e: any) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
   const renderMessage = ({ item }: { item: Message }) => (
     <View style={[styles.messageContainer, item.role === 'user' ? styles.userMessage : styles.aiMessage]}>
       <View style={[styles.messageBubble, item.role === 'user' ? styles.userBubble : styles.aiBubble]}>
@@ -100,52 +94,70 @@ export function AiAdvisor() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>AI Budget Advisor</Text>
-          <Text style={styles.headerSubtitle}>Powered by Gemini</Text>
+      <LinearGradient colors={['#0F172A', '#1E1B4B', '#0F172A']} style={StyleSheet.absoluteFill} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.headerTitle}>AI Budget Advisor</Text>
+            <Text style={styles.headerSubtitle}>Powered by Gemini</Text>
+          </View>
+          <LinearGradient 
+            colors={['rgba(234, 179, 8, 0.2)', 'rgba(202, 138, 4, 0.2)']} 
+            style={styles.proBadge}
+          >
+            <Text style={styles.proBadgeText}>PRO FEATURE</Text>
+          </LinearGradient>
         </View>
-        <View style={styles.proBadge}>
-          <Text style={styles.proBadgeText}>PRO FEATURE</Text>
-        </View>
-      </View>
 
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={item => item.id}
-        style={styles.messagesContainer}
-        contentContainerStyle={styles.messagesContent}
-        onContentSizeChange={scrollToBottom}
-      />
-
-      {isLoading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={Colors.primary} />
-        </View>
-      )}
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={input}
-          onChangeText={setInput}
-          onSubmitEditing={handleSend}
-          placeholder="Ask for advice on your budget..."
-          multiline
-          numberOfLines={1}
-          maxLength={500}
-          editable={!isLoading}
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={item => item.id}
+          style={styles.messagesContainer}
+          contentContainerStyle={styles.messagesContent}
+          onContentSizeChange={scrollToBottom}
+          showsVerticalScrollIndicator={false}
         />
-        <TouchableOpacity
-          style={[styles.sendButton, !input.trim() || isLoading ? styles.sendButtonDisabled : null]}
-          onPress={handleSend}
-          disabled={!input.trim() || isLoading}
+
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={Colors.primaryLight} />
+          </View>
+        )}
+
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
-          <Ionicons name="send" size={20} color="#FFF" />
-        </TouchableOpacity>
-      </View>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              value={input}
+              onChangeText={setInput}
+              onSubmitEditing={handleSend}
+              placeholder="Ask for advice on your budget..."
+              placeholderTextColor="#94A3B8"
+              multiline
+              numberOfLines={1}
+              maxLength={500}
+              editable={!isLoading}
+            />
+            <TouchableOpacity
+              style={[styles.sendButton, !input.trim() || isLoading ? styles.sendButtonDisabled : null]}
+              onPress={handleSend}
+              disabled={!input.trim() || isLoading}
+            >
+              <LinearGradient 
+                colors={[Colors.primary, Colors.secondary]} 
+                style={styles.sendButtonGradient}
+              >
+                <Ionicons name="send" size={18} color="#FFF" />
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </View>
   );
 }
@@ -159,24 +171,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#1E293B',
+    padding: 20,
+    backgroundColor: 'rgba(30, 41, 59, 0.7)',
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '800',
     color: '#FFF',
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontSize: 12,
     color: '#94A3B8',
+    fontWeight: '500',
   },
   proBadge: {
-    backgroundColor: 'rgba(234, 179, 8, 0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(234, 179, 8, 0.3)',
@@ -184,16 +197,16 @@ const styles = StyleSheet.create({
   proBadgeText: {
     color: '#EAB308',
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   messagesContainer: {
     flex: 1,
   },
   messagesContent: {
-    padding: 16,
+    padding: 20,
   },
   messageContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
     maxWidth: '85%',
   },
   userMessage: {
@@ -203,56 +216,68 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   messageBubble: {
-    borderRadius: 16,
-    padding: 12,
+    borderRadius: 20,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   userBubble: {
     backgroundColor: Colors.primary,
     borderBottomRightRadius: 4,
   },
   aiBubble: {
-    backgroundColor: '#1E293B',
+    backgroundColor: 'rgba(30, 41, 59, 0.8)',
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   messageText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
   },
   userText: {
     color: '#FFF',
+    fontWeight: '500',
   },
   aiText: {
-    color: '#E2E8F0',
+    color: '#F1F5F9',
+    fontWeight: '400',
   },
   loadingContainer: {
     alignItems: 'center',
-    padding: 8,
+    padding: 10,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     padding: 16,
-    backgroundColor: '#0F172A',
+    backgroundColor: 'rgba(15, 23, 42, 0.9)',
     borderTopWidth: 1,
-    borderTopColor: '#1E293B',
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    gap: 10,
   },
   input: {
     flex: 1,
-    backgroundColor: '#1E293B',
-    borderRadius: 20,
-    paddingHorizontal: 16,
+    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    borderRadius: 24,
+    paddingHorizontal: 18,
     paddingVertical: 12,
     color: '#FFF',
-    maxHeight: 100,
-    marginRight: 8,
+    maxHeight: 120,
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primary,
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  sendButtonGradient: {
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },

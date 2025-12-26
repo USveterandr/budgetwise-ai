@@ -8,123 +8,158 @@ const CLOUDFLARE_WORKER_URL = 'https://budgetwise-api.isaactrinidadllc.workers.d
 
 export const cloudflare = {
     // Profiles
-    async getProfile(userId: string) {
-        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/profile?userId=${userId}&t=${Date.now()}`);
+    async getProfile(userId: string, idToken: string) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/profile?userId=${userId}&t=${Date.now()}`, {
+            headers: { 'Authorization': `Bearer ${idToken}` }
+        });
         return res.json();
     },
 
-    async updateProfile(profile: any) {
+    async updateProfile(profile: any, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/profile`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
             body: JSON.stringify(profile)
         });
         return res.json();
     },
 
     // Transactions
-    async getTransactions(userId: string) {
-        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/transactions?userId=${userId}`);
+    async getTransactions(userId: string, idToken: string) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/transactions?userId=${userId}`, {
+            headers: { 'Authorization': `Bearer ${idToken}` }
+        });
         return res.json();
     },
 
-    async addTransaction(transaction: any) {
+    async addTransaction(transaction: any, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/transactions`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
             body: JSON.stringify(transaction)
         });
         return res.json();
     },
 
-    async deleteTransaction(id: string) {
+    async deleteTransaction(id: string, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/transactions/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${idToken}` }
         });
         return res.json();
     },
 
     // Budgets
-    async getBudgets(userId: string, month: string) {
-        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/budgets?userId=${userId}&month=${month}`);
+    async getBudgets(userId: string, month: string, idToken: string) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/budgets?userId=${userId}&month=${month}`, {
+            headers: { 'Authorization': `Bearer ${idToken}` }
+        });
         return res.json();
     },
 
-    async addBudget(budget: any) {
+    async addBudget(budget: any, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/budgets`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
             body: JSON.stringify(budget)
         });
         return res.json();
     },
 
-    async updateBudget(id: string, spent: number) {
+    async updateBudget(id: string, spent: number, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/budgets`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
             body: JSON.stringify({ id, spent })
         });
         return res.json();
     },
 
     // Investments
-    async getInvestments(userId: string) {
-        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/investments?userId=${userId}`);
+    async getInvestments(userId: string, idToken: string) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/investments?userId=${userId}`, {
+            headers: { 'Authorization': `Bearer ${idToken}` }
+        });
         return res.json();
     },
 
-    async addInvestment(investment: any) {
+    async addInvestment(investment: any, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/investments`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
             body: JSON.stringify(investment)
         });
         return res.json();
     },
 
-    async updateInvestment(id: string, investment: any) {
+    async updateInvestment(id: string, investment: any, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/investments/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
             body: JSON.stringify(investment)
         });
         return res.json();
     },
 
-    async deleteInvestment(id: string) {
+    async deleteInvestment(id: string, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/investments/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${idToken}` }
         });
         return res.json();
     },
 
     // Notifications
-    async getNotifications(userId: string) {
-        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/notifications?userId=${userId}`);
+    async getNotifications(userId: string, idToken: string) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/notifications?userId=${userId}`, {
+            headers: { 'Authorization': `Bearer ${idToken}` }
+        });
         return res.json();
     },
 
-    async addNotification(notification: any) {
+    async addNotification(notification: any, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/notifications`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
             body: JSON.stringify(notification)
         });
         return res.json();
     },
 
-    async markNotificationAsRead(id: string) {
+    async markNotificationAsRead(id: string, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/notifications/${id}/read`, {
-            method: 'PUT'
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${idToken}` }
         });
         return res.json();
     },
 
     // Storage
-    async uploadFile(userId: string, file: Blob, filename: string) {
+    async uploadFile(userId: string, file: Blob, filename: string, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/storage/upload?userId=${userId}&filename=${filename}`, {
             method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}` },
             body: file
         });
         return res.json();

@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
+import { Card } from './ui/Card';
+import { Button } from './ui/Button';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface Expert {
   id: string;
@@ -24,7 +27,6 @@ interface ConsultationSlot {
 export function Consultation() {
   const [selectedExpert, setSelectedExpert] = useState<Expert | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<ConsultationSlot | null>(null);
-  const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'browse' | 'schedule' | 'history'>('browse');
   const [formData, setFormData] = useState({
     name: '',
@@ -37,137 +39,62 @@ export function Consultation() {
 
   // Mock data for experts
   const experts: Expert[] = [
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      specialty: 'Retirement Planning',
-      rating: 4.9,
-      experience: '15 years',
-      image: '',
-      available: true
-    },
-    {
-      id: '2',
-      name: 'Michael Chen',
-      specialty: 'Investment Strategy',
-      rating: 4.8,
-      experience: '12 years',
-      image: '',
-      available: true
-    },
-    {
-      id: '3',
-      name: 'Emily Rodriguez',
-      specialty: 'Tax Optimization',
-      rating: 4.7,
-      experience: '10 years',
-      image: '',
-      available: false
-    }
+    { id: '1', name: 'Sarah Johnson', specialty: 'Retirement Planning', rating: 4.9, experience: '15 years', image: '', available: true },
+    { id: '2', name: 'Michael Chen', specialty: 'Investment Strategy', rating: 4.8, experience: '12 years', image: '', available: true },
+    { id: '3', name: 'Emily Rodriguez', specialty: 'Tax Optimization', rating: 4.7, experience: '10 years', image: '', available: false }
   ];
-
-  // Mock data for consultation slots
-  const consultationSlots: ConsultationSlot[] = [
-    {
-      id: '1',
-      date: '2023-12-20',
-      time: '10:00 AM',
-      duration: 30,
-      price: 150
-    },
-    {
-      id: '2',
-      date: '2023-12-20',
-      time: '2:00 PM',
-      duration: 60,
-      price: 250
-    },
-    {
-      id: '3',
-      date: '2023-12-21',
-      time: '11:00 AM',
-      duration: 45,
-      price: 200
-    }
-  ];
-
-  const handleBookConsultation = () => {
-    if (!selectedExpert || !selectedSlot || !message.trim()) {
-      Alert.alert('Error', 'Please select an expert, time slot, and enter a message');
-      return;
-    }
-
-    Alert.alert(
-      'Consultation Booked!',
-      `Your consultation with ${selectedExpert.name} on ${selectedSlot.date} at ${selectedSlot.time} has been booked.`,
-      [{ text: 'OK' }]
-    );
-  };
-
-  const handleSubmit = (e: any) => {
-    e.preventDefault();
-    // Simulate API call to Hubspot or booking system
-    setTimeout(() => {
-      setSubmitted(true);
-    }, 1000);
-  };
 
   const handleResetForm = () => {
     setSubmitted(false);
-    setFormData({
-      name: '',
-      email: '',
-      topic: 'retirement',
-      date: '',
-      notes: ''
-    });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
+    setFormData({ name: '', email: '', topic: 'retirement', date: '', notes: '' });
   };
 
   const renderExperts = () => (
-    <View>
+    <View style={styles.tabContent}>
       <Text style={styles.sectionTitle}>Financial Experts</Text>
-      <Text style={styles.sectionSubtitle}>Connect with certified professionals</Text>
-      
       {experts.map(expert => (
-        <TouchableOpacity 
+        <Card 
           key={expert.id}
           style={[styles.expertCard, selectedExpert?.id === expert.id && styles.selectedExpert]}
-          onPress={() => setSelectedExpert(expert)}
         >
-          <View style={styles.expertInfo}>
-            <View style={styles.expertAvatar}>
-              <Ionicons name="person" size={24} color="#FFF" />
-            </View>
-            <View style={styles.expertDetails}>
-              <Text style={styles.expertName}>{expert.name}</Text>
-              <Text style={styles.expertSpecialty}>{expert.specialty}</Text>
-              <View style={styles.expertMeta}>
-                <Text style={styles.expertRating}>★ {expert.rating}</Text>
-                <Text style={styles.expertExperience}>{expert.experience} exp</Text>
+          <TouchableOpacity 
+            style={styles.expertTouchable}
+            onPress={() => setSelectedExpert(expert)}
+          >
+            <View style={styles.expertInfo}>
+              <View style={styles.expertAvatar}>
+                <Ionicons name="person" size={24} color="#FFF" />
+              </View>
+              <View style={styles.expertDetails}>
+                <Text style={styles.expertName}>{expert.name}</Text>
+                <Text style={styles.expertSpecialty}>{expert.specialty}</Text>
+                <View style={styles.expertMeta}>
+                  <Text style={styles.expertRating}>★ {expert.rating}</Text>
+                  <Text style={styles.expertExperience}>{expert.experience} exp</Text>
+                </View>
               </View>
             </View>
-          </View>
-          <View style={styles.expertStatus}>
-            <View style={[styles.statusIndicator, expert.available ? styles.statusAvailable : styles.statusUnavailable]} />
-            <Text style={styles.statusText}>{expert.available ? 'Available' : 'Busy'}</Text>
-          </View>
-        </TouchableOpacity>
+            <View style={styles.expertStatus}>
+              <View style={[styles.statusIndicator, expert.available ? styles.statusAvailable : styles.statusUnavailable]} />
+              <Text style={styles.statusText}>{expert.available ? 'Available' : 'Busy'}</Text>
+            </View>
+          </TouchableOpacity>
+        </Card>
       ))}
+      {selectedExpert && (
+        <Button 
+          title={`Schedule with ${selectedExpert.name.split(' ')[0]}`}
+          onPress={() => setActiveTab('schedule')}
+          style={{ marginTop: 24 }}
+        />
+      )}
     </View>
   );
 
   const renderSchedule = () => (
-    <View>
+    <View style={styles.tabContent}>
       {submitted ? (
-        <View style={styles.submittedContainer}>
+        <Card style={styles.submittedCard}>
           <View style={styles.checkmarkCircle}>
             <Ionicons name="checkmark" size={40} color="#10B981" />
           </View>
@@ -175,55 +102,44 @@ export function Consultation() {
           <Text style={styles.submittedText}>
             Thank you. An advisor will review your request and send a confirmation email to <Text style={styles.boldText}>{formData.email}</Text> shortly.
           </Text>
-          <TouchableOpacity 
-            style={styles.resetButton}
-            onPress={handleResetForm}
-          >
-            <Text style={styles.resetButtonText}>Book Another</Text>
-          </TouchableOpacity>
-        </View>
+          <Button title="Book Another" onPress={handleResetForm} variant="secondary" />
+        </Card>
       ) : (
         <>
           <Text style={styles.sectionTitle}>Expert Consultation</Text>
-          <Text style={styles.sectionSubtitle}>First 30 minutes are complimentary for BudgetWise Premium members.</Text>
+          <Text style={styles.sectionSubtitle}>First 30 minutes are complimentary for BudgetWise Professional members.</Text>
           
-          <View style={styles.formCard}>
-            <View style={styles.formRow}>
-              <View style={styles.formField}>
-                <Text style={styles.label}>Full Name</Text>
-                <TextInput 
-                  style={styles.input}
-                  value={formData.name}
-                  onChangeText={(text) => setFormData({...formData, name: text})}
-                  placeholder="Enter your full name"
-                />
-              </View>
-              <View style={styles.formField}>
-                <Text style={styles.label}>Email</Text>
-                <TextInput 
-                  style={styles.input}
-                  value={formData.email}
-                  onChangeText={(text) => setFormData({...formData, email: text})}
-                  placeholder="Enter your email"
-                  keyboardType="email-address"
-                />
-              </View>
+          <Card style={styles.formCard}>
+            <View style={styles.formField}>
+              <Text style={styles.label}>Full Name</Text>
+              <TextInput 
+                style={styles.input}
+                value={formData.name}
+                onChangeText={(text) => setFormData({...formData, name: text})}
+                placeholder="Enter your full name"
+                placeholderTextColor="#64748B"
+              />
+            </View>
+            <View style={styles.formField}>
+              <Text style={styles.label}>Email Address</Text>
+              <TextInput 
+                style={styles.input}
+                value={formData.email}
+                onChangeText={(text) => setFormData({...formData, email: text})}
+                placeholder="Enter your email"
+                placeholderTextColor="#64748B"
+                keyboardType="email-address"
+              />
             </View>
             
             <View style={styles.formField}>
-              <Text style={styles.label}>Topic</Text>
+              <Text style={styles.label}>Consultation Topic</Text>
               <View style={styles.pickerContainer}>
-                <TouchableOpacity 
-                  style={styles.pickerButton}
-                  onPress={() => {}}
-                >
+                <TouchableOpacity style={styles.pickerButton}>
                   <Text style={styles.pickerText}>
-                    {formData.topic === 'retirement' && 'Retirement Planning'}
-                    {formData.topic === 'investment' && 'Portfolio Review'}
-                    {formData.topic === 'debt' && 'Debt Consolidation'}
-                    {formData.topic === 'tax' && 'Tax Optimization'}
+                    {formData.topic === 'retirement' ? 'Retirement Planning' : 'Portfolio Review'}
                   </Text>
-                  <Ionicons name="chevron-down" size={16} color={Colors.textSecondary} />
+                  <Ionicons name="chevron-down" size={16} color="#94A3B8" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -234,40 +150,39 @@ export function Consultation() {
                 style={styles.input}
                 value={formData.date}
                 onChangeText={(text) => setFormData({...formData, date: text})}
-                placeholder="Select preferred date"
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#64748B"
               />
             </View>
             
             <View style={styles.formField}>
-              <Text style={styles.label}>Specific Questions</Text>
+              <Text style={styles.label}>Additional Notes</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={formData.notes}
                 onChangeText={(text) => setFormData({...formData, notes: text})}
-                placeholder="What would you like to discuss with the advisor?"
+                placeholder="Tell us more about your goals..."
+                placeholderTextColor="#64748B"
                 multiline
                 numberOfLines={4}
               />
             </View>
             
-            <TouchableOpacity 
-              style={styles.submitButton}
-              onPress={handleSubmit}
-            >
-              <Text style={styles.submitButtonText}>Request Consultation</Text>
-            </TouchableOpacity>
-          </View>
+            <Button 
+              title="Request Consultation"
+              onPress={() => setSubmitted(true)}
+              style={{ marginTop: 12 }}
+            />
+          </Card>
         </>
       )}
     </View>
   );
 
   const renderHistory = () => (
-    <View>
-      <Text style={styles.sectionTitle}>Consultation History</Text>
-      <Text style={styles.sectionSubtitle}>Your past and upcoming sessions</Text>
-      
-      <View style={styles.historyCard}>
+    <View style={styles.tabContent}>
+      <Text style={styles.sectionTitle}>Session History</Text>
+      <Card style={styles.historyCard}>
         <View style={styles.historyItem}>
           <View style={styles.historyIcon}>
             <Ionicons name="calendar" size={20} color={Colors.primary} />
@@ -278,15 +193,13 @@ export function Consultation() {
             <Text style={styles.historyDateTime}>Dec 15, 2023 • 2:00 PM</Text>
           </View>
           <TouchableOpacity style={styles.historyAction}>
-            <Text style={styles.actionText}>Reschedule</Text>
+            <Text style={styles.actionText}>Details</Text>
           </TouchableOpacity>
         </View>
-        
         <View style={styles.historyDivider} />
-        
         <View style={styles.historyItem}>
           <View style={styles.historyIcon}>
-            <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
+            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
           </View>
           <View style={styles.historyDetails}>
             <Text style={styles.historyTitle}>Completed Session</Text>
@@ -294,432 +207,108 @@ export function Consultation() {
             <Text style={styles.historyDateTime}>Dec 1, 2023 • 10:00 AM</Text>
           </View>
           <TouchableOpacity style={styles.historyAction}>
-            <Text style={styles.actionText}>View Notes</Text>
+            <Text style={styles.actionText}>Notes</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </Card>
     </View>
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Expert Consultation</Text>
-        <Text style={styles.subtitle}>Connect with certified financial advisors</Text>
-      </View>
-      
-      <View style={styles.tabs}>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'browse' && styles.activeTab]}
-          onPress={() => setActiveTab('browse')}
-        >
-          <Text style={[styles.tabText, activeTab === 'browse' && styles.activeTabText]}>Browse</Text>
-        </TouchableOpacity>
+    <View style={styles.container}>
+      <LinearGradient colors={['#0F172A', '#13112B', '#0F172A']} style={StyleSheet.absoluteFill} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Consultation</Text>
+          <Text style={styles.subtitle}>Connect with certified financial advisors</Text>
+        </View>
         
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'schedule' && styles.activeTab]}
-          onPress={() => setActiveTab('schedule')}
-        >
-          <Text style={[styles.tabText, activeTab === 'schedule' && styles.activeTabText]}>Schedule</Text>
-        </TouchableOpacity>
+        <View style={styles.tabsContainer}>
+          <View style={styles.tabs}>
+            <TouchableOpacity 
+              style={[styles.tab, activeTab === 'browse' && styles.activeTab]}
+              onPress={() => setActiveTab('browse')}
+            >
+              <Text style={[styles.tabText, activeTab === 'browse' && styles.activeTabText]}>Experts</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.tab, activeTab === 'schedule' && styles.activeTab]}
+              onPress={() => setActiveTab('schedule')}
+            >
+              <Text style={[styles.tabText, activeTab === 'schedule' && styles.activeTabText]}>Schedule</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.tab, activeTab === 'history' && styles.activeTab]}
+              onPress={() => setActiveTab('history')}
+            >
+              <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>History</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
         
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'history' && styles.activeTab]}
-          onPress={() => setActiveTab('history')}
-        >
-          <Text style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>History</Text>
-        </TouchableOpacity>
-      </View>
-      
-      {activeTab === 'browse' && renderExperts()}
-      {activeTab === 'schedule' && renderSchedule()}
-      {activeTab === 'history' && renderHistory()}
-    </ScrollView>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {activeTab === 'browse' && renderExperts()}
+          {activeTab === 'schedule' && renderSchedule()}
+          {activeTab === 'history' && renderHistory()}
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0F172A',
-  },
-  content: {
-    padding: 16,
-  },
-  header: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFF',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#94A3B8',
-  },
-  tabs: {
-    flexDirection: 'row',
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  activeTab: {
-    backgroundColor: Colors.primary,
-    borderRadius: 12,
-  },
-  tabText: {
-    fontSize: 16,
-    color: '#94A3B8',
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: '#FFF',
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFF',
-    marginBottom: 4,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: '#94A3B8',
-    marginBottom: 16,
-  },
-  expertCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  selectedExpert: {
-    borderColor: Colors.primary,
-    backgroundColor: 'rgba(109, 40, 217, 0.1)',
-  },
-  expertInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  expertAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  expertDetails: {
-    flex: 1,
-  },
-  expertName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
-    marginBottom: 4,
-  },
-  expertSpecialty: {
-    fontSize: 14,
-    color: '#94A3B8',
-    marginBottom: 4,
-  },
-  expertMeta: {
-    flexDirection: 'row',
-  },
-  expertRating: {
-    fontSize: 12,
-    color: '#FBBF24',
-    marginRight: 12,
-  },
-  expertExperience: {
-    fontSize: 12,
-    color: '#94A3B8',
-  },
-  expertStatus: {
-    alignItems: 'center',
-  },
-  statusIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginBottom: 4,
-  },
-  statusAvailable: {
-    backgroundColor: Colors.success,
-  },
-  statusUnavailable: {
-    backgroundColor: Colors.error,
-  },
-  statusText: {
-    fontSize: 12,
-    color: '#94A3B8',
-  },
-  scheduleCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  scheduleTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFF',
-    marginBottom: 16,
-  },
-  slotsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  slotButton: {
-    backgroundColor: '#0F172A',
-    borderRadius: 8,
-    padding: 12,
-    minWidth: 100,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  selectedSlot: {
-    borderColor: Colors.primary,
-    backgroundColor: 'rgba(109, 40, 217, 0.1)',
-  },
-  slotDate: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginBottom: 4,
-  },
-  slotTime: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
-    marginBottom: 4,
-  },
-  slotDuration: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginBottom: 4,
-  },
-  slotPrice: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.primary,
-  },
-  messageCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  messageLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
-    marginBottom: 12,
-  },
-  messageInput: {
-    backgroundColor: '#0F172A',
-    borderRadius: 8,
-    padding: 12,
-    color: '#FFF',
-    textAlignVertical: 'top',
-    minHeight: 80,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  bookButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  bookButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  placeholderContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  placeholderText: {
-    color: '#94A3B8',
-    fontSize: 16,
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  historyCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  historyItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  historyIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(109, 40, 217, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  historyDetails: {
-    flex: 1,
-  },
-  historyTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
-    marginBottom: 4,
-  },
-  historyExpert: {
-    fontSize: 14,
-    color: '#94A3B8',
-    marginBottom: 2,
-  },
-  historyDateTime: {
-    fontSize: 12,
-    color: '#94A3B8',
-  },
-  historyAction: {
-    padding: 8,
-  },
-  actionText: {
-    color: Colors.primary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  historyDivider: {
-    height: 1,
-    backgroundColor: '#334155',
-    marginVertical: 8,
-  },
-  // New styles for form submission
-  submittedContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  checkmarkCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  submittedTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFF',
-    marginBottom: 12,
-  },
-  submittedText: {
-    fontSize: 16,
-    color: '#94A3B8',
-    textAlign: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 20,
-  },
-  boldText: {
-    fontWeight: 'bold',
-    color: '#FFF',
-  },
-  resetButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  resetButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  formCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  formRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  formField: {
-    flex: 1,
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    color: '#94A3B8',
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  input: {
-    backgroundColor: '#0F172A',
-    borderRadius: 8,
-    padding: 12,
-    color: '#FFF',
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  textArea: {
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#334155',
-    borderRadius: 8,
-    backgroundColor: '#0F172A',
-  },
-  pickerButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-  },
-  pickerText: {
-    fontSize: 16,
-    color: '#FFF',
-  },
-  submitButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  submitButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  container: { flex: 1, backgroundColor: '#0F172A' },
+  header: { paddingHorizontal: 20, paddingTop: 20, marginBottom: 24 },
+  title: { fontSize: 32, fontWeight: '800', color: '#F8FAFC', letterSpacing: -1, marginBottom: 8 },
+  subtitle: { fontSize: 15, color: '#94A3B8', fontWeight: '500' },
+  tabsContainer: { paddingHorizontal: 20, marginBottom: 24 },
+  tabs: { flexDirection: 'row', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 16, padding: 4, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
+  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 12 },
+  activeTab: { backgroundColor: Colors.primary },
+  tabText: { fontSize: 14, color: '#94A3B8', fontWeight: '600' },
+  activeTabText: { color: '#FFF' },
+  content: { flex: 1 },
+  tabContent: { paddingHorizontal: 20 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#64748B', marginBottom: 20, textTransform: 'uppercase', letterSpacing: 1.5 },
+  sectionSubtitle: { fontSize: 14, color: '#94A3B8', marginBottom: 20, lineHeight: 20 },
+  expertCard: { marginBottom: 12, padding: 0, overflow: 'hidden' },
+  expertTouchable: { padding: 16, flexDirection: 'row', alignItems: 'center' },
+  selectedExpert: { borderColor: Colors.primary, backgroundColor: 'rgba(124, 58, 237, 0.05)' },
+  expertInfo: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  expertAvatar: { width: 56, height: 56, borderRadius: 18, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  expertDetails: { flex: 1 },
+  expertName: { fontSize: 17, fontWeight: '700', color: '#F8FAFC', marginBottom: 4 },
+  expertSpecialty: { fontSize: 13, color: '#94A3B8', marginBottom: 6 },
+  expertMeta: { flexDirection: 'row', gap: 12 },
+  expertRating: { fontSize: 12, color: '#FBBF24', fontWeight: '700' },
+  expertExperience: { fontSize: 12, color: '#64748B', fontWeight: '600' },
+  expertStatus: { alignItems: 'flex-end', marginLeft: 12 },
+  statusIndicator: { width: 8, height: 8, borderRadius: 4, marginBottom: 6 },
+  statusAvailable: { backgroundColor: '#10B981' },
+  statusUnavailable: { backgroundColor: '#EF4444' },
+  statusText: { fontSize: 11, color: '#64748B', fontWeight: '700', textTransform: 'uppercase' },
+  formCard: { padding: 24, marginBottom: 20 },
+  formField: { marginBottom: 20 },
+  label: { fontSize: 13, color: '#94A3B8', marginBottom: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  input: { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 12, padding: 14, color: '#FFF', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', fontSize: 15 },
+  textArea: { minHeight: 100, textAlignVertical: 'top' },
+  pickerContainer: { borderRadius: 12, overflow: 'hidden' },
+  pickerButton: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
+  pickerText: { fontSize: 15, color: '#F8FAFC' },
+  submittedCard: { padding: 40, alignItems: 'center' },
+  checkmarkCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(16, 185, 129, 0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  submittedTitle: { fontSize: 24, fontWeight: '800', color: '#F8FAFC', marginBottom: 12 },
+  submittedText: { fontSize: 15, color: '#94A3B8', textAlign: 'center', marginBottom: 32, lineHeight: 24 },
+  boldText: { fontWeight: '800', color: '#F8FAFC' },
+  historyCard: { padding: 12 },
+  historyItem: { flexDirection: 'row', alignItems: 'center', padding: 8 },
+  historyIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255, 255, 255, 0.05)', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  historyDetails: { flex: 1 },
+  historyTitle: { fontSize: 15, fontWeight: '700', color: '#F8FAFC', marginBottom: 4 },
+  historyExpert: { fontSize: 13, color: '#94A3B8', marginBottom: 2 },
+  historyDateTime: { fontSize: 12, color: '#64748B', fontWeight: '500' },
+  historyAction: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, backgroundColor: 'rgba(255, 255, 255, 0.05)' },
+  actionText: { color: Colors.primaryLight, fontSize: 13, fontWeight: '700' },
+  historyDivider: { height: 1, backgroundColor: 'rgba(255, 255, 255, 0.05)', marginVertical: 12 },
 });

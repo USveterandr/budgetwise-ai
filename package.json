@@ -67,6 +67,7 @@
     "@babel/core": "^7.25.2",
     "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
     "@babel/plugin-transform-export-namespace-from": "^7.27.1",
+    "@cloudflare/workers-types": "^4.20251225.0",
     "@types/react": "~19.2.1",
     "@types/react-native-svg-charts": "^5.0.16",
     "eslint": "^9.25.0",

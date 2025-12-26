@@ -6,8 +6,11 @@ import { Card } from '../../components/ui/Card';
 import { TransactionItem } from '../../components/transactions/TransactionItem';
 import { Button } from '../../components/ui/Button';
 import { useFinance } from '../../context/FinanceContext';
+import { Investment } from '../../types';
+import { useAuth } from '../../context/AuthContext';
 import { EnhancedReceiptScanner } from '../../components/receipts/EnhancedReceiptScanner';
 import { useReceiptScanner } from '../../hooks/useReceiptScanner';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function TransactionsScreen() {
   const { transactions, addTransaction, deleteTransaction } = useFinance();
@@ -58,6 +61,7 @@ export default function TransactionsScreen() {
         category: newTx.category,
         type: newTx.type,
         date: new Date().toISOString().split('T')[0],
+        icon: 'wallet'
       });
       setNewTx({ description: '', amount: '', category: 'Food', type: 'expense' });
       setModalVisible(false);
@@ -69,68 +73,69 @@ export default function TransactionsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Transactions</Text>
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity style={styles.scanBtn} onPress={() => setShowScanner(true)}>
-            <Ionicons name="receipt" size={24} color="#FFF" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.addBtn} onPress={() => setModalVisible(true)}>
-            <Ionicons name="add" size={24} color="#FFF" />
-          </TouchableOpacity>
+    <View style={styles.container}>
+      <LinearGradient colors={['#0F172A', '#13112B', '#0F172A']} style={StyleSheet.absoluteFill} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Transactions</Text>
+          <View style={styles.buttonGroup}>
+            <TouchableOpacity style={styles.scanBtn} onPress={() => setShowScanner(true)}>
+              <Ionicons name="receipt" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.addBtn} onPress={() => setModalVisible(true)}>
+              <Ionicons name="add" size={24} color="#FFF" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color={DashboardColors.textSecondary} style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search transactions..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor={DashboardColors.textSecondary}
-        />
-      </View>
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color="#94A3B8" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search transactions..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor="#64748B"
+          />
+        </View>
 
-      {/* Filters */}
-      <View style={styles.filters}>
-        {(['all', 'income', 'expense'] as const).map(f => (
-          <TouchableOpacity key={f} style={[styles.filterBtn, filter === f && styles.filterActive]} onPress={() => setFilter(f)}>
-            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f.charAt(0).toUpperCase() + f.slice(1)}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Category Filter */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryFilterScroll}>
-        {categories.map(cat => (
-          <TouchableOpacity 
-            key={cat} 
-            style={[styles.categoryFilterBtn, categoryFilter === cat && styles.categoryFilterActive]} 
-            onPress={() => setCategoryFilter(cat)}
-          >
-            <Text style={[styles.categoryFilterText, categoryFilter === cat && styles.categoryFilterTextActive]}>
-              {cat === 'all' ? 'All Categories' : cat}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Card>
-          {filteredTx.map(t => (
-            <TransactionItem key={t.id} transaction={t} onDelete={deleteTransaction} />
+        <View style={styles.filters}>
+          {(['all', 'income', 'expense'] as const).map(f => (
+            <TouchableOpacity key={f} style={[styles.filterBtn, filter === f && styles.filterActive]} onPress={() => setFilter(f)}>
+              <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f.charAt(0).toUpperCase() + f.slice(1)}</Text>
+            </TouchableOpacity>
           ))}
-          {filteredTx.length === 0 && <Text style={styles.empty}>No transactions found</Text>}
-        </Card>
-      </ScrollView>
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryFilterScroll} contentContainerStyle={{ paddingBottom: 10 }}>
+          {categories.map(cat => (
+            <TouchableOpacity 
+              key={cat} 
+              style={[styles.categoryFilterBtn, categoryFilter === cat && styles.categoryFilterActive]} 
+              onPress={() => setCategoryFilter(cat)}
+            >
+              <Text style={[styles.categoryFilterText, categoryFilter === cat && styles.categoryFilterTextActive]}>
+                {cat === 'all' ? 'All Categories' : cat}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <Card style={{ marginBottom: 20 }}>
+            {filteredTx.map(t => (
+              <TransactionItem key={t.id} transaction={t} onDelete={deleteTransaction} />
+            ))}
+            {filteredTx.length === 0 && <Text style={styles.empty}>No transactions found</Text>}
+          </Card>
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      </SafeAreaView>
 
       {/* Receipt Scanner Modal */}
       <Modal visible={showScanner} animationType="slide" onRequestClose={handleScannerCancel}>
         <EnhancedReceiptScanner 
-          onScanComplete={handleReceiptScan} 
+          onScanComplete={(data: any) => handleReceiptScan(data)} 
           onCancel={handleScannerCancel} 
         />
       </Modal>
@@ -140,8 +145,21 @@ export default function TransactionsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modal}>
             <Text style={styles.modalTitle}>Add Transaction</Text>
-            <TextInput style={styles.input} placeholder="Description" value={newTx.description} onChangeText={v => setNewTx({ ...newTx, description: v })} />
-            <TextInput style={styles.input} placeholder="Amount" keyboardType="numeric" value={newTx.amount} onChangeText={v => setNewTx({ ...newTx, amount: v })} />
+            <TextInput 
+              style={styles.input} 
+              placeholder="Description" 
+              placeholderTextColor="#64748B"
+              value={newTx.description} 
+              onChangeText={v => setNewTx({ ...newTx, description: v })} 
+            />
+            <TextInput 
+              style={styles.input} 
+              placeholder="Amount" 
+              placeholderTextColor="#64748B"
+              keyboardType="numeric" 
+              value={newTx.amount} 
+              onChangeText={v => setNewTx({ ...newTx, amount: v })} 
+            />
             <View style={styles.typeRow}>
               <TouchableOpacity 
                 style={[styles.typeBtn, newTx.type === 'expense' && styles.typeBtnActive]} 
@@ -166,57 +184,62 @@ export default function TransactionsScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: DashboardColors.background, padding: 16 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  title: { fontSize: 24, fontWeight: '700', color: DashboardColors.text },
+  container: { flex: 1, backgroundColor: '#0F172A' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingHorizontal: 16, marginTop: 10 },
+  title: { fontSize: 32, fontWeight: '800', color: '#F8FAFC', letterSpacing: -1 },
   buttonGroup: { flexDirection: 'row', gap: 10 },
-  addBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
-  scanBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
+  addBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', shadowColor: Colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+  scanBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255, 255, 255, 0.1)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
   searchContainer: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    backgroundColor: DashboardColors.surface, 
-    borderRadius: 12, 
-    marginBottom: 16,
-    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)', 
+    borderRadius: 16, 
+    marginBottom: 20,
+    marginHorizontal: 16,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  searchIcon: { marginRight: 8 },
+  searchIcon: { marginRight: 10 },
   searchInput: { 
     flex: 1, 
     paddingVertical: 14, 
     fontSize: 16, 
-    color: DashboardColors.text 
+    color: '#F8FAFC' 
   },
-  filters: { flexDirection: 'row', marginBottom: 16, gap: 8 },
-  filterBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: DashboardColors.surface },
-  filterActive: { backgroundColor: Colors.primary },
-  filterText: { color: DashboardColors.textSecondary, fontWeight: '500' },
-  filterTextActive: { color: '#FFF' },
-  categoryFilterScroll: { marginBottom: 16 },
+  filters: { flexDirection: 'row', marginBottom: 16, gap: 8, paddingHorizontal: 16 },
+  filterBtn: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.05)' },
+  filterActive: { backgroundColor: 'rgba(124, 58, 237, 0.2)', borderColor: 'rgba(124, 58, 237, 0.3)' },
+  filterText: { color: '#94A3B8', fontWeight: '600', fontSize: 13 },
+  filterTextActive: { color: '#A78BFA' },
+  categoryFilterScroll: { marginBottom: 20, paddingLeft: 16 },
   categoryFilterBtn: { 
-    paddingHorizontal: 16, 
-    paddingVertical: 8, 
+    paddingHorizontal: 18, 
+    paddingVertical: 10, 
     borderRadius: 20, 
-    backgroundColor: DashboardColors.surface, 
-    marginRight: 8 
+    backgroundColor: 'rgba(255, 255, 255, 0.03)', 
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)'
   },
-  categoryFilterActive: { backgroundColor: Colors.primary },
-  categoryFilterText: { color: DashboardColors.textSecondary, fontWeight: '500' },
-  categoryFilterTextActive: { color: '#FFF' },
-  empty: { textAlign: 'center', color: DashboardColors.textSecondary, paddingVertical: 40 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modal: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 },
-  modalTitle: { fontSize: 20, fontWeight: '700', marginBottom: 20, color: DashboardColors.text },
-  input: { borderWidth: 1, borderColor: DashboardColors.border, borderRadius: 12, padding: 14, marginBottom: 12, fontSize: 16 },
-  typeRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
-  typeBtn: { flex: 1, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: DashboardColors.border, alignItems: 'center' },
-  typeBtnActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  typeText: { fontWeight: '600', color: DashboardColors.textSecondary },
-  typeTextActive: { color: '#FFF' },
-  modalBtns: { flexDirection: 'row' },
+  categoryFilterActive: { backgroundColor: 'rgba(124, 58, 237, 0.2)', borderColor: 'rgba(124, 58, 237, 0.3)' },
+  categoryFilterText: { color: '#94A3B8', fontWeight: '600', fontSize: 13 },
+  categoryFilterTextActive: { color: '#A78BFA' },
+  empty: { textAlign: 'center', color: '#64748B', paddingVertical: 60, fontStyle: 'italic' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  modal: { backgroundColor: '#1E293B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 40, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
+  modalTitle: { fontSize: 24, fontWeight: '800', marginBottom: 24, color: '#F8FAFC', textAlign: 'center' },
+  input: { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 16, padding: 16, marginBottom: 16, fontSize: 16, color: '#F8FAFC', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
+  typeRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
+  typeBtn: { flex: 1, padding: 16, borderRadius: 16, backgroundColor: 'rgba(255, 255, 255, 0.05)', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
+  typeBtnActive: { backgroundColor: 'rgba(124, 58, 237, 0.2)', borderColor: 'rgba(124, 58, 237, 0.3)' },
+  typeText: { fontWeight: '700', color: '#94A3B8' },
+  typeTextActive: { color: '#A78BFA' },
+  modalBtns: { flexDirection: 'row', gap: 12 },
 });

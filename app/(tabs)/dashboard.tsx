@@ -1,38 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { DashboardColors, Colors } from '../../constants/Colors';
 import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { useFinance } from '../../context/FinanceContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { user, getSubscriptionPlans } = useAuth();
-  const { transactions, budgets, investments, netWorth, monthlyIncome, monthlyExpenses } = useFinance();
+  const { user } = useAuth();
+  const { transactions, investments, netWorth, monthlyIncome, monthlyExpenses } = useFinance();
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   
-  const plans = getSubscriptionPlans();
-  const currentPlan = plans.find(plan => plan.name === user?.plan) || plans[0];
-
   useEffect(() => {
     // Get last 5 transactions
     const recent = [...transactions].slice(0, 5);
     setRecentTransactions(recent);
   }, [transactions]);
-
-  const getBudgetProgress = (budget: any) => {
-    if (budget.limit === 0) return 0;
-    return Math.min(100, (budget.spent / budget.limit) * 100);
-  };
-
-  const getBudgetColor = (progress: number) => {
-    if (progress >= 100) return Colors.error;
-    if (progress >= 80) return Colors.warning;
-    return Colors.success;
-  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -42,315 +28,232 @@ export default function DashboardScreen() {
     }).format(amount);
   };
 
-  const handleUpgradePress = () => {
-    router.push('/(tabs)/subscription');
-  };
-
-  const renderFeatureHighlight = (icon: string, title: string, description: string) => (
-    <View style={styles.featureItem}>
-      <View style={styles.featureIcon}>
-        <Ionicons name={icon as any} size={20} color="#FFF" />
-      </View>
-      <View style={styles.featureContent}>
-        <Text style={styles.featureTitle}>{title}</Text>
-        <Text style={styles.featureDescription}>{description}</Text>
-      </View>
-    </View>
-  );
-
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.welcome}>Welcome back,</Text>
-            <Text style={styles.username}>{user?.name || user?.email || 'User'}</Text>
-          </View>
-          <TouchableOpacity style={styles.profileButton} onPress={() => router.push('/(tabs)/settings')}>
-            <Ionicons name="person-circle" size={32} color={Colors.primary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Plan Banner */}
-        <Card style={styles.planBanner}>
-          <View style={styles.planHeader}>
+    <View style={styles.container}>
+      <LinearGradient colors={['#0F172A', '#1E1B4B', '#0F172A']} style={StyleSheet.absoluteFill} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+          {/* Header */}
+          <View style={styles.header}>
             <View>
-              <Text style={styles.planName}>{currentPlan.name} Plan</Text>
-              <Text style={styles.planPrice}>${currentPlan.price}/{currentPlan.period}</Text>
+              <Text style={styles.welcome}>Welcome back,</Text>
+              <Text style={styles.username}>{user?.name || user?.email || 'User'}</Text>
             </View>
-            <Button 
-              title={currentPlan.name === 'Enterprise' ? "Max Plan" : "Upgrade"} 
-              variant={currentPlan.name === 'Enterprise' ? "outline" : "primary"} 
-              size="small"
-              onPress={handleUpgradePress}
-              disabled={currentPlan.name === 'Enterprise'}
+            <TouchableOpacity style={styles.profileButton} onPress={() => router.push('/(tabs)/profile')}>
+              <Ionicons name="person-circle" size={36} color={Colors.primaryLight} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Financial Overview Card */}
+          <Card style={styles.mainOverviewCard}>
+            <LinearGradient 
+              colors={['rgba(124, 58, 237, 0.2)', 'rgba(79, 70, 229, 0.2)']} 
+              style={StyleSheet.absoluteFill} 
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
             />
-          </View>
-          
-          {currentPlan.name === 'Business' && (
-            <View style={styles.planFeatures}>
-              {renderFeatureHighlight("people", "Team Collaboration", "Work with up to 10 team members")}
-              {renderFeatureHighlight("bar-chart", "Advanced Analytics", "Detailed financial insights")}
-              {renderFeatureHighlight("code", "API Access", "Integrate with your systems")}
+            <Text style={styles.mainOverviewLabel}>Total Net Worth</Text>
+            <Text style={styles.mainOverviewValue}>{formatCurrency(netWorth)}</Text>
+            
+            <View style={styles.overviewStats}>
+              <View style={styles.overviewStatItem}>
+                <Ionicons name="arrow-down-circle" size={16} color={Colors.success} />
+                <Text style={styles.overviewStatValue}>{formatCurrency(monthlyIncome)}</Text>
+              </View>
+              <View style={styles.overviewStatItem}>
+                <Ionicons name="arrow-up-circle" size={16} color={Colors.error} />
+                <Text style={styles.overviewStatValue}>{formatCurrency(monthlyExpenses)}</Text>
+              </View>
             </View>
-          )}
-        </Card>
+          </Card>
 
-        {/* Financial Overview */}
-        <View style={styles.overviewGrid}>
-          <Card style={styles.overviewCard}>
-            <Text style={styles.overviewLabel}>Net Worth</Text>
-            <Text style={styles.overviewValue}>{formatCurrency(netWorth)}</Text>
-            <View style={styles.trendPositive}>
-              <Ionicons name="arrow-up" size={12} color={Colors.success} />
-              <Text style={styles.trendText}>2.5%</Text>
-            </View>
-          </Card>
-          
-          <Card style={styles.overviewCard}>
-            <Text style={styles.overviewLabel}>Monthly Income</Text>
-            <Text style={styles.overviewValue}>{formatCurrency(monthlyIncome)}</Text>
-            <View style={styles.trendPositive}>
-              <Ionicons name="arrow-up" size={12} color={Colors.success} />
-              <Text style={styles.trendText}>5.2%</Text>
-            </View>
-          </Card>
-          
-          <Card style={styles.overviewCard}>
-            <Text style={styles.overviewLabel}>Monthly Expenses</Text>
-            <Text style={styles.overviewValue}>{formatCurrency(monthlyExpenses)}</Text>
-            <View style={styles.trendNegative}>
-              <Ionicons name="arrow-down" size={12} color={Colors.error} />
-              <Text style={styles.trendText}>1.8%</Text>
-            </View>
-          </Card>
-        </View>
+          {/* Quick Actions - Simple & Large */}
+          <View style={styles.quickActionsGrid}>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: 'rgba(124, 58, 237, 0.15)' }]}
+              onPress={() => router.push('/(tabs)/receipts')}
+            >
+              <View style={styles.actionIconContainer}>
+                <Ionicons name="camera" size={32} color={Colors.primaryLight} />
+              </View>
+              <Text style={styles.actionButtonText}>Scan</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}
+              onPress={() => router.push('/(tabs)/ai-advisor')}
+            >
+              <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
+                <Ionicons name="sparkles" size={32} color="#10B981" />
+              </View>
+              <Text style={styles.actionButtonText}>AI Advice</Text>
+            </TouchableOpacity>
 
-        {/* Budgets Section */}
-        <Card style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Budgets</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/budget')}>
-              <Text style={styles.viewAll}>View All</Text>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}
+              onPress={() => router.push('/(tabs)/finance')}
+            >
+              <View style={[styles.actionIconContainer, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}>
+                <Ionicons name="add-circle" size={32} color="#3B82F6" />
+              </View>
+              <Text style={styles.actionButtonText}>Activity</Text>
             </TouchableOpacity>
           </View>
-          
-          {budgets.length === 0 ? (
-            <Text style={styles.emptyText}>No budgets set up yet</Text>
-          ) : (
-            budgets.slice(0, 3).map((budget) => {
-              const progress = getBudgetProgress(budget);
-              const color = getBudgetColor(progress);
-              
-              return (
-                <View key={budget.id} style={styles.budgetItem}>
-                  <View style={styles.budgetHeader}>
-                    <Text style={styles.budgetCategory}>{budget.category}</Text>
-                    <Text style={styles.budgetAmount}>
-                      {formatCurrency(budget.spent)} / {formatCurrency(budget.limit)}
-                    </Text>
-                  </View>
-                  <View style={styles.progressBar}>
-                    <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: color }]} />
-                  </View>
-                  <Text style={styles.progressText}>{Math.round(progress)}% used</Text>
-                </View>
-              );
-            })
-          )}
-        </Card>
 
-        {/* Recent Transactions */}
-        <Card style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Transactions</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/transactions')}>
-              <Text style={styles.viewAll}>View All</Text>
-            </TouchableOpacity>
-          </View>
-          
-          {recentTransactions.length === 0 ? (
-            <Text style={styles.emptyText}>No transactions yet</Text>
-          ) : (
-            recentTransactions.map((transaction) => (
-              <View key={transaction.id} style={styles.transactionItem}>
-                <View style={styles.transactionIcon}>
-                  <Ionicons 
-                    name={transaction.type === 'income' ? 'arrow-down' : 'arrow-up'} 
-                    size={16} 
-                    color={transaction.type === 'income' ? Colors.success : Colors.error} 
-                  />
+          {/* Recent Activity Summary */}
+          <Card style={styles.summaryCard}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Recent Activity</Text>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/finance')}>
+                <Ionicons name="chevron-forward" size={20} color={Colors.primaryLight} />
+              </TouchableOpacity>
+            </View>
+            
+            {recentTransactions.length === 0 ? (
+              <Text style={styles.emptyText}>No recent activity</Text>
+            ) : (
+              recentTransactions.slice(0, 3).map((transaction) => (
+                <View key={transaction.id} style={styles.simpleTransactionItem}>
+                  <View style={styles.transactionInfo}>
+                    <Text style={styles.itemDescription} numberOfLines={1}>{transaction.description}</Text>
+                    <Text style={styles.itemCategory}>{transaction.category}</Text>
+                  </View>
+                  <Text style={[styles.itemAmount, transaction.type === 'income' ? styles.incomeText : styles.expenseText]}>
+                    {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                  </Text>
                 </View>
-                <View style={styles.transactionDetails}>
-                  <Text style={styles.transactionDescription}>{transaction.description}</Text>
-                  <Text style={styles.transactionCategory}>{transaction.category}</Text>
-                </View>
-                <Text style={[styles.transactionAmount, transaction.type === 'income' ? styles.incomeAmount : styles.expenseAmount]}>
-                  {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+              ))
+            )}
+          </Card>
+
+          {/* Portfolio Pulse */}
+          <Card style={styles.summaryCard}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Investment Growth</Text>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/growth')}>
+                <Ionicons name="chevron-forward" size={20} color={Colors.primaryLight} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.growthContainer}>
+              <View>
+                <Text style={styles.growthLabel}>Portfolio Value</Text>
+                <Text style={styles.growthValue}>
+                  {formatCurrency(investments.reduce((sum, inv) => sum + (inv.quantity * inv.currentPrice), 0))}
                 </Text>
               </View>
-            ))
-          )}
-        </Card>
-
-        {/* Investments */}
-        <Card style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Investments</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/portfolio')}>
-              <Text style={styles.viewAll}>View All</Text>
-            </TouchableOpacity>
-          </View>
-          
-          {investments.length === 0 ? (
-            <Text style={styles.emptyText}>No investments yet</Text>
-          ) : (
-            <View>
-              <Text style={styles.investmentsSummary}>
-                {investments.length} assets • Total value: {formatCurrency(
-                  investments.reduce((sum, inv) => sum + (inv.quantity * inv.currentPrice), 0)
-                )}
-              </Text>
-              {investments.slice(0, 3).map((investment) => (
-                <View key={investment.id} style={styles.investmentItem}>
-                  <View style={styles.investmentHeader}>
-                    <Text style={styles.investmentName}>{investment.name}</Text>
-                    <Text style={styles.investmentValue}>
-                      {formatCurrency(investment.quantity * investment.currentPrice)}
-                    </Text>
-                  </View>
-                  <Text style={styles.investmentSymbol}>{investment.symbol}</Text>
-                  <View style={styles.investmentChange}>
-                    <Text style={styles.investmentQuantity}>
-                      {investment.quantity} shares
-                    </Text>
-                    <Text style={styles.investmentGain}>
-                      +{formatCurrency((investment.currentPrice - investment.purchasePrice) * investment.quantity)}
-                    </Text>
-                  </View>
-                </View>
-              ))}
+              <View style={styles.growthBadge}>
+                <Ionicons name="trending-up" size={14} color={Colors.success} />
+                <Text style={styles.growthPercentage}>+4.2%</Text>
+              </View>
             </View>
-          )}
-        </Card>
-      </ScrollView>
-    </SafeAreaView>
+          </Card>
+
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: DashboardColors.background,
+    backgroundColor: '#0F172A',
   },
   scroll: {
-    padding: 16,
+    padding: 20,
+    paddingTop: 10,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+    marginTop: 10,
   },
   welcome: {
     fontSize: 16,
-    color: DashboardColors.textSecondary,
+    color: '#94A3B8',
+    fontWeight: '500',
   },
   username: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: DashboardColors.text,
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#F8FAFC',
+    letterSpacing: -0.5,
   },
   profileButton: {
     padding: 4,
   },
-  planBanner: {
-    backgroundColor: Colors.primary,
-    marginBottom: 20,
+  mainOverviewCard: {
+    padding: 24,
+    marginBottom: 24,
+    overflow: 'hidden',
+    borderWidth: 0,
+    borderRadius: 24,
   },
-  planHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  planName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFF',
-  },
-  planPrice: {
-    fontSize: 16,
-    color: '#F0F0F0',
-    marginTop: 4,
-  },
-  planFeatures: {
-    gap: 12,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  featureIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    marginTop: 2,
-  },
-  featureContent: {
-    flex: 1,
-  },
-  featureTitle: {
+  mainOverviewLabel: {
     fontSize: 14,
+    color: '#A78BFA',
     fontWeight: '600',
-    color: '#FFF',
-    marginBottom: 2,
-  },
-  featureDescription: {
-    fontSize: 12,
-    color: '#F0F0F0',
-  },
-  overviewGrid: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 20,
-  },
-  overviewCard: {
-    flex: 1,
-    padding: 16,
-  },
-  overviewLabel: {
-    fontSize: 14,
-    color: DashboardColors.textSecondary,
-    marginBottom: 4,
-  },
-  overviewValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: DashboardColors.text,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
     marginBottom: 8,
   },
-  trendPositive: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  trendNegative: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  trendText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: DashboardColors.textSecondary,
-    marginLeft: 4,
-  },
-  sectionCard: {
+  mainOverviewValue: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#FFF',
     marginBottom: 20,
+  },
+  overviewStats: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  overviewStatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+  overviewStatValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#F8FAFC',
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+  },
+  actionButton: {
+    flex: 1,
+    height: 120, // Taller buttons for prominence
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#F8FAFC',
+  },
+  summaryCard: {
+    marginBottom: 16,
+    padding: 20,
+    borderRadius: 24,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -360,128 +263,74 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: DashboardColors.text,
+    fontWeight: '800',
+    color: '#F8FAFC',
+    letterSpacing: -0.3,
   },
-  viewAll: {
-    fontSize: 14,
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: DashboardColors.textSecondary,
-    textAlign: 'center',
-    paddingVertical: 20,
-  },
-  budgetItem: {
-    marginBottom: 16,
-  },
-  budgetHeader: {
+  simpleTransactionItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  budgetCategory: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: DashboardColors.text,
-  },
-  budgetAmount: {
-    fontSize: 14,
-    color: DashboardColors.textSecondary,
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: DashboardColors.surface,
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 4,
-  },
-  progressFill: {
-    height: '100%',
-  },
-  progressText: {
-    fontSize: 12,
-    color: DashboardColors.textSecondary,
-  },
-  transactionItem: {
-    flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: DashboardColors.border,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
-  transactionIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: DashboardColors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  transactionDetails: {
+  transactionInfo: {
     flex: 1,
+    marginRight: 10,
   },
-  transactionDescription: {
-    fontSize: 14,
+  itemDescription: {
+    fontSize: 15,
     fontWeight: '600',
-    color: DashboardColors.text,
+    color: '#F1F5F9',
   },
-  transactionCategory: {
+  itemCategory: {
     fontSize: 12,
-    color: DashboardColors.textSecondary,
+    color: '#64748B',
+    marginTop: 2,
+    fontWeight: '500',
   },
-  transactionAmount: {
-    fontSize: 14,
+  itemAmount: {
+    fontSize: 15,
     fontWeight: '700',
   },
-  incomeAmount: {
-    color: Colors.success,
-  },
-  expenseAmount: {
-    color: Colors.error,
-  },
-  investmentsSummary: {
-    fontSize: 14,
-    color: DashboardColors.textSecondary,
-    marginBottom: 16,
-  },
-  investmentItem: {
-    marginBottom: 16,
-  },
-  investmentHeader: {
+  incomeText: { color: Colors.success },
+  expenseText: { color: Colors.error },
+  growthContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  growthLabel: {
+    fontSize: 12,
+    color: '#94A3B8',
     marginBottom: 4,
-  },
-  investmentName: {
-    fontSize: 14,
     fontWeight: '600',
-    color: DashboardColors.text,
   },
-  investmentValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: DashboardColors.text,
+  growthValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#F8FAFC',
   },
-  investmentSymbol: {
-    fontSize: 12,
-    color: DashboardColors.textSecondary,
-    marginBottom: 8,
-  },
-  investmentChange: {
+  growthBadge: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    gap: 4,
   },
-  investmentQuantity: {
+  growthPercentage: {
     fontSize: 12,
-    color: DashboardColors.textSecondary,
-  },
-  investmentGain: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.success,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    paddingVertical: 20,
+    fontStyle: 'italic',
   },
 });

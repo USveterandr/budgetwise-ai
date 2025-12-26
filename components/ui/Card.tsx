@@ -1,10 +1,10 @@
 import React, { ReactNode } from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { DashboardColors } from '../../constants/Colors';
 
 interface CardProps {
   children: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   variant?: 'default' | 'dark';
 }
 
@@ -22,16 +22,18 @@ export function Card({ children, style, variant = 'default' }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: DashboardColors.surface,
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: 'rgba(30, 41, 59, 0.7)',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 5,
   },
   darkCard: {
-    backgroundColor: 'rgba(51, 65, 85, 0.9)',
+    backgroundColor: 'rgba(15, 23, 42, 0.8)',
   },
 });

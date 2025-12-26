@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch, Alert, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { useAuth } from '../context/AuthContext';
 import { useFinance } from '../context/FinanceContext';
 import { cloudflare } from '../app/lib/cloudflare';
+import { auth } from '../firebase';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface Goal {
   id: string;
@@ -48,7 +50,10 @@ export function Profile() {
     const loadProfile = async () => {
       if (user?.id) {
         try {
-          const data = await cloudflare.getProfile(user.id);
+          const idToken = await auth.currentUser?.getIdToken();
+          if (!idToken) return;
+          
+          const data = await cloudflare.getProfile(user.id, idToken);
           if (data) {
             setProfileData(data);
             setProfile({
@@ -114,6 +119,9 @@ export function Profile() {
         
       try {
         setLoading(true);
+        const idToken = await auth.currentUser?.getIdToken();
+        if (!idToken) return;
+
         const updatedProfile = {
           ...profileData,
           user_id: user.id,
@@ -125,7 +133,7 @@ export function Profile() {
            editingField]: newValue
         };
         
-        await cloudflare.updateProfile(updatedProfile);
+        await cloudflare.updateProfile(updatedProfile, idToken);
         setProfileData(updatedProfile);
         setProfile(prev => ({
           ...prev,
@@ -234,6 +242,7 @@ export function Profile() {
               value={editValue}
               onChangeText={setEditValue}
               keyboardType={typeof value === 'number' ? 'numeric' : 'default'}
+              placeholderTextColor="#64748B"
             />
           )}
           <TouchableOpacity style={styles.saveButton} onPress={handleSaveEdit}>
@@ -250,7 +259,7 @@ export function Profile() {
             {typeof value === 'number' && field === 'savingsRate' ? '%' : ''}
           </Text>
           <TouchableOpacity onPress={() => handleEditField(field, value)}>
-            <Ionicons name="pencil" size={16} color={Colors.primary} />
+            <Ionicons name="pencil" size={16} color={Colors.primaryLight} />
           </TouchableOpacity>
         </View>
       )}
@@ -258,279 +267,314 @@ export function Profile() {
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Ionicons name="person" size={48} color="#FFF" />
-          </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.name || 'User'}</Text>
-            <Text style={styles.userEmail}>{user?.email}</Text>
-            <View style={styles.planBadge}>
-              <Text style={styles.planText}>{currentPlan.name} Plan</Text>
+    <View style={styles.mainContainer}>
+      <LinearGradient colors={['#0F172A', '#1E1B4B', '#0F172A']} style={StyleSheet.absoluteFill} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <Ionicons name="person" size={48} color="#FFF" />
+              </View>
+              <View style={styles.userInfo}>
+                <Text style={styles.userName}>{user?.name || 'User'}</Text>
+                <Text style={styles.userEmail}>{user?.email}</Text>
+                <LinearGradient 
+                  colors={['rgba(124, 58, 237, 0.3)', 'rgba(79, 70, 229, 0.3)']} 
+                  style={styles.planBadge}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Text style={styles.planText}>{currentPlan.name} Plan</Text>
+                </LinearGradient>
+              </View>
             </View>
           </View>
-        </View>
-      </View>
 
-      {/* Subscription Plan */}
-      <View style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.cardTitle}>Subscription Plan</Text>
-          <TouchableOpacity onPress={() => {}}>
-            <Text style={styles.linkText}>Manage</Text>
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.planInfo}>
-          <Text style={styles.planName}>{currentPlan.name}</Text>
-          <Text style={styles.planPrice}>${currentPlan.price}/month</Text>
-        </View>
-        
-        <Text style={styles.planFeaturesTitle}>Plan Features:</Text>
-        {currentPlan.features.slice(0, 3).map((feature, index) => (
-          <View key={index} style={styles.featureRow}>
-            <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
-            <Text style={styles.featureText}>{feature}</Text>
-          </View>
-        ))}
-        
-        {plans.filter(p => p.name !== currentPlan.name).length > 0 && (
-          <TouchableOpacity 
-            style={styles.upgradeButton}
-            onPress={() => {}}
-          >
-            <Text style={styles.upgradeButtonText}>Upgrade Plan</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Profile Information */}
-      <View style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.cardTitle}>Profile Information</Text>
-        </View>
-        
-        {renderEditableField('Monthly Income', profile.monthlyIncome, 'monthlyIncome')}
-        {renderEditableField('Savings Rate', profile.savingsRate, 'savingsRate')}
-        {renderEditableField('Currency', profile.currency, 'currency')}
-        {renderEditableField('Business Industry', profile.businessIndustry || 'General', 'businessIndustry')}
-        {renderEditableField('Bio', profile.bio, 'bio')}
-      </View>
-
-      {/* Income Sources */}
-      <View style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.cardTitle}>Income Sources</Text>
-          <TouchableOpacity onPress={handleAddIncomeSource}>
-            <Ionicons name="add" size={20} color={Colors.primary} />
-          </TouchableOpacity>
-        </View>
-        
-        {incomeSources.map(source => (
-          <View key={source.id} style={styles.incomeSourceRow}>
-            <View style={styles.incomeSourceInfo}>
-              <Text style={styles.incomeSourceName}>{source.name}</Text>
-              <Text style={styles.incomeSourceAmount}>{formatCurrency(source.amount)}</Text>
+          {/* Subscription Plan */}
+          <View style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.cardTitle}>Subscription Plan</Text>
+              <TouchableOpacity onPress={() => {}}>
+                <Text style={styles.linkText}>Manage</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={() => handleRemoveIncomeSource(source.id)}>
-              <Ionicons name="trash" size={16} color={Colors.error} />
-            </TouchableOpacity>
+            
+            <View style={styles.planInfo}>
+              <Text style={styles.planName}>{currentPlan.name}</Text>
+              <Text style={styles.planPrice}>${currentPlan.price}/month</Text>
+            </View>
+            
+            <Text style={styles.planFeaturesTitle}>Plan Features:</Text>
+            {currentPlan.features.slice(0, 3).map((feature, index) => (
+              <View key={index} style={styles.featureRow}>
+                <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+                <Text style={styles.featureText}>{feature}</Text>
+              </View>
+            ))}
+            
+            {plans.filter(p => p.name !== currentPlan.name).length > 0 && (
+              <TouchableOpacity 
+                style={styles.upgradeButton}
+                onPress={() => {}}
+              >
+                <LinearGradient 
+                  colors={[Colors.primary, Colors.secondary]} 
+                  style={styles.upgradeButtonGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Text style={styles.upgradeButtonText}>Upgrade Plan</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
           </View>
-        ))}
-        
-        <View style={styles.addSourceContainer}>
-          <TextInput
-            style={styles.sourceInput}
-            placeholder="Source name"
-            value={newSource.name}
-            onChangeText={(text) => setNewSource({...newSource, name: text})}
-          />
-          <TextInput
-            style={[styles.sourceInput, styles.amountInput]}
-            placeholder="Amount"
-            value={newSource.amount}
-            onChangeText={(text) => setNewSource({...newSource, amount: text})}
-            keyboardType="numeric"
-          />
-          <TouchableOpacity 
-            style={styles.addButton}
-            onPress={handleAddIncomeSource}
-          >
-            <Ionicons name="add" size={20} color="#FFF" />
-          </TouchableOpacity>
-        </View>
-      </View>
 
-      {/* Financial Overview */}
-      <View style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.cardTitle}>Financial Overview</Text>
-        </View>
-        
-        <View style={styles.overviewGrid}>
-          <View style={styles.overviewItem}>
-            <Text style={styles.overviewLabel}>Net Worth</Text>
-            <Text style={styles.overviewValue}>{formatCurrency(calculateNetWorth())}</Text>
+          {/* Profile Information */}
+          <View style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.cardTitle}>Profile Information</Text>
+            </View>
+            
+            {renderEditableField('Monthly Income', profile.monthlyIncome, 'monthlyIncome')}
+            {renderEditableField('Savings Rate', profile.savingsRate, 'savingsRate')}
+            {renderEditableField('Currency', profile.currency, 'currency')}
+            {renderEditableField('Business Industry', profile.businessIndustry || 'General', 'businessIndustry')}
+            {renderEditableField('Bio', profile.bio, 'bio')}
           </View>
-          
-          <View style={styles.overviewItem}>
-            <Text style={styles.overviewLabel}>Investments</Text>
-            <Text style={styles.overviewValue}>{formatCurrency(
-              investments.reduce((sum, inv) => sum + (inv.quantity * inv.currentPrice), 0)
-            )}</Text>
-          </View>
-          
-          <View style={styles.overviewItem}>
-            <Text style={styles.overviewLabel}>Monthly Savings</Text>
-            <Text style={styles.overviewValue}>{formatCurrency(
-              profile.monthlyIncome * (profile.savingsRate / 100)
-            )}</Text>
-          </View>
-        </View>
-      </View>
 
-      {/* Financial Goals */}
-      <View style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.cardTitle}>Financial Goals</Text>
-          <TouchableOpacity onPress={handleAddGoal}>
-            <Ionicons name="add" size={20} color={Colors.primary} />
-          </TouchableOpacity>
-        </View>
-        
-        {goals.map(goal => {
-          const progress = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100);
-          
-          return (
-            <View key={goal.id} style={styles.goalItem}>
-              <View style={styles.goalHeader}>
-                <Text style={styles.goalIcon}>{goal.icon}</Text>
-                <View style={styles.goalInfo}>
-                  <Text style={styles.goalName}>{goal.name}</Text>
-                  <Text style={styles.goalAmount}>
-                    {formatCurrency(goal.currentAmount)} of {formatCurrency(goal.targetAmount)}
-                  </Text>
+          {/* Income Sources */}
+          <View style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.cardTitle}>Income Sources</Text>
+              <TouchableOpacity onPress={handleAddIncomeSource}>
+                <Ionicons name="add" size={24} color={Colors.primaryLight} />
+              </TouchableOpacity>
+            </View>
+            
+            {incomeSources.map(source => (
+              <View key={source.id} style={styles.incomeSourceRow}>
+                <View style={styles.incomeSourceInfo}>
+                  <Text style={styles.incomeSourceName}>{source.name}</Text>
+                  <Text style={styles.incomeSourceAmount}>{formatCurrency(source.amount)}</Text>
                 </View>
+                <TouchableOpacity onPress={() => handleRemoveIncomeSource(source.id)}>
+                  <Ionicons name="trash-outline" size={18} color={Colors.error} />
+                </TouchableOpacity>
               </View>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: goal.color }]} />
-              </View>
-              <Text style={styles.progressText}>Deadline: {new Date(goal.deadline).toLocaleDateString()}</Text>
+            ))}
+            
+            <View style={styles.addSourceContainer}>
+              <TextInput
+                style={styles.sourceInput}
+                placeholder="Source name"
+                placeholderTextColor="#64748B"
+                value={newSource.name}
+                onChangeText={(text) => setNewSource({...newSource, name: text})}
+              />
+              <TextInput
+                style={[styles.sourceInput, styles.amountInput]}
+                placeholder="Amount"
+                placeholderTextColor="#64748B"
+                value={newSource.amount}
+                onChangeText={(text) => setNewSource({...newSource, amount: text})}
+                keyboardType="numeric"
+              />
+              <TouchableOpacity 
+                style={styles.addButton}
+                onPress={handleAddIncomeSource}
+              >
+                <Ionicons name="add" size={24} color="#FFF" />
+              </TouchableOpacity>
             </View>
-          );
-        })}
-      </View>
+          </View>
 
-      {/* Settings */}
-      <View style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.cardTitle}>Settings</Text>
-        </View>
-        
-        <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>Push Notifications</Text>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={setNotificationsEnabled}
-            trackColor={{ false: '#767577', true: Colors.primary }}
-            thumbColor={notificationsEnabled ? '#FFF' : '#f4f3f4'}
-          />
-        </View>
-        
-        <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>Dark Mode</Text>
-          <Switch
-            value={darkMode}
-            onValueChange={setDarkMode}
-            trackColor={{ false: '#767577', true: Colors.primary }}
-            thumbColor={darkMode ? '#FFF' : '#f4f3f4'}
-          />
-        </View>
-      </View>
-    </ScrollView>
+          {/* Financial Overview */}
+          <View style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.cardTitle}>Financial Overview</Text>
+            </View>
+            
+            <View style={styles.overviewGrid}>
+              <View style={styles.overviewItem}>
+                <Text style={styles.overviewLabel}>Net Worth</Text>
+                <Text style={styles.overviewValue}>{formatCurrency(calculateNetWorth())}</Text>
+              </View>
+              
+              <View style={styles.overviewItem}>
+                <Text style={styles.overviewLabel}>Investments</Text>
+                <Text style={styles.overviewValue}>{formatCurrency(
+                  investments.reduce((sum, inv) => sum + (inv.quantity * inv.currentPrice), 0)
+                )}</Text>
+              </View>
+              
+              <View style={styles.overviewItem}>
+                <Text style={styles.overviewLabel}>Savings</Text>
+                <Text style={styles.overviewValue}>{formatCurrency(
+                  profile.monthlyIncome * (profile.savingsRate / 100)
+                )}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Financial Goals */}
+          <View style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.cardTitle}>Financial Goals</Text>
+              <TouchableOpacity onPress={handleAddGoal}>
+                <Ionicons name="add" size={24} color={Colors.primaryLight} />
+              </TouchableOpacity>
+            </View>
+            
+            {goals.map(goal => {
+              const progress = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100);
+              
+              return (
+                <View key={goal.id} style={styles.goalItem}>
+                  <View style={styles.goalHeader}>
+                    <Text style={styles.goalIcon}>{goal.icon}</Text>
+                    <View style={styles.goalInfo}>
+                      <Text style={styles.goalName}>{goal.name}</Text>
+                      <Text style={styles.goalAmount}>
+                        {formatCurrency(goal.currentAmount)} of {formatCurrency(goal.targetAmount)}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.progressBar}>
+                    <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: goal.color }]} />
+                  </View>
+                  <Text style={styles.progressText}>Deadline: {new Date(goal.deadline).toLocaleDateString()}</Text>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Settings */}
+          <View style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.cardTitle}>Settings</Text>
+            </View>
+            
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>Push Notifications</Text>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={setNotificationsEnabled}
+                trackColor={{ false: '#334155', true: Colors.primary }}
+                thumbColor="#FFF"
+              />
+            </View>
+            
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>Dark Mode</Text>
+              <Switch
+                value={darkMode}
+                onValueChange={setDarkMode}
+                trackColor={{ false: '#334155', true: Colors.primary }}
+                thumbColor="#FFF"
+              />
+            </View>
+          </View>
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
     backgroundColor: '#0F172A',
   },
+  container: {
+    flex: 1,
+  },
   content: {
     padding: 16,
+    paddingTop: 10,
   },
   header: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
+    backgroundColor: 'rgba(30, 41, 59, 0.7)',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   avatarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 20,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   userInfo: {
     flex: 1,
   },
   userName: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '800',
     color: '#FFF',
     marginBottom: 4,
+    letterSpacing: -0.5,
   },
   userEmail: {
     fontSize: 14,
     color: '#94A3B8',
-    marginBottom: 8,
+    marginBottom: 10,
+    fontWeight: '500',
   },
   planBadge: {
-    backgroundColor: 'rgba(109, 40, 217, 0.2)',
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 12,
     alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(124, 58, 237, 0.3)',
   },
   planText: {
-    color: Colors.primary,
+    color: Colors.primaryLight,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   card: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#F8FAFC',
+    letterSpacing: -0.5,
   },
   linkText: {
-    color: Colors.primary,
+    color: Colors.primaryLight,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   planInfo: {
     flexDirection: 'row',
@@ -538,93 +582,101 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   planName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#FFF',
   },
   planPrice: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#94A3B8',
+    fontWeight: '600',
   },
   planFeaturesTitle: {
     fontSize: 14,
-    color: '#94A3B8',
-    marginBottom: 8,
+    color: '#64748B',
+    marginBottom: 12,
+    fontWeight: '600',
   },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   featureText: {
     fontSize: 14,
     color: '#E2E8F0',
-    marginLeft: 8,
+    marginLeft: 10,
+    fontWeight: '500',
   },
   upgradeButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 8,
-    padding: 12,
+    marginTop: 20,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  upgradeButtonGradient: {
+    padding: 16,
     alignItems: 'center',
-    marginTop: 16,
   },
   upgradeButtonText: {
     color: '#FFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   fieldRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   fieldLabel: {
-    fontSize: 16,
-    color: '#E2E8F0',
+    fontSize: 15,
+    color: '#94A3B8',
     flex: 1,
+    fontWeight: '600',
   },
   valueContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   fieldValue: {
-    fontSize: 16,
-    color: '#FFF',
-    marginRight: 8,
+    fontSize: 15,
+    color: '#F1F5F9',
+    marginRight: 10,
+    fontWeight: '700',
   },
   editContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   editInput: {
-    backgroundColor: '#0F172A',
-    borderRadius: 8,
-    padding: 8,
+    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    borderRadius: 10,
+    padding: 10,
     color: '#FFF',
-    minWidth: 100,
+    minWidth: 120,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: 'rgba(124, 58, 237, 0.3)',
+    fontSize: 14,
   },
   saveButton: {
     backgroundColor: Colors.success,
-    borderRadius: 16,
-    width: 32,
-    height: 32,
+    borderRadius: 20,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
+    marginLeft: 10,
   },
   cancelButton: {
     backgroundColor: Colors.error,
-    borderRadius: 16,
-    width: 32,
-    height: 32,
+    borderRadius: 20,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
+    marginLeft: 10,
   },
   overviewGrid: {
     flexDirection: 'row',
@@ -635,73 +687,79 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   overviewLabel: {
-    fontSize: 14,
-    color: '#94A3B8',
-    marginBottom: 4,
+    fontSize: 12,
+    color: '#64748B',
+    marginBottom: 6,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   overviewValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#F8FAFC',
   },
   goalItem: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   goalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   goalIcon: {
-    fontSize: 24,
-    marginRight: 12,
+    fontSize: 28,
+    marginRight: 14,
   },
   goalInfo: {
     flex: 1,
   },
   goalName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
+    fontWeight: '700',
+    color: '#F1F5F9',
     marginBottom: 4,
   },
   goalAmount: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#94A3B8',
+    fontWeight: '500',
   },
   progressBar: {
-    height: 6,
-    backgroundColor: '#334155',
-    borderRadius: 3,
+    height: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 4,
     overflow: 'hidden',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   progressFill: {
     height: '100%',
+    borderRadius: 4,
   },
   progressText: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: '#64748B',
+    fontWeight: '600',
   },
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   settingLabel: {
     fontSize: 16,
     color: '#E2E8F0',
+    fontWeight: '600',
   },
-  // Picker styles
   pickerContainer: {
     borderWidth: 1,
-    borderColor: '#334155',
-    borderRadius: 8,
-    backgroundColor: '#0F172A',
-    minWidth: 150,
+    borderColor: 'rgba(124, 58, 237, 0.3)',
+    borderRadius: 10,
+    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    minWidth: 160,
   },
   pickerButton: {
     flexDirection: 'row',
@@ -710,54 +768,62 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   pickerText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#FFF',
+    fontWeight: '600',
   },
-  // Income sources styles
   incomeSourceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   incomeSourceInfo: {
     flex: 1,
   },
   incomeSourceName: {
     fontSize: 16,
-    color: '#FFF',
+    color: '#F1F5F9',
     marginBottom: 4,
+    fontWeight: '700',
   },
   incomeSourceAmount: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#94A3B8',
+    fontWeight: '500',
   },
   addSourceContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
-    gap: 8,
+    marginTop: 20,
+    gap: 12,
   },
   sourceInput: {
     flex: 1,
-    backgroundColor: '#0F172A',
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderRadius: 12,
+    padding: 14,
     color: '#FFF',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    fontSize: 14,
   },
   amountInput: {
-    flex: 0.5,
+    flex: 0.6,
   },
   addButton: {
     backgroundColor: Colors.primary,
-    borderRadius: 8,
-    width: 40,
-    height: 40,
+    borderRadius: 12,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 3,
   },
 });

@@ -24,8 +24,9 @@ export interface Investment {
   symbol: string;
   name: string;
   quantity: number;
-  costBasis: number; // Total cost to acquire
-  currentPrice: number; // Price per share/unit
+  purchasePrice: number; // Price per share/unit at purchase
+  costBasis: number; // Total cost to acquire (quantity * purchasePrice)
+  currentPrice: number; // Price per share/unit now
   type: 'stock' | 'crypto' | 'bond' | 'etf' | 'real_estate' | 'other';
 }
 

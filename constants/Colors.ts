@@ -23,11 +23,11 @@ export const Colors = {
 };
 
 export const DashboardColors = {
-  background: '#F8FAFC',
-  surface: '#FFFFFF',
-  text: '#1E293B',
-  textSecondary: '#64748B',
-  border: '#E2E8F0',
+  background: '#0F172A',
+  surface: '#1E293B',
+  text: '#F8FAFC',
+  textSecondary: '#94A3B8',
+  border: 'rgba(255, 255, 255, 0.1)',
   income: '#10B981',
   expense: '#EF4444',
   savings: '#7C3AED',

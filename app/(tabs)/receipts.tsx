@@ -169,7 +169,8 @@ export default function ReceiptsScreen() {
         amount: receipt.parsedData.amount,
         category: receipt.parsedData.category,
         date: receipt.parsedData.date,
-        type: 'expense'
+        type: 'expense',
+        icon: 'receipt' // Default icon for receipt-based transactions
       });
       
       // Update receipt status
@@ -218,8 +219,9 @@ Status: ${receipt.status}`,
   };
 
   return (
-    <LinearGradient colors={['#0F172A', '#1E1B4B', '#0F172A']} style={styles.container}>
-      <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <LinearGradient colors={['#0F172A', '#13112B', '#0F172A']} style={StyleSheet.absoluteFill} />
+      <SafeAreaView style={{ flex: 1 }}>
         <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <Text style={styles.title}>Receipt Manager</Text>
@@ -227,10 +229,17 @@ Status: ${receipt.status}`,
           </View>
 
           <Card style={styles.scanCard}>
-            <Text style={styles.sectionTitle}>Scan New Receipt</Text>
-            <Text style={styles.scanDescription}>
-              Take a photo of your receipt to automatically extract transaction details
-            </Text>
+            <View style={styles.scanHeader}>
+              <View style={styles.scanIconContainer}>
+                <Ionicons name="camera" size={32} color={Colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sectionTitle}>Scan New Receipt</Text>
+                <Text style={styles.scanDescription}>
+                  Take a photo of your receipt to automatically extract transaction details
+                </Text>
+              </View>
+            </View>
             <Button 
               title={scanning ? "Scanning..." : "Scan Receipt"} 
               onPress={scanReceipt} 
@@ -239,9 +248,12 @@ Status: ${receipt.status}`,
               style={styles.scanButton}
             />
             {checkScanLimit() && (
-              <Text style={styles.limitReachedText}>
-                You've reached your monthly scan limit. Upgrade for unlimited scans.
-              </Text>
+              <View style={styles.limitBadge}>
+                <Ionicons name="alert-circle" size={16} color="#EF4444" />
+                <Text style={styles.limitReachedText}>
+                  Monthly scan limit reached. Upgrade for more.
+                </Text>
+              </View>
             )}
           </Card>
 
@@ -249,8 +261,9 @@ Status: ${receipt.status}`,
             <Text style={styles.sectionTitle}>Recent Receipts</Text>
             {receipts.length === 0 ? (
               <Card style={styles.emptyCard}>
-                <Text style={styles.emptyText}>No receipts scanned yet.</Text>
-                <Text style={styles.emptySubtext}>Tap "Scan Receipt" to get started.</Text>
+                <Ionicons name="receipt-outline" size={64} color="rgba(255, 255, 255, 0.1)" />
+                <Text style={styles.emptyText}>No receipts scanned yet</Text>
+                <Text style={styles.emptySubtext}>Tap "Scan Receipt" to get started</Text>
               </Card>
             ) : (
               receipts.map((receipt) => (
@@ -266,7 +279,11 @@ Status: ${receipt.status}`,
                       receipt.status === 'processed' ? styles.processedStatus :
                       styles.scannedStatus
                     ]}>
-                      <Text style={styles.statusText}>
+                      <Text style={[
+                        styles.statusText,
+                        { color: receipt.status === 'added_to_transactions' ? '#10B981' :
+                                 receipt.status === 'processed' ? '#F59E0B' : '#3B82F6' }
+                      ]}>
                         {receipt.status === 'added_to_transactions' ? 'Added' :
                          receipt.status === 'processed' ? 'Processed' : 'Scanned'}
                       </Text>
@@ -275,11 +292,11 @@ Status: ${receipt.status}`,
                   
                   <View style={styles.receiptDetails}>
                     <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Category:</Text>
+                      <Text style={styles.detailLabel}>Category</Text>
                       <Text style={styles.detailValue}>{receipt.parsedData.category}</Text>
                     </View>
                     <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Date:</Text>
+                      <Text style={styles.detailLabel}>Date</Text>
                       <Text style={styles.detailValue}>{receipt.parsedData.date}</Text>
                     </View>
                   </View>
@@ -293,12 +310,12 @@ Status: ${receipt.status}`,
                     </TouchableOpacity>
                     
                     {receipt.status !== 'added_to_transactions' && (
-                      <TouchableOpacity 
-                        style={[styles.actionButton, styles.primaryActionButton]}
+                      <Button 
+                        title="Add Transaction"
                         onPress={() => addReceiptToTransactions(receipt)}
-                      >
-                        <Text style={[styles.actionText, styles.primaryActionText]}>Add to Transactions</Text>
-                      </TouchableOpacity>
+                        style={styles.primaryActionButton}
+                        textStyle={styles.primaryActionText}
+                      />
                     )}
                   </View>
                   
@@ -307,161 +324,49 @@ Status: ${receipt.status}`,
               ))
             )}
           </View>
+          <View style={{ height: 100 }} />
         </ScrollView>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scroll: {
-    padding: 20,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-  section: {
-    marginTop: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 16,
-  },
-  scanCard: {
-    marginBottom: 20,
-  },
-  scanDescription: {
-    color: Colors.textSecondary,
-    fontSize: 14,
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-  scanButton: {
-    alignSelf: 'flex-start',
-  },
-  limitReachedText: {
-    color: Colors.error,
-    fontSize: 14,
-    marginTop: 12,
-    fontStyle: 'italic',
-  },
-  emptyCard: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: Colors.text,
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  emptySubtext: {
-    color: Colors.textSecondary,
-    fontSize: 14,
-  },
-  receiptCard: {
-    marginBottom: 16,
-  },
-  receiptHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  storeInfo: {
-    flex: 1,
-  },
-  storeName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  receiptAmount: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.error,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  scannedStatus: {
-    backgroundColor: '#DBEAFE',
-  },
-  processedStatus: {
-    backgroundColor: '#FEF3C7',
-  },
-  addedStatus: {
-    backgroundColor: '#D1FAE5',
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  receiptDetails: {
-    marginBottom: 16,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  detailLabel: {
-    color: Colors.textSecondary,
-    fontSize: 14,
-  },
-  detailValue: {
-    color: Colors.text,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  receiptActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-  },
-  actionButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  primaryActionButton: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  actionText: {
-    color: Colors.text,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  primaryActionText: {
-    color: Colors.white,
-  },
-  timestamp: {
-    color: Colors.textSecondary,
-    fontSize: 12,
-    marginTop: 12,
-    textAlign: 'right',
-  },
+  container: { flex: 1, backgroundColor: '#0F172A' },
+  scroll: { padding: 16 },
+  header: { marginBottom: 32, paddingVertical: 10 },
+  title: { fontSize: 32, fontWeight: '800', color: '#F8FAFC', letterSpacing: -1, marginBottom: 8 },
+  subtitle: { fontSize: 15, color: '#94A3B8', fontWeight: '500' },
+  section: { marginTop: 8 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#64748B', marginBottom: 20, textTransform: 'uppercase', letterSpacing: 1.5 },
+  scanCard: { marginBottom: 32, padding: 24 },
+  scanHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 24, gap: 20 },
+  scanIconContainer: { width: 64, height: 64, borderRadius: 20, backgroundColor: 'rgba(124, 58, 237, 0.1)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(124, 58, 237, 0.2)' },
+  scanDescription: { color: '#94A3B8', fontSize: 14, lineHeight: 22, marginTop: 4 },
+  scanButton: { width: '100%', height: 56 },
+  limitBadge: { flexDirection: 'row', alignItems: 'center', marginTop: 16, backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 12, borderRadius: 12, gap: 8 },
+  limitReachedText: { color: '#EF4444', fontSize: 13, fontWeight: '600' },
+  emptyCard: { padding: 60, alignItems: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
+  emptyText: { color: '#F8FAFC', fontSize: 18, fontWeight: '700', marginTop: 20 },
+  emptySubtext: { color: '#64748B', fontSize: 14, marginTop: 8, textAlign: 'center' },
+  receiptCard: { marginBottom: 16, padding: 20 },
+  receiptHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  storeInfo: { flex: 1 },
+  storeName: { fontSize: 18, fontWeight: '800', color: '#F8FAFC', marginBottom: 6 },
+  receiptAmount: { fontSize: 24, fontWeight: '800', color: '#EF4444' },
+  statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
+  scannedStatus: { backgroundColor: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.2)' },
+  processedStatus: { backgroundColor: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.2)' },
+  addedStatus: { backgroundColor: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.2)' },
+  statusText: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  receiptDetails: { marginBottom: 24, gap: 10 },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  detailLabel: { color: '#94A3B8', fontSize: 13, fontWeight: '500' },
+  detailValue: { color: '#F1F5F9', fontSize: 14, fontWeight: '700' },
+  receiptActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, alignItems: 'center' },
+  actionButton: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', backgroundColor: 'rgba(255, 255, 255, 0.05)' },
+  primaryActionButton: { height: 44, paddingHorizontal: 16, borderRadius: 12 },
+  actionText: { color: '#F1F5F9', fontSize: 14, fontWeight: '700' },
+  primaryActionText: { fontSize: 14, fontWeight: '700' },
+  timestamp: { color: '#64748B', fontSize: 12, marginTop: 20, textAlign: 'right', fontWeight: '500' },
 });

@@ -1,11 +1,70 @@
-/**
- * Budgetwise AI - Cloudflare Worker API
- * Handles interactions with D1 Database and R2 Storage
- */
+/// <reference types="@cloudflare/workers-types" />
 
 export interface Env {
     DB: D1Database;
     R2: R2Bucket;
+}
+
+const FIREBASE_PROJECT_ID = "budgetwise-ai-88101";
+const GOOGLE_JWK_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
+
+let cachedJWKs: any = null;
+let lastFetchTime = 0;
+
+async function fetchJWKs() {
+    const now = Date.now();
+    if (!cachedJWKs || now - lastFetchTime > 3600000) { // Cache for 1 hour
+        const response = await fetch(GOOGLE_JWK_URL);
+        cachedJWKs = await response.json();
+        lastFetchTime = now;
+    }
+    return cachedJWKs;
+}
+
+async function verifyFirebaseToken(token: string): Promise<string | null> {
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+
+        const [headerB64, payloadB64, signatureB64] = parts;
+        const header = JSON.parse(atob(headerB64));
+        const payload = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
+
+        // Basic claim validation
+        const now = Math.floor(Date.now() / 1000);
+        if (payload.aud !== FIREBASE_PROJECT_ID) return null;
+        if (payload.iss !== `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`) return null;
+        if (payload.exp < now) return null;
+
+        // Full signature verification
+        const jwks = await fetchJWKs();
+        const key = jwks.keys.find((k: any) => k.kid === header.kid);
+        if (!key) return null;
+
+        const cryptoKey = await crypto.subtle.importKey(
+            "jwk",
+            key,
+            { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+            false,
+            ["verify"]
+        );
+
+        const encoder = new TextEncoder();
+        const data = encoder.encode(`${headerB64}.${payloadB64}`);
+        const signature = Uint8Array.from(atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+
+        const isValid = await crypto.subtle.verify(
+            "RSASSA-PKCS1-v1_5",
+            cryptoKey,
+            signature,
+            data
+        );
+
+        return isValid ? payload.sub : null;
+    } catch (e) {
+        console.error("Token verification error:", e);
+        return null;
+    }
 }
 
 export default {
@@ -25,20 +84,37 @@ export default {
             return new Response(null, { headers: corsHeaders });
         }
 
+        // Root / Health check
+        if (path === "/" || path === "/api/health") {
+            return Response.json({ status: "ok", message: "Budgetwise AI API", version: "1.0.0" }, { headers: corsHeaders });
+        }
+
+        // Authenticate request
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+        }
+
+        const token = authHeader.split(" ")[1];
+        const verifiedUserId = await verifyFirebaseToken(token);
+
+        if (!verifiedUserId) {
+            return new Response("Invalid Token", { status: 401, headers: corsHeaders });
+        }
+
         try {
             // Profiles API
             if (path === "/api/profile") {
                 if (method === "GET") {
-                    const userId = url.searchParams.get("userId");
                     const profile = await env.DB.prepare("SELECT * FROM profiles WHERE user_id = ?")
-                        .bind(userId)
+                        .bind(verifiedUserId)
                         .first();
                     return Response.json(profile || {}, { headers: corsHeaders });
                 }
 
                 if (method === "POST" || method === "PUT") {
                     const body = await request.json();
-                    const user_id = body.user_id;
+                    const user_id = verifiedUserId;
                     const name = body.name || null;
                     const email = body.email || null;
                     const plan = body.plan || null;
@@ -68,10 +144,9 @@ export default {
 
             // Transactions API
             if (path === "/api/transactions") {
-                const userId = url.searchParams.get("userId");
                 if (method === "GET") {
                     const { results } = await env.DB.prepare("SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC")
-                        .bind(userId)
+                        .bind(verifiedUserId)
                         .all();
                     return Response.json(results, { headers: corsHeaders });
                 }
@@ -82,7 +157,7 @@ export default {
                     await env.DB.prepare(`
             INSERT INTO transactions (id, user_id, description, amount, category, type, date)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-          `).bind(id, body.user_id, body.description, body.amount, body.category, body.type, body.date).run();
+          `).bind(id, verifiedUserId, body.description, body.amount, body.category, body.type, body.date).run();
                     return Response.json({ id, success: true }, { headers: corsHeaders });
                 }
             }
@@ -95,11 +170,10 @@ export default {
 
             // Budgets API
             if (path === "/api/budgets") {
-                const userId = url.searchParams.get("userId");
                 const month = url.searchParams.get("month");
                 if (method === "GET") {
                     const { results } = await env.DB.prepare("SELECT * FROM budgets WHERE user_id = ? AND month = ?")
-                        .bind(userId, month)
+                        .bind(verifiedUserId, month)
                         .all();
                     return Response.json(results, { headers: corsHeaders });
                 }
@@ -110,7 +184,7 @@ export default {
                     await env.DB.prepare(`
             INSERT INTO budgets (id, user_id, category, budget_limit, spent, month)
             VALUES (?, ?, ?, ?, ?, ?)
-          `).bind(id, body.user_id, body.category, body.budget_limit, body.spent, body.month).run();
+          `).bind(id, verifiedUserId, body.category, body.budget_limit, body.spent, body.month).run();
                     return Response.json({ id, success: true }, { headers: corsHeaders });
                 }
 
@@ -125,10 +199,9 @@ export default {
 
             // Investments API
             if (path === "/api/investments") {
-                const userId = url.searchParams.get("userId");
                 if (method === "GET") {
                     const { results } = await env.DB.prepare("SELECT * FROM investments WHERE user_id = ?")
-                        .bind(userId)
+                        .bind(verifiedUserId)
                         .all();
                     return Response.json(results, { headers: corsHeaders });
                 }
@@ -139,7 +212,7 @@ export default {
                     await env.DB.prepare(`
             INSERT INTO investments (id, user_id, name, symbol, quantity, purchase_price, current_price, purchase_date, type)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).bind(id, body.user_id, body.name, body.symbol, body.quantity, body.purchase_price, body.current_price, body.purchase_date, body.type).run();
+          `).bind(id, verifiedUserId, body.name, body.symbol, body.quantity, body.purchase_price, body.current_price, body.purchase_date, body.type).run();
                     return Response.json({ id, success: true }, { headers: corsHeaders });
                 }
             }
@@ -163,10 +236,9 @@ export default {
 
             // Notifications API
             if (path === "/api/notifications") {
-                const userId = url.searchParams.get("userId");
                 if (method === "GET") {
                     const { results } = await env.DB.prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC")
-                        .bind(userId)
+                        .bind(verifiedUserId)
                         .all();
                     return Response.json(results, { headers: corsHeaders });
                 }
@@ -177,7 +249,7 @@ export default {
                     await env.DB.prepare(`
             INSERT INTO notifications (id, user_id, title, message, category, read)
             VALUES (?, ?, ?, ?, ?, ?)
-          `).bind(id, body.user_id, body.title, body.message, body.category, body.read ? 1 : 0).run();
+          `).bind(id, verifiedUserId, body.title, body.message, body.category, body.read ? 1 : 0).run();
                     return Response.json({ id, success: true }, { headers: corsHeaders });
                 }
             }
@@ -193,8 +265,7 @@ export default {
             if (path.startsWith("/api/storage/upload")) {
                 if (method === "POST") {
                     const filename = url.searchParams.get("filename") || `receipt_${Date.now()}.jpg`;
-                    const userId = url.searchParams.get("userId");
-                    const key = `users/${userId}/receipts/${filename}`;
+                    const key = `users/${verifiedUserId}/receipts/${filename}`;
 
                     await env.R2.put(key, request.body);
                     return Response.json({ key, url: `/api/storage/view?key=${key}` }, { headers: corsHeaders });
