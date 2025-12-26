@@ -1,30 +1,23 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useAuth } from '../context/AuthContext';
 import { Colors } from '../constants/Colors';
 
 export default function OAuthNativeCallback() {
   const router = useRouter();
-  const { isSignedIn, isLoaded } = useAuth();
-  const { user } = useUser();
+  const { isAuthenticated, initialized } = useAuth();
 
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!initialized) return;
 
-    // Give Clerk a moment to fully process the OAuth session
-    const timer = setTimeout(() => {
-      if (isSignedIn && user) {
-        console.log('OAuth success, redirecting to dashboard');
-        router.replace('/(tabs)/dashboard');
-      } else {
-        console.log('OAuth failed or cancelled, redirecting to signup');
-        router.replace('/(auth)/signup');
-      }
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [isSignedIn, isLoaded, user, router]);
+    // Direct user based on auth state
+    if (isAuthenticated) {
+      router.replace('/(tabs)/dashboard');
+    } else {
+      router.replace('/(auth)/login');
+    }
+  }, [isAuthenticated, initialized, router]);
 
   return (
     <View style={styles.container}>

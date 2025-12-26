@@ -1,11 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
-import { supabase } from '../app/lib/supabase';
-import { db } from '../firebase';
+import { cloudflare } from '../app/lib/cloudflare';
+import { db, auth } from '../firebase';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { useUser, useAuth as useClerkAuth, useClerk } from '@clerk/clerk-expo';
+import { 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut as firebaseSignOut,
+  sendPasswordResetEmail as firebaseSendPasswordResetEmail,
+  User as FirebaseUser,
+  updateProfile
+} from 'firebase/auth';
 import { User, SubscriptionPlan } from '../types';
-
-// Types are now imported from ../types
 
 interface AuthContextType {
   user: User | null;
@@ -14,119 +20,145 @@ interface AuthContextType {
   initialized: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   sendPasswordResetEmail: (email: string) => Promise<boolean>;
   resetPassword: (token: string, newPassword: string) => Promise<boolean>;
   upgradePlan: (newPlan: 'Starter' | 'Professional' | 'Business' | 'Enterprise') => Promise<boolean>;
   getSubscriptionPlans: () => SubscriptionPlan[];
   sendVerificationEmail: (email: string, userId: string) => Promise<boolean>;
   verifyEmail: (token: string) => Promise<boolean>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
-  const { user: clerkUser, isLoaded: isClerkLoaded } = useUser();
-  const { signOut } = useClerkAuth();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
 
-  console.log('AuthProvider initialized');
+  console.log('AuthProvider initialized with Firebase Auth');
 
-  // Sync Clerk user to local state and Supabase
   useEffect(() => {
-    const syncUser = async () => {
-      if (!isClerkLoaded) return;
-
-      if (clerkUser) {
-        const plan = (clerkUser.publicMetadata?.plan as any) || (clerkUser.unsafeMetadata?.plan as any) || 'Starter';
-        const email = clerkUser.primaryEmailAddress?.emailAddress || '';
-        const name = clerkUser.fullName || email.split('@')[0];
-        
-        const newUser: User = {
-          id: clerkUser.id,
-          name,
-          email,
-          plan,
-          emailVerified: clerkUser.primaryEmailAddress?.verification?.status === 'verified'
-        };
-
-        setUser(newUser);
-        
-        // Sync to Supabase profiles table to ensure data integrity for other tables
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        // Sync with Firestore to get extra data like 'plan'
         try {
-          const { data: existingProfile } = await supabase.from('profiles').select('*').eq('user_id', clerkUser.id).single();
-          
-          if (!existingProfile) {
-            await supabase.from('profiles').insert({
-              user_id: clerkUser.id,
-              name,
-              email,
-              plan,
-              email_verified: newUser.emailVerified
-            });
-            await createDefaultBudgets(clerkUser.id);
-          } else {
-            // Update plan if changed in Clerk
-            if (existingProfile.plan !== plan) {
-              await supabase.from('profiles').update({ plan }).eq('user_id', clerkUser.id);
-            }
-          }
-        } catch (error) {
-          console.error('Error syncing to Supabase:', error);
-        }
-
-        // Sync to Firebase Firestore
-        try {
-          const userRef = doc(db, 'profiles', clerkUser.id);
+          const userRef = doc(db, 'profiles', firebaseUser.uid);
           const userSnap = await getDoc(userRef);
+          
+          let plan = 'Starter';
+          let emailVerified = firebaseUser.emailVerified;
+          let name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User';
 
-          if (!userSnap.exists()) {
+          if (userSnap.exists()) {
+            const data = userSnap.data();
+            plan = data.plan || 'Starter';
+          } else {
+            // First time login/signup sync
             await setDoc(userRef, {
-              user_id: clerkUser.id,
+              user_id: firebaseUser.uid,
               name,
-              email,
+              email: firebaseUser.email,
               plan,
-              email_verified: newUser.emailVerified,
+              email_verified: emailVerified,
               created_at: new Date().toISOString()
             });
-          } else {
-            const currentData = userSnap.data();
-            if (currentData.plan !== plan) {
-              await updateDoc(userRef, { plan });
-            }
+            await createDefaultBudgets(firebaseUser.uid);
           }
+
+          let onboardingComplete = false;
+
+          // Sync with Cloudflare profiles table
+          try {
+            const existingProfile = await cloudflare.getProfile(firebaseUser.uid);
+            if (!existingProfile || !existingProfile.user_id) {
+              await cloudflare.updateProfile({
+                user_id: firebaseUser.uid,
+                name,
+                email: firebaseUser.email,
+                plan,
+                email_verified: emailVerified
+              });
+            } else {
+              if (existingProfile.plan !== plan) {
+                await cloudflare.updateProfile({ 
+                  ...existingProfile,
+                  plan 
+                });
+              }
+              // If monthly_income exists and is > 0, consider onboarding complete
+              if (existingProfile.monthly_income && existingProfile.monthly_income > 0) {
+                onboardingComplete = true;
+              }
+            }
+          } catch (error) {
+            console.error('Error syncing to Cloudflare:', error);
+          }
+
+          const newUser: User = {
+            id: firebaseUser.uid,
+            name,
+            email: firebaseUser.email || '',
+            plan: plan as any,
+            emailVerified,
+            onboardingComplete
+          };
+
+          setUser(newUser);
+
         } catch (error) {
-          console.error('Error syncing to Firebase:', error);
+          console.error('Error in onAuthStateChanged profile sync:', error);
         }
       } else {
         setUser(null);
       }
-      
       setLoading(false);
       setInitialized(true);
-    };
+    });
 
-    syncUser();
-  }, [clerkUser, isClerkLoaded]);
+    return () => unsubscribe();
+  }, []);
 
-  // Deprecated: Login is handled by Clerk hooks in components
   const login = async (email: string, password: string): Promise<boolean> => {
-    console.warn('AuthContext.login is deprecated. Use useSignIn from @clerk/clerk-expo instead.');
-    return true;
+    try {
+      setLoading(true);
+      await signInWithEmailAndPassword(auth, email, password);
+      return true;
+    } catch (error) {
+      console.error('Firebase login error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Deprecated: Signup is handled by Clerk hooks in components
   const signup = async (name: string, email: string, password: string): Promise<boolean> => {
-    console.warn('AuthContext.signup is deprecated. Use useSignUp from @clerk/clerk-expo instead.');
-    return true;
+    try {
+      setLoading(true);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      
+      // Update display name
+      await updateProfile(firebaseUser, { displayName: name });
+      
+      return true;
+    } catch (error) {
+      console.error('Firebase signup error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const sendPasswordResetEmail = async (email: string): Promise<boolean> => {
-    // Clerk handles this via their own flow usually, but we can stub it or use Clerk's API if needed
-    console.log('Password reset requested for:', email);
-    return true;
+    try {
+      await firebaseSendPasswordResetEmail(auth, email);
+      return true;
+    } catch (error) {
+      console.error('Firebase reset email error:', error);
+      return false;
+    }
   };
 
   const resetPassword = async (token: string, newPassword: string): Promise<boolean> => {
@@ -142,24 +174,18 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   };
 
   const upgradePlan = async (newPlan: 'Starter' | 'Professional' | 'Business' | 'Enterprise'): Promise<boolean> => {
-    if (!clerkUser) return false;
+    if (!auth.currentUser) return false;
     
     try {
-      // In a real app, this would be done via Clerk's backend API or a webhook from a payment provider (Stripe).
-      // Client-side update of publicMetadata is not allowed for security.
-      // However, we can update unsafeMetadata for demo purposes if the user hasn't set up a backend.
-      await clerkUser.update({
-        unsafeMetadata: {
-          ...clerkUser.unsafeMetadata,
-          plan: newPlan
-        }
-      });
+      const userRef = doc(db, 'profiles', auth.currentUser.uid);
+      await updateDoc(userRef, { plan: newPlan });
       
-      // Also update local state immediately for UI responsiveness
+      // Update local state
       setUser(prev => prev ? { ...prev, plan: newPlan } : null);
       
-      // Sync to Supabase
-      await supabase.from('profiles').update({ plan: newPlan }).eq('user_id', clerkUser.id);
+      // Sync to Cloudflare
+      const profile = await cloudflare.getProfile(auth.currentUser.uid);
+      await cloudflare.updateProfile({ ...profile, plan: newPlan });
       
       return true;
     } catch (e) {
@@ -273,9 +299,11 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       { user_id: userId, category: 'Entertainment', budget_limit: 300, spent: 0, month },
       { user_id: userId, category: 'Utilities', budget_limit: 250, spent: 0, month },
     ];
-    await supabase.from('budgets').insert(defaultBudgets);
+
+    for (const budget of defaultBudgets) {
+      await cloudflare.addBudget(budget);
+    }
     
-    // Sync to Firestore
     try {
       for (const budget of defaultBudgets) {
         const budgetRef = doc(db, 'budgets', `${userId}_${budget.category}_${month}`);
@@ -288,15 +316,45 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
   const logout = async () => {
     try {
-      await signOut();
+      await firebaseSignOut(auth);
       setUser(null);
-      console.log('User logged out');
+      console.log('User logged out from Firebase');
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
-  console.log('AuthProvider rendering with user:', user);
+  const refreshProfile = async () => {
+    if (!auth.currentUser) return;
+    
+    try {
+      const firebaseUser = auth.currentUser;
+      const userRef = doc(db, 'profiles', firebaseUser.uid);
+      const userSnap = await getDoc(userRef);
+      
+      let plan = 'Starter';
+      if (userSnap.exists()) {
+        plan = userSnap.data().plan || 'Starter';
+      }
+
+      let onboardingComplete = false;
+      const profile = await cloudflare.getProfile(firebaseUser.uid);
+      if (profile && profile.monthly_income && profile.monthly_income > 0) {
+        onboardingComplete = true;
+      }
+
+      setUser({
+        id: firebaseUser.uid,
+        name: profile?.name || firebaseUser.displayName || 'User',
+        email: firebaseUser.email || '',
+        plan: plan as any,
+        emailVerified: firebaseUser.emailVerified,
+        onboardingComplete
+      });
+    } catch (e) {
+      console.error('Error refreshing profile:', e);
+    }
+  };
 
   const contextValue = useMemo(() => ({
     user, 
@@ -311,7 +369,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     upgradePlan,
     getSubscriptionPlans,
     sendVerificationEmail,
-    verifyEmail
+    verifyEmail,
+    refreshProfile
   }), [user, loading, initialized]);
 
   return (

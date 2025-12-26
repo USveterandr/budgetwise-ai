@@ -19,7 +19,6 @@
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
-    "@supabase/supabase-js": "^2.49.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/express": "^5.0.6",
     "bcrypt": "^6.0.0",

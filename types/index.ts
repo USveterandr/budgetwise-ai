@@ -83,6 +83,7 @@ export interface User {
   billingCycle?: 'monthly' | 'yearly';
   trialEndsAt?: number; // Timestamp
   provider?: 'email' | 'google' | 'apple';
+  onboardingComplete?: boolean;
 }
 
 // Goal types

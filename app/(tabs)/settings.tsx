@@ -52,8 +52,8 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle}>Account</Text>
         <Card>
-          <SettingItem icon="person" title="Edit Profile" subtitle="Update your personal information" onPress={() => {}} />
-          <SettingItem icon="card" title="Payment Methods" subtitle="Manage your payment options" onPress={() => {}} />
+          <SettingItem icon="person" title="Edit Profile" subtitle="Update your personal information" onPress={() => router.push('/(tabs)/profile')} />
+          <SettingItem icon="card" title="Payment Methods" subtitle="Manage your payment options" onPress={() => router.push('/(tabs)/subscription')} />
           <SettingItem icon="shield-checkmark" title="Security" subtitle="Password and authentication" onPress={() => {}} />
         </Card>
 
@@ -67,10 +67,10 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle}>Support</Text>
         <Card>
-          <SettingItem icon="help-circle" title="Help Center" subtitle="FAQs and guides" onPress={() => {}} />
-          <SettingItem icon="chatbubble" title="Contact Support" subtitle="Get help from our team" onPress={() => {}} />
-          <SettingItem icon="document-text" title="Terms of Service" onPress={() => {}} />
-          <SettingItem icon="lock-closed" title="Privacy Policy" onPress={() => {}} />
+          <SettingItem icon="help-circle" title="Help Center" subtitle="FAQs and guides" onPress={() => router.push('/help-center')} />
+          <SettingItem icon="chatbubble" title="Contact Support" subtitle="Get help from our team" onPress={() => router.push('/contact-support')} />
+          <SettingItem icon="document-text" title="Terms of Service" onPress={() => router.push('/terms-of-service')} />
+          <SettingItem icon="lock-closed" title="Privacy Policy" onPress={() => router.push('/privacy')} />
         </Card>
 
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>

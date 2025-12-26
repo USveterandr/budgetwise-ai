@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as Notifications from 'expo-notifications';
-import { supabase } from '../app/lib/supabase';
+import { cloudflare } from '../app/lib/cloudflare';
 import { Platform } from 'react-native';
 
 // Configure notification handler
@@ -74,20 +74,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     console.log('Refreshing notifications for user:', userId);
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-      
-      if (data && !error) {
-        setNotifications(data.map(n => ({
+      const data = await cloudflare.getNotifications(userId);
+      if (data) {
+        setNotifications(data.map((n: any) => ({
           id: n.id,
           user_id: n.user_id,
           title: n.title,
           message: n.message,
           category: n.category,
-          read: n.read,
+          read: Boolean(n.read),
           created_at: n.created_at,
         })));
       }
@@ -101,11 +96,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const markAsRead = async (id: string) => {
     try {
-      await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', id);
-      
+      await cloudflare.markNotificationAsRead(id);
       setNotifications(prev => 
         prev.map(notification => 
           notification.id === id ? { ...notification, read: true } : notification
@@ -118,20 +109,13 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const markAllAsRead = async () => {
     try {
-      const unreadIds = notifications
-        .filter(n => !n.read)
-        .map(n => n.id);
-      
-      if (unreadIds.length > 0) {
-        await supabase
-          .from('notifications')
-          .update({ read: true })
-          .in('id', unreadIds);
-        
-        setNotifications(prev => 
-          prev.map(notification => ({ ...notification, read: true }))
-        );
+      const unreadNotifications = notifications.filter(n => !n.read);
+      for (const n of unreadNotifications) {
+        await cloudflare.markNotificationAsRead(n.id);
       }
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, read: true }))
+      );
     } catch (e) {
       console.error('Error marking all notifications as read:', e);
     }

@@ -7,18 +7,13 @@ import { Colors } from '../../constants/Colors';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
-import { useSignIn, useOAuth } from '@clerk/clerk-expo';
 
 export default function LoginScreen() {
   const { login } = useAuth();
-  const { signIn, setActive, isLoaded } = useSignIn();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  // Google OAuth
-  const { startOAuthFlow: googleAuth } = useOAuth({ strategy: 'oauth_google' });
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -26,69 +21,33 @@ export default function LoginScreen() {
       return;
     }
     
-    if (!isLoaded) {
-      return;
-    }
-    
     setLoading(true);
     setError('');
     
     try {
-      // First try Clerk authentication
-      const signInAttempt = await signIn.create({
-        identifier: email,
-        password,
-      });
-      
-      if (signInAttempt.status === 'complete') {
-        await setActive({ session: signInAttempt.createdSessionId });
-        setLoading(false);
+      const success = await login(email, password);
+      if (success) {
         router.replace('/(tabs)/dashboard');
       } else {
-        setLoading(false);
         setError('Invalid credentials');
       }
     } catch (err: any) {
-      setLoading(false);
-      console.error('Clerk sign in error:', err);
-      if (err.errors?.[0]?.code === 'form_identifier_not_found' || err.errors?.[0]?.code === 'form_password_incorrect') {
-        setError('Invalid credentials');
-      } else if (err.errors?.[0]?.longMessage) {
-        setError(err.errors[0].longMessage);
+      console.error('Login error:', err);
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError('Invalid email or password');
+      } else if (err.message) {
+        setError(err.message);
       } else {
         setError('An error occurred during sign in');
-      }
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const { createdSessionId, setActive } = await googleAuth();
-      
-      if (createdSessionId) {
-        // Set the user as active
-        await setActive!({ session: createdSessionId });
-        
-        // Get user info from Clerk
-        // For Google login, we don't need to create a user in our backend as they should already exist
-        // Just navigate to dashboard
-        router.replace('/(tabs)/dashboard');
-      }
-    } catch (err: any) {
-      console.error('Google sign in error:', err);
-      // Provide more specific error messages
-      if (err?.code === 'oauth_client_not_found' || err?.message?.includes('invalid_client')) {
-        setError('Google sign in is not properly configured. Please contact support.');
-      } else if (err?.message?.includes('access_denied')) {
-        setError('Google sign in was cancelled or denied.');
-      } else {
-        setError('Failed to sign in with Google. Please try again or use email login.');
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleLogin = async () => {
+    // Placeholder for Firebase Google Login
+    setError('Google login is temporarily disabled. Please use email and password.');
   };
 
   const resendVerificationEmail = async () => {

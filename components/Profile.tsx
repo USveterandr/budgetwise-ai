@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { useAuth } from '../context/AuthContext';
 import { useFinance } from '../context/FinanceContext';
+import { cloudflare } from '../app/lib/cloudflare';
 
 interface Goal {
   id: string;
@@ -30,15 +31,41 @@ interface UserProfile {
 }
 
 export function Profile() {
-  const { user, upgradePlan, getSubscriptionPlans } = useAuth();
+  const { user, upgradePlan, getSubscriptionPlans, refreshProfile } = useAuth();
   const { investments } = useFinance();
+  const [loading, setLoading] = useState(false);
+  const [profileData, setProfileData] = useState<any>(null);
+  
   const [profile, setProfile] = useState<UserProfile>({
-    monthlyIncome: 5000,
-    savingsRate: 20,
+    monthlyIncome: 0,
+    savingsRate: 0,
     currency: 'USD',
-    bio: 'Building financial freedom step by step.',
+    bio: '',
     businessIndustry: 'General'
   });
+
+  React.useEffect(() => {
+    const loadProfile = async () => {
+      if (user?.id) {
+        try {
+          const data = await cloudflare.getProfile(user.id);
+          if (data) {
+            setProfileData(data);
+            setProfile({
+              monthlyIncome: data.monthly_income || 0,
+              savingsRate: data.savings_rate || 0,
+              currency: data.currency || 'USD',
+              bio: data.bio || '',
+              businessIndustry: data.business_industry || 'General'
+            });
+          }
+        } catch (e) {
+          console.error('Error loading profile:', e);
+        }
+      }
+    };
+    loadProfile();
+  }, [user?.id]);
   const [goals, setGoals] = useState<Goal[]>([
     {
       id: '1',
@@ -79,14 +106,40 @@ export function Profile() {
   const plans = getSubscriptionPlans();
   const currentPlan = plans.find(plan => plan.name === user?.plan) || plans[0];
 
-  const handleSaveEdit = () => {
-    if (editingField) {
-      setProfile(prev => ({
-        ...prev,
-        [editingField]: editValue
-      }));
-      setEditingField(null);
-      setEditValue('');
+  const handleSaveEdit = async () => {
+    if (editingField && user?.id) {
+      const newValue = editingField === 'monthlyIncome' || editingField === 'savingsRate' 
+        ? parseFloat(editValue) 
+        : editValue;
+        
+      try {
+        setLoading(true);
+        const updatedProfile = {
+          ...profileData,
+          user_id: user.id,
+          name: user.name,
+          email: user.email,
+          [editingField === 'monthlyIncome' ? 'monthly_income' : 
+           editingField === 'savingsRate' ? 'savings_rate' : 
+           editingField === 'businessIndustry' ? 'business_industry' : 
+           editingField]: newValue
+        };
+        
+        await cloudflare.updateProfile(updatedProfile);
+        setProfileData(updatedProfile);
+        setProfile(prev => ({
+          ...prev,
+          [editingField]: newValue
+        }));
+        await refreshProfile();
+        setEditingField(null);
+        setEditValue('');
+      } catch (e) {
+        console.error('Error saving profile:', e);
+        Alert.alert('Error', 'Failed to save profile changes.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 

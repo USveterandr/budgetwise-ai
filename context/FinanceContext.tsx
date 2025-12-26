@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '../app/lib/supabase';
+import { cloudflare } from '../app/lib/cloudflare';
 import { NotificationContext } from './NotificationContext';
 import { Transaction, Budget, Investment, UserProfile } from '../types';
 
@@ -60,24 +60,32 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       // Fetch user profile
-      const { data: profileData } = await supabase.from('profiles').select('*').eq('user_id', uid).single();
-      if (profileData) {
+      const profileData = await cloudflare.getProfile(uid);
+      if (profileData && profileData.user_id) {
         setUserProfile({
           monthlyIncome: profileData.monthly_income || 0,
           savingsRate: profileData.savings_rate || 0,
           currency: profileData.currency || 'USD',
           bio: profileData.bio || '',
-          businessIndustry: profileData.business_industry || 'General'
-        });
+          business_industry: profileData.business_industry || 'General'
+        } as any);
       }
       
-      const { data: txData } = await supabase.from('transactions').select('*').eq('user_id', uid).order('date', { ascending: false });
-      if (txData) setTransactions(txData.map(t => ({ id: t.id, description: t.description, amount: Number(t.amount), category: t.category, date: t.date, type: t.type, icon: t.category === 'Food' ? 'restaurant' : t.category === 'Transport' ? 'car' : t.category === 'Utilities' ? 'zap' : t.category === 'Entertainment' ? 'film' : t.category === 'Shopping' ? 'shopping-cart' : 'wallet' })));
+      const txData = await cloudflare.getTransactions(uid);
+      if (txData) setTransactions(txData.map((t: any) => ({ 
+        id: t.id, 
+        description: t.description, 
+        amount: Number(t.amount), 
+        category: t.category, 
+        date: t.date, 
+        type: t.type, 
+        icon: t.category === 'Food' ? 'restaurant' : t.category === 'Transport' ? 'car' : t.category === 'Utilities' ? 'zap' : t.category === 'Entertainment' ? 'film' : t.category === 'Shopping' ? 'shopping-cart' : 'wallet' 
+      })));
       
       const month = new Date().toISOString().slice(0, 7);
-      const { data: budgetData } = await supabase.from('budgets').select('*').eq('user_id', uid).eq('month', month);
+      const budgetData = await cloudflare.getBudgets(uid, month);
       if (budgetData) {
-        const updatedBudgets = budgetData.map(b => ({ 
+        const updatedBudgets = budgetData.map((b: any) => ({ 
           id: b.id, 
           category: b.category, 
           limit: Number(b.budget_limit), 
@@ -90,8 +98,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         checkBudgetAlerts(uid, updatedBudgets);
       }
       
-      const { data: investmentData } = await supabase.from('investments').select('*').eq('user_id', uid);
-      if (investmentData) setInvestments(investmentData.map(i => ({
+      const investmentData = await cloudflare.getInvestments(uid);
+      if (investmentData) setInvestments(investmentData.map((i: any) => ({
         id: i.id,
         name: i.name,
         symbol: i.symbol,
@@ -111,22 +119,19 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       
       // Check for 80% alert
       if (percentage >= 80 && percentage < 100) {
-        // Check if we've already sent this alert
-        const { data: existing80Alert } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('user_id', uid)
-          .eq('category', 'budget_alert')
-          .ilike('title', `%${budget.category}%80%`)
-          .gte('created_at', new Date().toISOString().split('T')[0]);
+        const notifications = await cloudflare.getNotifications(uid);
+        const existing80Alert = notifications?.filter((n: any) => 
+          n.category === 'budget_alert' && 
+          n.title.includes(budget.category) && 
+          n.title.includes('80%') &&
+          n.created_at.split('T')[0] === new Date().toISOString().split('T')[0]
+        );
         
         if (!existing80Alert || existing80Alert.length === 0) {
-          // Send 80% alert
           const title = `Budget Alert: ${budget.category}`;
           const message = `You've used ${percentage.toFixed(0)}% of your ${budget.category} budget. Limit: $${budget.limit.toFixed(2)}, Spent: $${budget.spent.toFixed(2)}`;
           
-          // Save to notifications table
-          await supabase.from('notifications').insert({
+          await cloudflare.addNotification({
             user_id: uid,
             title,
             message,
@@ -134,29 +139,25 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
             read: false
           });
           
-          // Send local notification
           sendLocalNotification(title, message);
         }
       }
       
       // Check for 100% alert
       if (percentage >= 100) {
-        // Check if we've already sent this alert
-        const { data: existing100Alert } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('user_id', uid)
-          .eq('category', 'budget_alert')
-          .ilike('title', `%${budget.category}%100%`)
-          .gte('created_at', new Date().toISOString().split('T')[0]);
+        const notifications = await cloudflare.getNotifications(uid);
+        const existing100Alert = notifications?.filter((n: any) => 
+          n.category === 'budget_alert' && 
+          n.title.includes(budget.category) && 
+          n.title.includes('100%') &&
+          n.created_at.split('T')[0] === new Date().toISOString().split('T')[0]
+        );
         
         if (!existing100Alert || existing100Alert.length === 0) {
-          // Send 100% alert
           const title = `Budget Alert: ${budget.category}`;
           const message = `You've exceeded your ${budget.category} budget! Limit: $${budget.limit.toFixed(2)}, Spent: $${budget.spent.toFixed(2)}`;
           
-          // Save to notifications table
-          await supabase.from('notifications').insert({
+          await cloudflare.addNotification({
             user_id: uid,
             title,
             message,
@@ -164,7 +165,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
             read: false
           });
           
-          // Send local notification
           sendLocalNotification(title, message);
         }
       }
@@ -172,8 +172,16 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   };
 
   const addTransaction = async (t: Omit<Transaction, 'id'>) => {
-    const { data, error } = await supabase.from('transactions').insert({ user_id: userId, description: t.description, amount: t.amount, category: t.category, type: t.type, date: t.date }).select().single();
-    if (data && !error) {
+    const data = await cloudflare.addTransaction({ 
+      user_id: userId, 
+      description: t.description, 
+      amount: t.amount, 
+      category: t.category, 
+      type: t.type, 
+      date: t.date 
+    });
+    
+    if (data && data.success) {
       setTransactions(prev => [{ id: data.id, ...t }, ...prev]);
       
       // Update budget spent amount if this is an expense
@@ -191,10 +199,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteTransaction = async (id: string) => {
-    // Get the transaction to adjust budget
     const transaction = transactions.find(t => t.id === id);
-    
-    await supabase.from('transactions').delete().eq('id', id);
+    await cloudflare.deleteTransaction(id);
     setTransactions(prev => prev.filter(t => t.id !== id));
     
     // Adjust budget spent amount if this was an expense
@@ -203,39 +209,37 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       if (budget) {
         const newSpent = budget.spent - transaction.amount;
         await updateBudget(budget.id, newSpent);
-        
-        // Refresh data to trigger budget alerts
         await refreshData(userId);
       }
     }
   };
 
   const updateBudget = async (id: string, spent: number) => {
-    await supabase.from('budgets').update({ spent, updated_at: new Date().toISOString() }).eq('id', id);
+    await cloudflare.updateBudget(id, spent);
     setBudgets(prev => prev.map(b => b.id === id ? { ...b, spent } : b));
   };
 
   const addBudget = async (b: Omit<Budget, 'id'> & { month: string }) => {
-    const { data, error } = await supabase.from('budgets').insert({
+    const data = await cloudflare.addBudget({
       user_id: userId,
       category: b.category,
       budget_limit: b.limit,
       spent: b.spent,
       month: b.month
-    }).select().single();
+    });
     
-    if (data && !error) {
+    if (data && data.success) {
       setBudgets(prev => [...prev, {
         id: data.id,
-        category: data.category,
-        limit: Number(data.budget_limit),
-        spent: Number(data.spent)
+        category: b.category,
+        limit: Number(b.limit),
+        spent: Number(b.spent)
       }]);
     }
   };
 
   const addInvestment = async (investment: Omit<Investment, 'id'>) => {
-    const { data, error } = await supabase.from('investments').insert({
+    const data = await cloudflare.addInvestment({
       user_id: userId,
       name: investment.name,
       symbol: investment.symbol,
@@ -244,17 +248,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       current_price: investment.currentPrice,
       purchase_date: new Date().toISOString(),
       type: investment.type
-    }).select().single();
+    });
     
-    if (data && !error) {
+    if (data && data.success) {
       setInvestments(prev => [...prev, {
         id: data.id,
-        name: data.name,
-        symbol: data.symbol,
-        quantity: Number(data.quantity),
-        costBasis: Number(data.purchase_price * data.quantity),
-        currentPrice: Number(data.current_price),
-        type: data.type
+        ...investment,
+        costBasis: Number(investment.costBasis)
       }]);
     }
   };
@@ -268,13 +268,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     if (investment.currentPrice !== undefined) updates.current_price = investment.currentPrice;
     if (investment.type !== undefined) updates.type = investment.type;
 
-    await supabase.from('investments').update(updates).eq('id', id);
+    await cloudflare.updateInvestment(id, updates);
     
     setInvestments(prev => prev.map(inv => inv.id === id ? { ...inv, ...investment } : inv));
   };
 
   const deleteInvestment = async (id: string) => {
-    await supabase.from('investments').delete().eq('id', id);
+    await cloudflare.deleteInvestment(id);
     setInvestments(prev => prev.filter(i => i.id !== id));
   };
 
