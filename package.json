@@ -13,6 +13,7 @@
     "build": "npx expo export --platform web --clear"
   },
   "dependencies": {
+    "@clerk/backend": "^2.29.0",
     "@clerk/clerk-expo": "^2.19.14",
     "@clerk/types": "^4.101.9",
     "@expo/vector-icons": "^15.0.2",

@@ -1,94 +1,20 @@
 /// <reference types="@cloudflare/workers-types" />
+import { createClerkClient } from '@clerk/backend';
 
 export interface Env {
     DB: D1Database;
     R2: R2Bucket;
+    CLERK_SECRET_KEY: string;
+    CLERK_PUBLISHABLE_KEY: string;
 }
 
 // Clerk configuration
-const CLERK_ISSUER = "https://clerk.budgetwise.isaac-trinidad.com";
-const CLERK_JWKS_URL = "https://clerk.budgetwise.isaac-trinidad.com/.well-known/jwks.json";
 const AUTHORIZED_PARTIES = [
     "https://budgetwise-ai.pages.dev",
     "https://clerk.budgetwise.isaac-trinidad.com",
     "http://localhost:8081",
     "http://localhost:19006"
 ];
-
-let cachedJWKs: any = null;
-let lastFetchTime = 0;
-
-async function fetchJWKs(jwksUrl: string) {
-    const now = Date.now();
-    if (!cachedJWKs || now - lastFetchTime > 3600000) { // Cache for 1 hour
-        const response = await fetch(jwksUrl);
-        cachedJWKs = await response.json();
-        lastFetchTime = now;
-    }
-    return cachedJWKs;
-}
-
-async function verifyClerkToken(token: string, env: any): Promise<string | null> {
-    try {
-        const parts = token.split('.');
-        if (parts.length !== 3) return null;
-
-        const [headerB64, payloadB64, signatureB64] = parts;
-        const header = JSON.parse(atob(headerB64));
-        const payload = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
-
-        // Environment-specific configuration
-        const issuer = env.CLERK_ISSUER || CLERK_ISSUER;
-        const jwksUrl = env.CLERK_JWKS_URL || CLERK_JWKS_URL;
-        const authorizedParties = env.AUTHORIZED_PARTIES ? JSON.parse(env.AUTHORIZED_PARTIES) : AUTHORIZED_PARTIES;
-
-        // Basic claim validation
-        const now = Math.floor(Date.now() / 1000);
-        if (payload.iss !== issuer) {
-            throw new Error(`Auth Error: Invalid token issuer. Expected: ${issuer}. Check your backend environment variables.`);
-        }
-        if (payload.exp < now) {
-            throw new Error(`Auth Error: Token expired. Please refresh your session.`);
-        }
-        if (payload.nbf && payload.nbf > now) {
-            throw new Error(`Auth Error: Token not yet valid.`);
-        }
-
-        // Secure request authorization (authorizedParties)
-        if (payload.azp && !authorizedParties.includes(payload.azp)) {
-            throw new Error(`Auth Error: Unauthorized origin (${payload.azp}). Please add this to AUTHORIZED_PARTIES in your backend.`);
-        }
-
-        // Full signature verification
-        const jwks = await fetchJWKs(jwksUrl);
-        const key = jwks.keys.find((k: any) => k.kid === header.kid);
-        if (!key) return null;
-
-        const cryptoKey = await crypto.subtle.importKey(
-            "jwk",
-            key,
-            { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-            false,
-            ["verify"]
-        );
-
-        const encoder = new TextEncoder();
-        const data = encoder.encode(`${headerB64}.${payloadB64}`);
-        const signature = Uint8Array.from(atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
-
-        const isValid = await crypto.subtle.verify(
-            "RSASSA-PKCS1-v1_5",
-            cryptoKey,
-            signature,
-            data
-        );
-
-        return isValid ? payload.sub : null;
-    } catch (e) {
-        console.error("Clerk token verification error:", e);
-        return null;
-    }
-}
 
 export default {
     async fetch(request: Request, env: Env): Promise<Response> {
@@ -109,24 +35,49 @@ export default {
 
         // Root / Health check
         if (path === "/" || path === "/api/health") {
-            return Response.json({ status: "ok", message: "Budgetwise AI API (Clerk Enabled)", version: "1.1.0" }, { headers: corsHeaders });
+            return Response.json({ status: "ok", message: "Budgetwise AI API (Clerk Enabled)", version: "1.2.0" }, { headers: corsHeaders });
         }
+
+        // Initialize Clerk Client
+        const clerkClient = createClerkClient({
+            secretKey: env.CLERK_SECRET_KEY,
+            publishableKey: env.CLERK_PUBLISHABLE_KEY,
+        });
 
         // Authenticate request
-        const authHeader = request.headers.get("Authorization");
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return new Response("Unauthorized", { status: 401, headers: corsHeaders });
-        }
-
-        const token = authHeader.split(" ")[1];
         let verifiedUserId: string | null = null;
+
         try {
-            verifiedUserId = await verifyClerkToken(token, env);
+            const requestState = await clerkClient.authenticateRequest(request, {
+                authorizedParties: AUTHORIZED_PARTIES,
+            });
+
+            // Handshake & Interstitial Logic
+            if (requestState.headers) {
+                const headers = new Headers(requestState.headers);
+                const location = headers.get('location');
+                if (location) {
+                    // Handle redirect handshake
+                    return new Response(null, { status: 307, headers: { 'Location': location, ...corsHeaders } });
+                }
+                
+                if (requestState.status === 'handshake') {
+                    throw new Error('Clerk: unexpected handshake without redirect');
+                }
+            }
+
+            const auth = requestState.toAuth();
+            verifiedUserId = auth ? auth.userId : null;
+
         } catch (e: any) {
-            return new Response(JSON.stringify({ error: e.message }), { status: 401, headers: corsHeaders });
+            console.error("Clerk authentication error:", e);
+            // Allow public endpoints if needed, but for now we assume all API routes are protected except health
+            // If we want to allow unauthenticated access to some routes, we should check path here.
+            // For now, we'll just return 401 if auth fails and we are not on a public route.
         }
 
         if (!verifiedUserId) {
+             // If authentication failed, return 401
             return new Response(JSON.stringify({ error: "Authentication failed" }), { status: 401, headers: corsHeaders });
         }
 
