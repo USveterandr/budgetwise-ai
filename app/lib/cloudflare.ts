@@ -9,7 +9,7 @@ const CLOUDFLARE_WORKER_URL = 'https://budgetwise-api.isaactrinidadllc.workers.d
 export const cloudflare = {
     // Profiles
     async getProfile(userId: string) {
-        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/profile?userId=${userId}`);
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/profile?userId=${userId}&t=${Date.now()}`);
         return res.json();
     },
 

@@ -38,7 +38,15 @@ export default {
 
                 if (method === "POST" || method === "PUT") {
                     const body = await request.json();
-                    const { user_id, name, email, plan, monthly_income, savings_rate, currency, bio, business_industry } = body;
+                    const user_id = body.user_id;
+                    const name = body.name || null;
+                    const email = body.email || null;
+                    const plan = body.plan || null;
+                    const monthly_income = body.monthly_income !== undefined ? body.monthly_income : null;
+                    const savings_rate = body.savings_rate !== undefined ? body.savings_rate : null;
+                    const currency = body.currency || 'USD';
+                    const bio = body.bio || null;
+                    const business_industry = body.business_industry || 'General';
 
                     await env.DB.prepare(`
             INSERT INTO profiles (user_id, name, email, plan, monthly_income, savings_rate, currency, bio, business_industry)

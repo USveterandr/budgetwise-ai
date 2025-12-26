@@ -17,33 +17,58 @@ export default function OnboardingScreen() {
   const [industry, setIndustry] = useState('General');
   const [loading, setLoading] = useState(false);
 
+  // Sync name from user object if it becomes available after mount
+  React.useEffect(() => {
+    if (user?.name && !name) {
+      setName(user.name);
+    }
+  }, [user?.name]);
+
   const handleComplete = async () => {
-    if (!name || !income) {
-      Alert.alert('Required Fields', 'Please provide your name and monthly income to continue.');
+    // Sanitize income (remove commas, currency symbols, etc.)
+    const cleanIncome = income.replace(/[^0-9.]/g, '');
+    const incomeVal = parseFloat(cleanIncome);
+
+    if (!name.trim()) {
+      Alert.alert('Missing Name', 'Please provide your name.');
+      return;
+    }
+    if (!cleanIncome || isNaN(incomeVal) || incomeVal <= 0) {
+      Alert.alert('Invalid Income', 'Please provide a valid monthly income greater than 0.');
       return;
     }
 
     setLoading(true);
     try {
-      await cloudflare.updateProfile({
+      console.log('Completing onboarding for user:', user?.id);
+      const updateData = {
         user_id: user?.id,
-        name,
+        name: name.trim(),
         email: user?.email,
-        monthly_income: parseFloat(income),
+        monthly_income: incomeVal,
         currency,
         business_industry: industry,
         updated_at: new Date().toISOString()
-      });
+      };
       
-      // Refresh the global auth state to mark onboarding as complete
-      await refreshProfile();
+      const result = await cloudflare.updateProfile(updateData);
+      console.log('Profile update result:', result);
       
-      Alert.alert('Welcome!', 'Your profile has been created successfully.', [
-        { text: 'Let\'s Go!', onPress: () => router.replace('/(tabs)/dashboard') }
-      ]);
-    } catch (error) {
-      console.error('Onboarding error:', error);
-      Alert.alert('Error', 'Failed to save your profile. Please try again.');
+      if (result.success) {
+        // Refresh the global auth state
+        await refreshProfile();
+        console.log('Profile refreshed in AuthContext');
+        
+        // Give a small delay to ensure state updates before navigation
+        setTimeout(() => {
+          router.replace('/(tabs)/dashboard');
+        }, 500);
+      } else {
+        throw new Error(result.error || 'Server returned failure');
+      }
+    } catch (error: any) {
+      console.error('Onboarding error details:', error);
+      Alert.alert('Setup Failed', `We couldn't save your profile: ${error.message || 'Network error'}. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -105,6 +130,26 @@ export default function OnboardingScreen() {
                     </TouchableOpacity>
                   ))}
                 </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Business or Profession</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.industrySelector}>
+                  {[
+                    "Plumber", "Electrician", "Truck Driver", "Insurance Agent",
+                    "Real Estate Agent", "Graphic Designer", "Software Developer",
+                    "Restaurant Owner", "Retail Store", "Construction", "Consultant",
+                    "Landscaping", "Auto Mechanic", "Other"
+                  ].map((ind) => (
+                    <TouchableOpacity 
+                      key={ind}
+                      style={[styles.industryChip, industry === ind && styles.activeChip]}
+                      onPress={() => setIndustry(ind)}
+                    >
+                      <Text style={[styles.chipText, industry === ind && styles.activeChipText]}>{ind}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
 
               <TouchableOpacity 
@@ -204,6 +249,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
+  industrySelector: {
+    flexDirection: 'row',
+    marginTop: 4,
+  },
   currencyChip: {
     paddingVertical: 12,
     paddingHorizontal: 24,
@@ -211,6 +260,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(30, 41, 59, 0.5)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  industryChip: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    marginRight: 8,
   },
   activeChip: {
     backgroundColor: Colors.primary,

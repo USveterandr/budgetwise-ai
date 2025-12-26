@@ -105,6 +105,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
             onboardingComplete
           };
 
+          console.log('Setting user in AuthContext:', newUser.id, 'Onboarding complete:', newUser.onboardingComplete);
           setUser(newUser);
 
         } catch (error) {
@@ -343,14 +344,17 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         onboardingComplete = true;
       }
 
-      setUser({
+      const updatedUser: User = {
         id: firebaseUser.uid,
         name: profile?.name || firebaseUser.displayName || 'User',
         email: firebaseUser.email || '',
         plan: plan as any,
         emailVerified: firebaseUser.emailVerified,
         onboardingComplete
-      });
+      };
+
+      console.log('Refreshing user in AuthContext:', updatedUser.id, 'Onboarding complete:', updatedUser.onboardingComplete);
+      setUser(updatedUser);
     } catch (e) {
       console.error('Error refreshing profile:', e);
     }
