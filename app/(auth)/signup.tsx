@@ -314,7 +314,7 @@ export default function SignupScreen() {
                   <Text style={styles.resendText}>Resend Code</Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
+                <TouchableOpacity onPress={() => router.replace('/login')}>
                   <Text style={styles.loginText}>Back to Login</Text>
                 </TouchableOpacity>
               </View>
@@ -388,7 +388,7 @@ export default function SignupScreen() {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account?</Text>
-            <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
+            <TouchableOpacity onPress={() => router.replace('/login')}>
               <Text style={styles.link}> Sign In</Text>
             </TouchableOpacity>
           </View>

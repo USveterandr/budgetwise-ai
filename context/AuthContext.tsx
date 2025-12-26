@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { supabase } from '../app/lib/supabase';
+import { db } from '../firebase';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { useUser, useAuth as useClerkAuth, useClerk } from '@clerk/clerk-expo';
 import { User, SubscriptionPlan } from '../types';
 
@@ -73,6 +75,30 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
           }
         } catch (error) {
           console.error('Error syncing to Supabase:', error);
+        }
+
+        // Sync to Firebase Firestore
+        try {
+          const userRef = doc(db, 'profiles', clerkUser.id);
+          const userSnap = await getDoc(userRef);
+
+          if (!userSnap.exists()) {
+            await setDoc(userRef, {
+              user_id: clerkUser.id,
+              name,
+              email,
+              plan,
+              email_verified: newUser.emailVerified,
+              created_at: new Date().toISOString()
+            });
+          } else {
+            const currentData = userSnap.data();
+            if (currentData.plan !== plan) {
+              await updateDoc(userRef, { plan });
+            }
+          }
+        } catch (error) {
+          console.error('Error syncing to Firebase:', error);
         }
       } else {
         setUser(null);
@@ -248,6 +274,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       { user_id: userId, category: 'Utilities', budget_limit: 250, spent: 0, month },
     ];
     await supabase.from('budgets').insert(defaultBudgets);
+    
+    // Sync to Firestore
+    try {
+      for (const budget of defaultBudgets) {
+        const budgetRef = doc(db, 'budgets', `${userId}_${budget.category}_${month}`);
+        await setDoc(budgetRef, budget);
+      }
+    } catch (error) {
+      console.error('Error syncing default budgets to Firebase:', error);
+    }
   };
 
   const logout = async () => {

@@ -50,7 +50,7 @@ export default function LandingPage() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <View style={styles.logo}><Ionicons name="wallet" size={28} color={Colors.primary} /><Text style={styles.logoText}>BudgetWise AI</Text></View>
-          <TouchableOpacity onPress={() => router.push('/(auth)/login')} style={styles.loginBtn}><Text style={styles.loginText}>Sign In</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/login')} style={styles.loginBtn}><Text style={styles.loginText}>Sign In</Text></TouchableOpacity>
         </View>
 
         <View style={styles.badge}><Ionicons name="flame" size={14} color="#FFF" /><Text style={styles.badgeText}>LIMITED: 50% OFF</Text></View>
@@ -60,7 +60,7 @@ export default function LandingPage() {
         <Text style={styles.subtitle}>Join 50,000+ users who've unlocked their wealth potential with AI-powered finance management.</Text>
 
         <View style={styles.ctas}>
-          <Button title="Start Free Trial" onPress={() => router.push('/(auth)/signup')} size="large" />
+          <Button title="Create Account" onPress={() => router.push('/signup')} size="large" />
           <Button title="Learn More" onPress={() => router.push('/learn-more')} variant="outline" size="large" style={{ marginTop: 12 }} />
         </View>
 

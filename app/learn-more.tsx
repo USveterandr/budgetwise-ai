@@ -71,12 +71,12 @@ export default function LearnMorePage() {
           Join thousands of users who have already taken control of their financial future with BudgetWise AI.
         </Text>
         <Button 
-          title="Get Started Free" 
-          onPress={() => router.push('/(auth)/signup')} 
+          title="Create Account" 
+          onPress={() => router.push('/signup')} 
           size="large" 
           style={styles.ctaButton}
         />
-        <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+        <TouchableOpacity onPress={() => router.push('/login')}>
           <Text style={styles.signInText}>Already have an account? Sign In</Text>
         </TouchableOpacity>
       </View>

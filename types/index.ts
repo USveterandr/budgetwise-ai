@@ -70,9 +70,12 @@ export type SubscriptionTier = 'individual' | 'family' | 'business' | 'enterpris
 
 // User types
 export interface User {
+  id?: string;
   email: string;
   passwordHash?: string; // Optional for OAuth users
   name: string;
+  plan?: 'Starter' | 'Professional' | 'Business' | 'Enterprise';
+  emailVerified?: boolean;
   resetToken?: string;
   resetTokenExpiry?: number;
   isPro?: boolean;
