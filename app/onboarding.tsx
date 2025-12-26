@@ -34,15 +34,21 @@ export default function OnboardingScreen() {
 
   // Navigate to dashboard when onboarding is complete
   React.useEffect(() => {
+    console.log('Checking onboarding status:', user?.onboardingComplete);
     if (user?.onboardingComplete) {
+      console.log('Onboarding complete, navigating to dashboard...');
       router.replace('/(tabs)/dashboard');
     }
   }, [user?.onboardingComplete]);
 
   const handleComplete = async () => {
+    console.log('Complete Profile button pressed');
+    
     // Sanitize income (remove commas, currency symbols, etc.)
     const cleanIncome = income.replace(/[^0-9.]/g, '');
     const incomeVal = parseFloat(cleanIncome);
+
+    console.log('Form Data:', { name, income: cleanIncome, currency, industry });
 
     if (!name.trim()) {
       Alert.alert('Missing Name', 'Please provide your name.');
@@ -54,6 +60,7 @@ export default function OnboardingScreen() {
     }
 
     if (!user?.id) {
+      console.error('User ID missing in handleComplete');
       Alert.alert('Error', 'User information missing. Please try logging in again.');
       return;
     }
@@ -249,6 +256,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 32,
     paddingTop: 60,
+    paddingBottom: 100,
   },
   header: {
     marginBottom: 40,
