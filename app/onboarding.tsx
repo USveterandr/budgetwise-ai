@@ -9,7 +9,7 @@ import { cloudflare } from './lib/cloudflare';
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { user, refreshProfile } = useAuth();
+  const { user, refreshProfile, getToken } = useAuth();
   
   const [name, setName] = useState(user?.name || '');
   const [income, setIncome] = useState('');
@@ -51,7 +51,10 @@ export default function OnboardingScreen() {
         updated_at: new Date().toISOString()
       };
       
-      const result = await cloudflare.updateProfile(updateData);
+      const idToken = await getToken();
+      if (!idToken) throw new Error('No authentication token found');
+
+      const result = await cloudflare.updateProfile(updateData, idToken);
       console.log('Profile update result:', result);
       
       if (result.success) {
@@ -77,7 +80,7 @@ export default function OnboardingScreen() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient colors={['#0F172A', '#1E1B4B', '#0F172A']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#020617', '#0F172A', '#020617']} style={StyleSheet.absoluteFill} />
       
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView 
@@ -160,9 +163,11 @@ export default function OnboardingScreen() {
                 <LinearGradient
                   colors={[Colors.primary, '#6366F1']}
                   style={styles.gradientButton}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
                 >
                   <Text style={styles.buttonText}>
-                    {loading ? 'Setting up...' : 'Complete Profile'}
+                    {loading ? 'Propagating...' : 'Complete Profile'}
                   </Text>
                   <Ionicons name="arrow-forward" size={20} color="#FFF" style={{ marginLeft: 8 }} />
                 </LinearGradient>
@@ -216,22 +221,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   input: {
-    backgroundColor: 'rgba(30, 41, 59, 0.7)',
-    borderRadius: 16,
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    borderRadius: 20,
     padding: 20,
     color: '#FFF',
     fontSize: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    fontWeight: '600',
   },
   incomeInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(30, 41, 59, 0.7)',
-    borderRadius: 16,
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    borderRadius: 20,
     paddingHorizontal: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   currencyPrefix: {
     fontSize: 20,

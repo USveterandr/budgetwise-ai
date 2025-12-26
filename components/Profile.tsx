@@ -5,7 +5,6 @@ import { Colors } from '../constants/Colors';
 import { useAuth } from '../context/AuthContext';
 import { useFinance } from '../context/FinanceContext';
 import { cloudflare } from '../app/lib/cloudflare';
-import { auth } from '../firebase';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface Goal {
@@ -33,7 +32,7 @@ interface UserProfile {
 }
 
 export function Profile() {
-  const { user, upgradePlan, getSubscriptionPlans, refreshProfile } = useAuth();
+  const { user, upgradePlan, getSubscriptionPlans, refreshProfile, getToken } = useAuth();
   const { investments } = useFinance();
   const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
@@ -50,7 +49,7 @@ export function Profile() {
     const loadProfile = async () => {
       if (user?.id) {
         try {
-          const idToken = await auth.currentUser?.getIdToken();
+          const idToken = await getToken();
           if (!idToken) return;
           
           const data = await cloudflare.getProfile(user.id, idToken);
@@ -119,7 +118,7 @@ export function Profile() {
         
       try {
         setLoading(true);
-        const idToken = await auth.currentUser?.getIdToken();
+        const idToken = await getToken();
         if (!idToken) return;
 
         const updatedProfile = {
