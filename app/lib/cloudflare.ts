@@ -4,7 +4,7 @@
  */
 
 // Placeholder URL - update this after deploying the worker
-const CLOUDFLARE_WORKER_URL = 'https://budgetwise-api.isaactrinidadllc.workers.dev';
+const CLOUDFLARE_WORKER_URL = 'https://budgetwise-backend.isaactrinidadllc.workers.dev';
 
 export const cloudflare = {
     // Profiles

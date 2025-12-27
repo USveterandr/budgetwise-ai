@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import { nanoid } from 'nanoid'
 import * as XLSX from 'xlsx'
 
@@ -10,6 +11,76 @@ type Bindings = {
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
+
+app.use('/*', cors({
+  origin: '*',
+  allowHeaders: ['Content-Type', 'Authorization'],
+  allowMethods: ['POST', 'GET', 'OPTIONS']
+}))
+
+// =====================
+// User Profile Management
+// =====================
+
+// GET /api/profile?userId=...
+app.get('/api/profile', async (c) => {
+  const userId = c.req.query('userId')
+  if (!userId) return c.json({ error: 'userId required' }, 400)
+
+  const user = await c.env.DB.prepare(
+    "SELECT * FROM users WHERE id = ?"
+  ).bind(userId).first()
+
+  if (!user) return c.json({ error: 'User not found' }, 404)
+  
+  // Map DB columns to expected profile format if needed, or return as is
+  return c.json({
+    user_id: user.id,
+    ...user
+  })
+})
+
+// POST /api/profile
+app.post('/api/profile', async (c) => {
+  const body = await c.req.json()
+  const { user_id, email, name, plan, monthly_income, currency, business_industry, bio, savings_rate } = body
+
+  if (!user_id) return c.json({ error: 'user_id required' }, 400)
+
+  // Check if user exists
+  const existing = await c.env.DB.prepare(
+    "SELECT id FROM users WHERE id = ?"
+  ).bind(user_id).first()
+
+  if (existing) {
+    // Update
+    await c.env.DB.prepare(`
+      UPDATE users SET 
+        name = COALESCE(?, name),
+        email = COALESCE(?, email),
+        plan = COALESCE(?, plan),
+        monthly_income = COALESCE(?, monthly_income),
+        currency = COALESCE(?, currency),
+        business_industry = COALESCE(?, business_industry),
+        bio = COALESCE(?, bio),
+        savings_rate = COALESCE(?, savings_rate),
+        updated_at = ?
+      WHERE id = ?
+    `).bind(
+      name, email, plan, monthly_income, currency, business_industry, bio, savings_rate, Date.now(), user_id
+    ).run()
+  } else {
+    // Insert
+    await c.env.DB.prepare(`
+      INSERT INTO users (id, email, name, plan, monthly_income, currency, business_industry, bio, savings_rate, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      user_id, email, name, plan || 'Starter', monthly_income, currency || 'USD', business_industry, bio, savings_rate, Date.now(), Date.now()
+    ).run()
+  }
+
+  return c.json({ success: true })
+})
 
 // =====================
 // Email Verification
