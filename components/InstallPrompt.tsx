@@ -15,6 +15,7 @@ export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const slideAnim = useState(new Animated.Value(100))[0]; // Start 100px below
 
   useEffect(() => {
@@ -37,6 +38,25 @@ export function InstallPrompt() {
         // Dismissal period expired, clear it
         localStorage.removeItem('install-prompt-dismissed-until');
       }
+    }
+
+    // Detect iOS
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
+    setIsIOS(isIosDevice);
+
+    if (isIosDevice) {
+      // Show prompt for iOS after delay
+      setTimeout(() => {
+        setShowPrompt(true);
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 50,
+          friction: 7,
+        }).start();
+      }, 3000);
+      return;
     }
 
     // Listen for the beforeinstallprompt event
@@ -76,6 +96,11 @@ export function InstallPrompt() {
   }, [slideAnim]);
 
   const handleInstallClick = async () => {
+    if (isIOS) {
+      alert('To install on iOS:\n1. Tap the Share button (square with arrow)\n2. Scroll down and tap "Add to Home Screen"');
+      return;
+    }
+
     if (!deferredPrompt) return;
 
     // Show the install prompt
@@ -113,7 +138,7 @@ export function InstallPrompt() {
   };
 
   // Don't show on native apps or if already installed
-  if (Platform.OS !== 'web' || isInstalled || !showPrompt || !deferredPrompt) {
+  if (Platform.OS !== 'web' || isInstalled || !showPrompt || (!deferredPrompt && !isIOS)) {
     return null;
   }
 
@@ -141,7 +166,9 @@ export function InstallPrompt() {
           </LinearGradient>
           <View style={styles.textContainer}>
             <Text style={styles.title}>Install Budgetwise AI</Text>
-            <Text style={styles.subtitle}>Quick access • Offline mode • Native experience</Text>
+            <Text style={styles.subtitle}>
+              {isIOS ? "Tap Share -> Add to Home Screen" : "Quick access • Offline mode • Native experience"}
+            </Text>
           </View>
           <View style={styles.actions}>
             <TouchableOpacity 
@@ -155,7 +182,7 @@ export function InstallPrompt() {
                 end={{ x: 1, y: 1 }}
                 style={styles.installGradient}
               >
-                <Text style={styles.installText}>Install</Text>
+                <Text style={styles.installText}>{isIOS ? "How?" : "Install"}</Text>
               </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity 

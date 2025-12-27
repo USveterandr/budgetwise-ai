@@ -50,6 +50,8 @@ export default function ForgotPasswordScreen() {
           'Your password has been updated successfully. You are now signed in.',
           [{ text: 'Great!', onPress: () => router.replace('/(tabs)/dashboard') }]
         );
+      } else {
+        Alert.alert('Error', 'Unable to verify code. Please try again or request a new code.');
       }
     } catch (error: any) {
       console.error('Reset password error:', error);

@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Image, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { useAuth } from '../../context/AuthContext';
 import { useEffect } from "react";
@@ -26,6 +27,23 @@ export default function BasicInfo() {
     router.push("/onboarding/financial-setup");
   };
 
+  const pickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+
+      if (!result.canceled) {
+        updateData({ avatarUri: result.assets[0].uri });
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#020617', '#0F172A', '#020617']} style={StyleSheet.absoluteFill} />
@@ -42,11 +60,17 @@ export default function BasicInfo() {
             </View>
 
             <View style={styles.avatarContainer}>
-              <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person" size={40} color="#94A3B8" />
-              </View>
-              <TouchableOpacity style={styles.uploadButton}>
-                <Text style={styles.uploadButtonText}>Upload Photo</Text>
+              <TouchableOpacity onPress={pickImage} style={styles.avatarPlaceholder}>
+                {data.avatarUri ? (
+                  <Image source={{ uri: data.avatarUri }} style={styles.avatarImage} />
+                ) : (
+                  <Ionicons name="person" size={40} color="#94A3B8" />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
+                <Text style={styles.uploadButtonText}>
+                  {data.avatarUri ? 'Change Photo' : 'Upload Photo'}
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -132,6 +156,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     marginBottom: 16,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   uploadButton: {
     paddingVertical: 8,

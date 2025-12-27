@@ -6,6 +6,7 @@ interface OnboardingData {
   currency: string;
   industry: string;
   goals: string;
+  avatarUri?: string;
 }
 
 interface OnboardingContextType {

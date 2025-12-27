@@ -171,6 +171,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         await setActive({ session: result.createdSessionId });
         return true;
       }
+      console.warn('Clerk reset password status:', result.status);
       return false;
     } catch (error) {
       console.error('Clerk reset password error:', error);

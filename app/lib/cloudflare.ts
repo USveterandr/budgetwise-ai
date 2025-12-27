@@ -27,6 +27,27 @@ export const cloudflare = {
         return res.json();
     },
 
+    async uploadAvatar(userId: string, imageUri: string, idToken: string) {
+        const formData = new FormData();
+        formData.append('userId', userId);
+        
+        const filename = imageUri.split('/').pop() || 'avatar.jpg';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+        // @ts-ignore
+        formData.append('avatar', { uri: imageUri, name: filename, type });
+
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/profile/avatar`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: formData
+        });
+        return res.json();
+    },
+
     // Transactions
     async getTransactions(userId: string, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/transactions?userId=${userId}`, {

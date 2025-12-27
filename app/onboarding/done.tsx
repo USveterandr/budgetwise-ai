@@ -22,6 +22,16 @@ export default function Done() {
       const idToken = await getToken();
       if (!idToken) throw new Error('Authentication token missing');
 
+      // Upload Avatar if exists
+      if (data.avatarUri) {
+        try {
+          await cloudflare.uploadAvatar(user.id, data.avatarUri, idToken);
+        } catch (avatarErr) {
+          console.error('Avatar upload failed:', avatarErr);
+          // Continue even if avatar fails
+        }
+      }
+
       const cleanIncome = (data.income || '').replace(/[^0-9.]/g, '');
       const incomeVal = parseFloat(cleanIncome);
 
