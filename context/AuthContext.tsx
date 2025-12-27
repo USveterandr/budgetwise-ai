@@ -244,7 +244,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
           investments: 5,
           aiInsights: true,
           prioritySupport: false,
-          familySharing: false
+          familySharing: false,
+          maxDevices: 3
         }
       },
       {
@@ -264,7 +265,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
           investments: 20,
           aiInsights: true,
           prioritySupport: true,
-          familySharing: true
+          familySharing: true,
+          maxDevices: 5
         }
       },
       {
@@ -284,7 +286,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
           investments: Infinity,
           aiInsights: true,
           prioritySupport: true,
-          familySharing: true
+          familySharing: true,
+          maxDevices: 10
         }
       }
     ];

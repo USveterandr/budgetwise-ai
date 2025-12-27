@@ -23,7 +23,11 @@ export function InstallPrompt() {
     if (Platform.OS !== 'web') return;
 
     // Check if app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    if (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true ||
+      localStorage.getItem('budgetwise_installed') === 'true'
+    ) {
       setIsInstalled(true);
       return;
     }
@@ -112,6 +116,7 @@ export function InstallPrompt() {
     if (outcome === 'accepted') {
       console.log('User accepted the install prompt');
       setIsInstalled(true);
+      localStorage.setItem('budgetwise_installed', 'true');
       localStorage.removeItem('install-prompt-dismissed-until');
     } else {
       console.log('User dismissed the install prompt');
@@ -165,9 +170,9 @@ export function InstallPrompt() {
             <Ionicons name="download-outline" size={28} color="#FFF" />
           </LinearGradient>
           <View style={styles.textContainer}>
-            <Text style={styles.title}>Install Budgetwise AI</Text>
+            <Text style={styles.title}>{isIOS ? "Add to Home Screen" : "Install Budgetwise"}</Text>
             <Text style={styles.subtitle}>
-              {isIOS ? "Tap Share -> Add to Home Screen" : "Quick access • Offline mode • Native experience"}
+              {isIOS ? "For the best full-screen experience" : "Quick access • Offline mode • Native experience"}
             </Text>
           </View>
           <View style={styles.actions}>

@@ -168,5 +168,6 @@ export interface SubscriptionPlan {
     aiInsights: boolean;
     prioritySupport: boolean;
     familySharing: boolean;
+    maxDevices: number;
   };
 }
