@@ -1,0 +1,19 @@
+{
+  "name": "budgetwise-backend",
+  "version": "1.0.0",
+  "description": "BudgetWise AI Backend",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "hono": "^3.12.0",
+    "nanoid": "^3.3.7",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240101.0",
+    "wrangler": "^3.22.0"
+  }
+}
