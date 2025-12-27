@@ -14,7 +14,7 @@ export default function Done() {
   const { user, getToken, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  const handleFinish = async () => {
+  const handleFinish = async (redirectRoute: string) => {
     if (!user?.id) return;
 
     setLoading(true);
@@ -54,8 +54,8 @@ export default function Done() {
 
       await refreshProfile();
       
-      // Redirect to Receipts
-      router.replace("/(tabs)/receipts");
+      // Redirect
+      router.replace(redirectRoute as any);
     } catch (err: any) {
       Alert.alert('Setup Failed', err.message || 'An error occurred');
     } finally {
@@ -79,7 +79,7 @@ export default function Done() {
 
           <TouchableOpacity 
             style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleFinish}
+            onPress={() => handleFinish("/(tabs)/receipts")}
             disabled={loading}
           >
             <LinearGradient
@@ -97,6 +97,14 @@ export default function Done() {
                 </>
               )}
             </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.secondaryButton, loading && styles.buttonDisabled]}
+            onPress={() => handleFinish("/(tabs)/dashboard")}
+            disabled={loading}
+          >
+            <Text style={styles.secondaryButtonText}>Go to Dashboard</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -157,5 +165,16 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 18,
     fontWeight: '800',
+  },
+  secondaryButton: {
+    marginTop: 16,
+    padding: 16,
+    width: '100%',
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    color: '#94A3B8',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
