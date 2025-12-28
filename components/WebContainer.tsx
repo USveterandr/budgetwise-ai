@@ -1,18 +1,33 @@
-import React, { ReactNode } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import React, { ReactNode, useEffect, useState } from 'react';
+import { View, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 
 interface WebContainerProps {
   children: ReactNode;
 }
 
 export const WebContainer: React.FC<WebContainerProps> = ({ children }) => {
+  const [isDashboard, setIsDashboard] = useState(false);
+  const { width: windowWidth } = useWindowDimensions();
+
+  // Check if we're on the dashboard route by inspecting the current URL
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsDashboard(window.location.pathname.includes('/dashboard'));
+    }
+  }, []);
+
   if (Platform.OS !== 'web') {
     return <View style={styles.container}>{children}</View>;
   }
 
+  // For dashboard page, use more width if the window is wide enough
+  const webContainerStyle = isDashboard && windowWidth > 768 
+    ? [styles.webContainer, styles.dashboardContainer] 
+    : styles.webContainer;
+
   return (
     <View style={styles.webBackground}>
-      <View style={styles.webContainer}>
+      <View style={webContainerStyle}>
         {children}
       </View>
     </View>
@@ -44,4 +59,8 @@ const styles = StyleSheet.create({
     elevation: 5,
     overflow: 'hidden', // Clip content to container
   },
+  dashboardContainer: {
+    maxWidth: 1200, // Wider for dashboard on larger screens
+    marginHorizontal: 20, // Add some margin on large screens
+  }
 });
