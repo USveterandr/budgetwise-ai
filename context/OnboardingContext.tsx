@@ -1,44 +1,47 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
-// Dynamically import AsyncStorage to handle web compatibility
-let AsyncStorage: any = null;
+// Properly handle AsyncStorage for both web and native environments
+let storage: any;
 
-// Check if we're in a React Native environment
-if (typeof window !== 'undefined' && (window as any).document) {
+// Check if we're in a browser environment
+if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
   // Web environment - use localStorage
-  AsyncStorage = {
-    getItem: async (key: string) => {
-      return localStorage.getItem(key);
+  storage = {
+    getItem: (key: string) => {
+      return Promise.resolve(window.localStorage.getItem(key));
     },
-    setItem: async (key: string, value: string) => {
-      localStorage.setItem(key, value);
+    setItem: (key: string, value: string) => {
+      window.localStorage.setItem(key, value);
+      return Promise.resolve();
     },
-    removeItem: async (key: string) => {
-      localStorage.removeItem(key);
+    removeItem: (key: string) => {
+      window.localStorage.removeItem(key);
+      return Promise.resolve();
     }
   };
 } else {
-  // Native environment - import react-native-async-storage
-  import('@react-native-async-storage/async-storage').then(module => {
-    AsyncStorage = module.default;
-  }).catch(() => {
-    console.warn('AsyncStorage not available, using memory fallback');
+  // Native environment - use AsyncStorage
+  try {
+    const { default: AsyncStorage } = require('@react-native-async-storage/async-storage');
+    storage = AsyncStorage;
+  } catch (e) {
+    console.warn('AsyncStorage not available, using in-memory fallback');
     // Fallback to in-memory storage
-    const storage: Record<string, string> = {};
-    AsyncStorage = {
+    const memoryStorage: Record<string, string> = {};
+    storage = {
       getItem: async (key: string) => {
-        return Promise.resolve(storage[key] || null);
+        return memoryStorage[key] || null;
       },
       setItem: async (key: string, value: string) => {
-        storage[key] = value;
+        memoryStorage[key] = value;
         return Promise.resolve();
       },
       removeItem: async (key: string) => {
-        delete storage[key];
+        delete memoryStorage[key];
         return Promise.resolve();
       }
     };
-  });
+  }
 }
 
 interface OnboardingData {
@@ -69,11 +72,11 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Load data from AsyncStorage on initialization
+  // Load data from storage on initialization
   useEffect(() => {
     const loadData = async () => {
       try {
-        const savedData = await AsyncStorage.getItem('onboardingData');
+        const savedData = await storage.getItem('onboardingData');
         if (savedData) {
           setData(JSON.parse(savedData));
         }
@@ -87,12 +90,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     loadData();
   }, []);
 
-  // Save data to AsyncStorage whenever it changes
+  // Save data to storage whenever it changes
   useEffect(() => {
     if (isInitialized) {
       const saveData = async () => {
         try {
-          await AsyncStorage.setItem('onboardingData', JSON.stringify(data));
+          await storage.setItem('onboardingData', JSON.stringify(data));
         } catch (error) {
           console.error('Failed to save onboarding data:', error);
         }
@@ -119,7 +122,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     });
     
     try {
-      await AsyncStorage.removeItem('onboardingData');
+      await storage.removeItem('onboardingData');
     } catch (error) {
       console.error('Failed to reset onboarding data:', error);
     }

@@ -10,15 +10,18 @@ export default function Goals() {
   const router = useRouter();
   const { data, updateData } = useOnboarding();
   const [isLoaded, setIsLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Add error handling to ensure context is available
   useEffect(() => {
     try {
       if (data) {
         setIsLoaded(true);
+        setError(null);
       }
-    } catch (error) {
-      console.error("Error in Goals component:", error);
+    } catch (err) {
+      console.error("Error in Goals component:", err);
+      setError("Failed to load onboarding data");
       Alert.alert("Error", "An error occurred while loading the page. Please try again.");
     }
   }, [data]);
@@ -26,6 +29,28 @@ export default function Goals() {
   const handleNext = () => {
     router.push("/onboarding/done");
   };
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: '#FFF' }}>Error: {error}</Text>
+        <TouchableOpacity 
+          style={[styles.button, { marginTop: 20 }]}
+          onPress={() => window.location.reload()} // For web, reload the page
+        >
+          <LinearGradient
+            colors={[Colors.primary, '#6366F1']}
+            style={styles.gradientButton}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+          >
+            <Text style={styles.buttonText}>Retry</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   // Show loading state until context is properly loaded
   if (!isLoaded) {
