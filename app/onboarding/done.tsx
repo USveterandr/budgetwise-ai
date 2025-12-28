@@ -79,7 +79,7 @@ export default function Done() {
 
           <TouchableOpacity 
             style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={() => handleFinish("/(tabs)/receipts")}
+            onPress={() => handleFinish("/(tabs)/dashboard")}
             disabled={loading}
           >
             <LinearGradient
@@ -92,8 +92,8 @@ export default function Done() {
                 <ActivityIndicator color="#FFF" />
               ) : (
                 <>
-                  <Text style={styles.buttonText}>Scan Receipts</Text>
-                  <Ionicons name="scan" size={20} color="#FFF" style={{ marginLeft: 8 }} />
+                  <Text style={styles.buttonText}>Go to Dashboard</Text>
+                  <Ionicons name="arrow-forward" size={20} color="#FFF" style={{ marginLeft: 8 }} />
                 </>
               )}
             </LinearGradient>

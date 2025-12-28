@@ -80,7 +80,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
               email: profile.email || clerkUser.emailAddresses[0]?.emailAddress || '',
               plan: (profile.plan || 'Starter') as any,
               emailVerified: clerkUser.emailAddresses[0]?.verification.status === 'verified',
-              onboardingComplete: !!(profile.monthly_income && profile.monthly_income > 0)
+              onboardingComplete: !!(profile.monthly_income && profile.monthly_income > 0),
+              businessIndustry: profile.business_industry
             });
           }
         } catch (error) {
@@ -213,7 +214,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
             ...prev,
             name: profile.name || prev.name,
             plan: (profile.plan || prev.plan) as any,
-            onboardingComplete: newOnboardingStatus
+            onboardingComplete: newOnboardingStatus,
+            businessIndustry: profile.business_industry || prev.businessIndustry
           } : null);
         } else {
             console.warn('[AuthContext] Profile refresh returned empty or invalid data');

@@ -85,6 +85,7 @@ export interface User {
   trialEndsAt?: number; // Timestamp
   provider?: 'email' | 'google' | 'apple';
   onboardingComplete?: boolean;
+  businessIndustry?: string;
 }
 
 // Goal types
