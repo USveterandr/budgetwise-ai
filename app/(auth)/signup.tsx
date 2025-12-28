@@ -9,7 +9,7 @@ import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 
 export default function SignupScreen() {
-  const { signup, verifySignup } = useAuth();
+  const { signup, verifySignup, loading: authLoading } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,6 +19,10 @@ export default function SignupScreen() {
   const [error, setError] = useState('');
 
   const handleSignup = async () => {
+    if (authLoading) {
+      setError('Please wait for authentication to initialize...');
+      return;
+    }
     if (!name || !email || !password) {
       setError('Please fill in all fields');
       return;
@@ -41,7 +45,11 @@ export default function SignupScreen() {
           router.replace('/onboarding');
         }
       } else {
-        setError(`Failed to create account. Status: ${result.status}`);
+        if (result.status === 'clerk_not_loaded') {
+          setError('Authentication service not ready. Please try again in a moment.');
+        } else {
+          setError(`Failed to create account. Status: ${result.status}`);
+        }
       }
     } catch (err: any) {
       console.error('Signup error:', err);

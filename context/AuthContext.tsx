@@ -119,7 +119,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   };
 
   const signup = async (name: string, email: string, password: string): Promise<{ success: boolean; status?: string }> => {
-    if (!signUpLoaded || !signUp) return { success: false };
+    if (!signUpLoaded || !signUp) return { success: false, status: 'clerk_not_loaded' };
     try {
       const result = await signUp.create({
         emailAddress: email,
