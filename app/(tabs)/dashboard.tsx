@@ -7,29 +7,13 @@ import { Card } from '../../components/ui/Card';
 import { useAuth } from '../../context/AuthContext';
 import { useFinance } from '../../context/FinanceContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ProfessionDashboard } from '../../components/ProfessionDashboard';
 
 export default function DashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { transactions, netWorth, monthlyIncome, monthlyExpenses } = useFinance();
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
-  
-  const INDUSTRY_INSIGHTS: Record<string, string> = {
-    "Plumber": "Track material costs and billable hours separately to maximize margins.",
-    "Electrician": "Monitor copper prices and bulk buy materials when rates are low.",
-    "Truck Driver": "Track fuel efficiency and maintenance to reduce operating costs.",
-    "Real Estate Agent": "Set aside taxes from every commission check immediately.",
-    "Software Developer": "Invest in automation tools to increase your billable output.",
-    "Restaurant Owner": "Watch food cost percentage daily to minimize waste.",
-    "Retail Store": "Analyze foot traffic to optimize staffing schedules.",
-    "Construction": "Track project milestones to manage cash flow gaps.",
-    "Consultant": "Focus on recurring revenue to stabilize monthly income.",
-    "Landscaping": "Build a cash reserve in peak months for the off-season.",
-    "Auto Mechanic": "Upsell preventative maintenance to increase ticket value.",
-    "Other": "Focus on building a strong financial foundation."
-  };
-
-  const industryInsight = user?.businessIndustry ? INDUSTRY_INSIGHTS[user.businessIndustry] : null;
 
   useEffect(() => {
     const recent = [...transactions].slice(0, 3);
@@ -87,21 +71,9 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          {/* Industry Insight */}
-          {industryInsight && (
-            <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
-              <Card style={{ padding: 16, backgroundColor: 'rgba(99, 102, 241, 0.1)', borderColor: 'rgba(99, 102, 241, 0.2)' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                  <Ionicons name="bulb" size={20} color={Colors.primary} style={{ marginRight: 8 }} />
-                  <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: 14 }}>
-                    {user?.businessIndustry} Insight
-                  </Text>
-                </View>
-                <Text style={{ color: '#E2E8F0', fontSize: 14, lineHeight: 20 }}>
-                  {industryInsight}
-                </Text>
-              </Card>
-            </View>
+          {/* Profession Workspace */}
+          {user?.businessIndustry && user.businessIndustry !== 'Other' && (
+            <ProfessionDashboard industry={user.businessIndustry} />
           )}
 
           {/* Quick Hub Access */}

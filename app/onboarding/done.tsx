@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, ActivityIndicator, useEffect } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/Colors';
@@ -13,6 +13,7 @@ export default function Done() {
   const { data } = useOnboarding();
   const { user, getToken, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [profileUpdated, setProfileUpdated] = useState(false);
 
   const handleFinish = async (redirectRoute: string) => {
     if (!user?.id) {
@@ -56,10 +57,9 @@ export default function Done() {
       }
 
       await refreshProfile();
+      setProfileUpdated(true);
       
-      // Force navigation to dashboard
-      console.log("Navigating to dashboard...");
-      router.replace("/(tabs)/dashboard");
+      console.log("Profile updated, waiting for context update...");
     } catch (err: any) {
       console.error("Onboarding Error:", err);
       Alert.alert('Setup Failed', err.message || 'An error occurred');
@@ -67,6 +67,14 @@ export default function Done() {
       setLoading(false);
     }
   };
+
+  // Watch for changes in user.onboardingComplete status and navigate when updated
+  useEffect(() => {
+    if (profileUpdated && user?.onboardingComplete) {
+      console.log("Navigation triggered: Onboarding complete detected in user context");
+      router.replace("/(tabs)/dashboard");
+    }
+  }, [user?.onboardingComplete, profileUpdated]);
 
   return (
     <View style={styles.container}>
