@@ -15,7 +15,10 @@ export default function Done() {
   const [loading, setLoading] = useState(false);
 
   const handleFinish = async (redirectRoute: string) => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      Alert.alert("Error", "User session not found. Please try logging in again.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -28,7 +31,6 @@ export default function Done() {
           await cloudflare.uploadAvatar(user.id, data.avatarUri, idToken);
         } catch (avatarErr) {
           console.error('Avatar upload failed:', avatarErr);
-          // Continue even if avatar fails
         }
       }
 
@@ -42,10 +44,11 @@ export default function Done() {
         monthly_income: incomeVal,
         currency: data.currency,
         business_industry: data.industry,
-        bio: data.goals, // Mapping goals to bio for now
+        bio: data.goals,
         updated_at: new Date().toISOString()
       };
 
+      console.log("Updating profile with:", updateData);
       const result = await cloudflare.updateProfile(updateData, idToken);
 
       if (!result || !result.success) {
@@ -54,9 +57,11 @@ export default function Done() {
 
       await refreshProfile();
       
-      // Redirect
-      router.replace(redirectRoute as any);
+      // Force navigation to dashboard
+      router.dismissAll();
+      router.replace("/(tabs)/dashboard");
     } catch (err: any) {
+      console.error("Onboarding Error:", err);
       Alert.alert('Setup Failed', err.message || 'An error occurred');
     } finally {
       setLoading(false);
