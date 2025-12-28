@@ -9,13 +9,23 @@ import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { login, initialized, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
+    if (!initialized) {
+      setError('Authentication is initializing. Please wait...');
+      return;
+    }
+    
+    if (authLoading) {
+      setError('Please wait for authentication to initialize...');
+      return;
+    }
+    
     if (!email || !password) {
       setError('Please fill in all fields');
       return;
@@ -116,23 +126,16 @@ export default function LoginScreen() {
             
             <TouchableOpacity 
               onPress={() => router.push('/forgot-password')}
-              style={{ marginTop: 16, alignItems: 'center' }}
+              style={{ marginTop: 16, alignItems: 'flex-end' }}
             >
-              <Text style={styles.link}>Forgot Password?</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              onPress={() => router.push('/privacy')}
-              style={{ marginTop: 20, alignItems: 'center' }}
-            >
-              <Text style={{ color: Colors.textSecondary, fontSize: 13 }}>Privacy Policy</Text>
+              <Text style={styles.forgotPassword}>Forgot Password?</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account?</Text>
-            <TouchableOpacity onPress={() => router.replace('/signup')}>
-              <Text style={styles.link}> Create Account</Text>
+            <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
+              <Text style={styles.link}> Sign Up</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

@@ -9,7 +9,7 @@ import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 
 export default function SignupScreen() {
-  const { signup, verifySignup, loading: authLoading } = useAuth();
+  const { signup, verifySignup, loading: authLoading, initialized } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,10 +19,17 @@ export default function SignupScreen() {
   const [error, setError] = useState('');
 
   const handleSignup = async () => {
+    // Only proceed if auth is initialized and not loading
+    if (!initialized) {
+      setError('Authentication is initializing. Please wait...');
+      return;
+    }
+    
     if (authLoading) {
       setError('Please wait for authentication to initialize...');
       return;
     }
+    
     if (!name || !email || !password) {
       setError('Please fill in all fields');
       return;
