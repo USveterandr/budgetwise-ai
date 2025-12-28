@@ -37,7 +37,14 @@ export default function Goals() {
         <Text style={{ color: '#FFF' }}>Error: {error}</Text>
         <TouchableOpacity 
           style={[styles.button, { marginTop: 20 }]}
-          onPress={() => window.location.reload()} // For web, reload the page
+          onPress={() => {
+            if (typeof window !== 'undefined') {
+              window.location.reload();
+            } else {
+              // For native apps, we might want to reset the onboarding context
+              console.log("Reload not available in native app");
+            }
+          }} // For web, reload the page
         >
           <LinearGradient
             colors={[Colors.primary, '#6366F1']}
@@ -53,10 +60,10 @@ export default function Goals() {
   }
 
   // Show loading state until context is properly loaded
-  if (!isLoaded) {
+  if (!isLoaded || !data) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: '#FFF' }}>Loading...</Text>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#0F172A' }]}>
+        <Text style={{ color: '#FFF' }}>Loading onboarding data...</Text>
       </View>
     );
   }
@@ -83,7 +90,7 @@ export default function Goals() {
                   style={styles.input}
                   placeholder="e.g. Save for a house, Pay off debt"
                   placeholderTextColor="#64748B"
-                  value={data.goals || ''}
+                  value={data?.goals || ''}
                   onChangeText={(text) => updateData({ goals: text })}
                   multiline
                   numberOfLines={3}
@@ -93,9 +100,9 @@ export default function Goals() {
 
             <View style={styles.actions}>
               <TouchableOpacity 
-                style={[styles.button, !data.goals?.trim() && styles.buttonDisabled]}
+                style={[styles.button, !(data?.goals?.trim()) && styles.buttonDisabled]}
                 onPress={handleNext}
-                disabled={!data.goals?.trim()}
+                disabled={!(data?.goals?.trim())}
               >
                 <LinearGradient
                   colors={[Colors.primary, '#6366F1']}
