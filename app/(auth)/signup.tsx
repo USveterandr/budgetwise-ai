@@ -9,10 +9,12 @@ import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 
 export default function SignupScreen() {
-  const { signup } = useAuth();
+  const { signup, verifySignup } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
+  const [pendingVerification, setPendingVerification] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -30,20 +32,51 @@ export default function SignupScreen() {
     setError('');
     
     try {
-      const success = await signup(name, email, password);
-      if (success) {
-        router.replace('/onboarding');
+      const result = await signup(name, email, password);
+      if (result.success) {
+        if (result.status === 'pending_verification') {
+          setPendingVerification(true);
+          Alert.alert('Verification Code Sent', 'Please check your email for the verification code.');
+        } else {
+          router.replace('/onboarding');
+        }
       } else {
         setError('Failed to create account. Please try again.');
       }
     } catch (err: any) {
       console.error('Signup error:', err);
-      if (err.code === 'auth/email-already-in-use') {
-        setError('An account with this email already exists.');
+      if (err.errors && err.errors[0] && err.errors[0].message) {
+        setError(err.errors[0].message);
       } else if (err.message) {
         setError(err.message);
       } else {
         setError('An error occurred during sign up. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    if (!code) {
+      setError('Please enter the verification code');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const success = await verifySignup(code);
+      if (success) {
+        router.replace('/onboarding');
+      } else {
+        setError('Verification failed. Please check the code and try again.');
+      }
+    } catch (err: any) {
+      console.error('Verification error:', err);
+      if (err.errors && err.errors[0] && err.errors[0].message) {
+        setError(err.errors[0].message);
+      } else {
+        setError('Verification failed. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -64,56 +97,83 @@ export default function SignupScreen() {
 
           <View style={styles.header}>
             <View style={styles.iconContainer}>
-              <Ionicons name="person-add" size={40} color={Colors.primary} />
+              <Ionicons name={pendingVerification ? "mail-unread" : "person-add"} size={40} color={Colors.primary} />
             </View>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Start your journey to financial freedom</Text>
+            <Text style={styles.title}>{pendingVerification ? "Verify Email" : "Create Account"}</Text>
+            <Text style={styles.subtitle}>
+              {pendingVerification 
+                ? `Enter the code sent to ${email}` 
+                : "Start your journey to financial freedom"}
+            </Text>
           </View>
 
           <View style={styles.form}>
-            <Input label="Full Name" placeholder="Enter your name" value={name} onChangeText={setName} variant="dark" />
-            <Input label="Email" placeholder="Enter your email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" variant="dark" />
-            <Input label="Password" placeholder="Create a password" value={password} onChangeText={setPassword} secureTextEntry variant="dark" />
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-            <Button title="Create Account" onPress={handleSignup} loading={loading} size="large" style={{ marginTop: 8 }} />
-            
-            {/* Hide Google OAuth on web due to CAPTCHA issues on localhost */}
-            {Platform.OS !== 'web' && (
+            {!pendingVerification ? (
               <>
-                <View style={styles.dividerContainer}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>OR</Text>
-                  <View style={styles.dividerLine} />
-                </View>
+                <Input label="Full Name" placeholder="Enter your name" value={name} onChangeText={setName} variant="dark" />
+                <Input label="Email" placeholder="Enter your email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" variant="dark" />
+                <Input label="Password" placeholder="Create a password" value={password} onChangeText={setPassword} secureTextEntry variant="dark" />
+                {error ? <Text style={styles.error}>{error}</Text> : null}
+                <Button title="Create Account" onPress={handleSignup} loading={loading} size="large" style={{ marginTop: 8 }} />
                 
-                <Button 
-                  title="Sign Up with Google" 
-                  onPress={handleGoogleSignup} 
-                  loading={loading} 
-                  size="large" 
-                  variant="outline" 
-                  style={styles.googleButton}
+                {/* Hide Google OAuth on web due to CAPTCHA issues on localhost */}
+                {Platform.OS !== 'web' && (
+                  <>
+                    <View style={styles.dividerContainer}>
+                      <View style={styles.dividerLine} />
+                      <Text style={styles.dividerText}>OR</Text>
+                      <View style={styles.dividerLine} />
+                    </View>
+                    
+                    <Button 
+                      title="Sign Up with Google" 
+                      onPress={handleGoogleSignup} 
+                      loading={loading} 
+                      size="large" 
+                      variant="outline" 
+                      style={styles.googleButton}
+                    />
+                  </>
+                )}
+                
+                <TouchableOpacity 
+                  onPress={() => router.push('/privacy')}
+                  style={{ marginTop: 20, alignItems: 'center' }}
+                >
+                  <Text style={{ color: Colors.textSecondary, fontSize: 13, textAlign: 'center' }}>
+                    By creating an account, you agree to our{'\n'}
+                    <Text style={{ color: Colors.primary }}>Privacy Policy</Text>
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Input 
+                  label="Verification Code" 
+                  placeholder="123456" 
+                  value={code} 
+                  onChangeText={setCode} 
+                  keyboardType="number-pad" 
+                  variant="dark" 
                 />
+                {error ? <Text style={styles.error}>{error}</Text> : null}
+                <Button title="Verify Email" onPress={handleVerify} loading={loading} size="large" style={{ marginTop: 8 }} />
+                
+                <TouchableOpacity onPress={() => setPendingVerification(false)} style={{ marginTop: 20, alignItems: 'center' }}>
+                  <Text style={{ color: Colors.primary, fontSize: 15, fontWeight: '600' }}>Change Email</Text>
+                </TouchableOpacity>
               </>
             )}
-            
-            <TouchableOpacity 
-              onPress={() => router.push('/privacy')}
-              style={{ marginTop: 20, alignItems: 'center' }}
-            >
-              <Text style={{ color: Colors.textSecondary, fontSize: 13, textAlign: 'center' }}>
-                By creating an account, you agree to our{'\n'}
-                <Text style={{ color: Colors.primary }}>Privacy Policy</Text>
-              </Text>
-            </TouchableOpacity>
           </View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account?</Text>
-            <TouchableOpacity onPress={() => router.replace('/login')}>
-              <Text style={styles.link}> Sign In</Text>
-            </TouchableOpacity>
-          </View>
+          {!pendingVerification && (
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Already have an account?</Text>
+              <TouchableOpacity onPress={() => router.replace('/login')}>
+                <Text style={styles.link}> Sign In</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
@@ -152,24 +212,4 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', justifyContent: 'center' },
   footerText: { color: Colors.textSecondary, fontSize: 15 },
   link: { color: Colors.primary, fontSize: 15, fontWeight: '600' },
-  verificationActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-  },
-  resendText: {
-    color: Colors.primary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  loginText: {
-    color: Colors.textSecondary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  changeEmailText: {
-    color: Colors.primary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
 });

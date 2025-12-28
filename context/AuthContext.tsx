@@ -9,7 +9,8 @@ interface AuthContextType {
   loading: boolean;
   initialized: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  signup: (name: string, email: string, password: string) => Promise<boolean>;
+  signup: (name: string, email: string, password: string) => Promise<{ success: boolean; status?: string }>;
+  verifySignup: (code: string) => Promise<boolean>;
   logout: () => Promise<void>;
   sendPasswordResetEmail: (email: string) => Promise<boolean>;
   resetPassword: (code: string, newPassword: string) => Promise<boolean>;
@@ -117,8 +118,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     }
   };
 
-  const signup = async (name: string, email: string, password: string): Promise<boolean> => {
-    if (!signUpLoaded || !signUp) return false;
+  const signup = async (name: string, email: string, password: string): Promise<{ success: boolean; status?: string }> => {
+    if (!signUpLoaded || !signUp) return { success: false };
     try {
       const result = await signUp.create({
         emailAddress: email,
@@ -128,11 +129,29 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       });
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
+        return { success: true, status: 'complete' };
+      } else if (result.status === 'missing_requirements') {
+        await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+        return { success: true, status: 'pending_verification' };
+      }
+      return { success: false, status: result.status || 'unknown' };
+    } catch (error) {
+      console.error('Clerk signup error:', error);
+      throw error;
+    }
+  };
+
+  const verifySignup = async (code: string): Promise<boolean> => {
+    if (!signUpLoaded || !signUp) return false;
+    try {
+      const result = await signUp.attemptEmailAddressVerification({ code });
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId });
         return true;
       }
       return false;
     } catch (error) {
-      console.error('Clerk signup error:', error);
+      console.error('Clerk verify error:', error);
       throw error;
     }
   };
@@ -308,7 +327,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     upgradePlan,
     getSubscriptionPlans,
     refreshProfile,
-    getToken
+    getToken,
+    verifySignup
   }), [user, isAuthenticated, loading, initialized, getToken]);
 
   return (
