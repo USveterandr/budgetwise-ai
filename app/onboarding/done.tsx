@@ -58,7 +58,7 @@ export default function Done() {
       await refreshProfile();
       
       // Force navigation to dashboard
-      router.dismissAll();
+      console.log("Navigating to dashboard...");
       router.replace("/(tabs)/dashboard");
     } catch (err: any) {
       console.error("Onboarding Error:", err);
