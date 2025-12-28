@@ -53,7 +53,10 @@ export default function DashboardScreen() {
           <View style={styles.header}>
             <View>
               <Text style={styles.welcome}>Welcome home,</Text>
-              <Text style={styles.username}>{user?.name?.split(' ')[0] || 'Visionary'}</Text>
+              <Text style={styles.username}>
+                {user?.name?.split(' ')[0] || 'Visionary'}
+                {user?.businessIndustry && user.businessIndustry !== 'Other' ? ` | ${user.businessIndustry}` : ''}
+              </Text>
             </View>
             <TouchableOpacity style={styles.notificationBtn}>
               <Ionicons name="notifications-outline" size={24} color={Colors.textSecondary} />

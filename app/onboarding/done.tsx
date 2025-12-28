@@ -79,7 +79,7 @@ export default function Done() {
 
           <TouchableOpacity 
             style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={() => handleFinish("/(tabs)/dashboard")}
+            onPress={() => handleFinish("/dashboard")}
             disabled={loading}
           >
             <LinearGradient
@@ -97,14 +97,6 @@ export default function Done() {
                 </>
               )}
             </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.secondaryButton, loading && styles.buttonDisabled]}
-            onPress={() => handleFinish("/(tabs)/dashboard")}
-            disabled={loading}
-          >
-            <Text style={styles.secondaryButtonText}>Go to Dashboard</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
