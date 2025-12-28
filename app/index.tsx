@@ -19,7 +19,7 @@ export default function LandingPage() {
   useEffect(() => {
     if (initialized && isAuthenticated) {
       if (user?.onboardingComplete) {
-        router.replace('/dashboard');
+        router.replace('/(tabs)/dashboard');
       } else {
         router.replace('/onboarding');
       }

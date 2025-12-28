@@ -79,7 +79,7 @@ export default function Done() {
 
           <TouchableOpacity 
             style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={() => handleFinish("/dashboard")}
+            onPress={() => handleFinish("/(tabs)/dashboard")}
             disabled={loading}
           >
             <LinearGradient

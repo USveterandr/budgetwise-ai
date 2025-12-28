@@ -28,7 +28,7 @@ function RootLayoutNav() {
         router.replace("/onboarding");
       } else if (user?.onboardingComplete && (inAuthGroup || onOnboarding)) {
         // Authenticated and onboarding complete, but on auth/onboarding pages
-        router.replace("/dashboard");
+        router.replace("/(tabs)/dashboard");
       }
     }
   }, [isAuthenticated, user, initialized, segments]);
