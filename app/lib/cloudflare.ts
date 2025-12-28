@@ -4,7 +4,11 @@
  */
 
 // Placeholder URL - update this after deploying the worker
-const CLOUDFLARE_WORKER_URL = 'https://budgetwise-backend.isaactrinidadllc.workers.dev';
+// Placeholder URL - update this after deploying the worker
+// Use localhost for development, production URL for release
+const CLOUDFLARE_WORKER_URL = __DEV__
+    ? 'http://localhost:8787'
+    : 'https://budgetwise-backend.isaactrinidadllc.workers.dev';
 
 export const cloudflare = {
     // Profiles
@@ -30,7 +34,7 @@ export const cloudflare = {
     async uploadAvatar(userId: string, imageUri: string, idToken: string) {
         const formData = new FormData();
         formData.append('userId', userId);
-        
+
         const filename = imageUri.split('/').pop() || 'avatar.jpg';
         const match = /\.(\w+)$/.exec(filename);
         const type = match ? `image/${match[1]}` : `image/jpeg`;

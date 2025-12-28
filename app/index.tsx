@@ -8,23 +8,13 @@ import { Colors } from '../constants/Colors';
 import { Button } from '../components/ui/Button';
 import { FeatureCard } from '../components/landing/FeatureCard';
 import { TestimonialCard } from '../components/landing/TestimonialCard';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../AuthContext';
 
 const HERO_IMAGE = 'https://d64gsuwffb70l.cloudfront.net/6931d42fc95edfeb0aaaa606_1764873445881_ef508941.webp';
 
 export default function LandingPage() {
-  const { isAuthenticated, user, initialized } = useAuth();
+  const { currentUser } = useAuth();
   const [timeLeft, setTimeLeft] = useState({ hours: 11, minutes: 59, seconds: 59 });
-
-  useEffect(() => {
-    if (initialized && isAuthenticated) {
-      if (user?.onboardingComplete) {
-        router.replace('/(tabs)/dashboard');
-      } else {
-        router.replace('/onboarding');
-      }
-    }
-  }, [isAuthenticated, initialized, user]);
 
   useEffect(() => {
     const timer = setInterval(() => {
