@@ -41,7 +41,7 @@ export default function SignupScreen() {
           router.replace('/onboarding');
         }
       } else {
-        setError('Failed to create account. Please try again.');
+        setError(`Failed to create account. Status: ${result.status}`);
       }
     } catch (err: any) {
       console.error('Signup error:', err);

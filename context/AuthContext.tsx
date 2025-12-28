@@ -134,6 +134,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
         return { success: true, status: 'pending_verification' };
       }
+      console.log('Signup failed with status:', result.status);
       return { success: false, status: result.status || 'unknown' };
     } catch (error) {
       console.error('Clerk signup error:', error);
