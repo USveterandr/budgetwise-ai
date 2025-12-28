@@ -1,17 +1,40 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../context/OnboardingContext';
+import { useEffect, useState } from "react";
 
 export default function Goals() {
   const router = useRouter();
   const { data, updateData } = useOnboarding();
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Add error handling to ensure context is available
+  useEffect(() => {
+    try {
+      if (data) {
+        setIsLoaded(true);
+      }
+    } catch (error) {
+      console.error("Error in Goals component:", error);
+      Alert.alert("Error", "An error occurred while loading the page. Please try again.");
+    }
+  }, [data]);
 
   const handleNext = () => {
     router.push("/onboarding/done");
   };
+
+  // Show loading state until context is properly loaded
+  if (!isLoaded) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: '#FFF' }}>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -35,7 +58,7 @@ export default function Goals() {
                   style={styles.input}
                   placeholder="e.g. Save for a house, Pay off debt"
                   placeholderTextColor="#64748B"
-                  value={data.goals}
+                  value={data.goals || ''}
                   onChangeText={(text) => updateData({ goals: text })}
                   multiline
                   numberOfLines={3}
@@ -45,9 +68,9 @@ export default function Goals() {
 
             <View style={styles.actions}>
               <TouchableOpacity 
-                style={[styles.button, !data.goals.trim() && styles.buttonDisabled]}
+                style={[styles.button, !data.goals?.trim() && styles.buttonDisabled]}
                 onPress={handleNext}
-                disabled={!data.goals.trim()}
+                disabled={!data.goals?.trim()}
               >
                 <LinearGradient
                   colors={[Colors.primary, '#6366F1']}
