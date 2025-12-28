@@ -2,6 +2,29 @@
 
 This is a personal finance tracking application built with Expo that helps users manage their income, expenses, and budgets with AI-powered insights.
 
+## Tech Stack
+
+- **Frontend:** Expo (React Native), TypeScript, NativeWind (Tailwind CSS)
+- **Authentication:** Clerk (Secure Email/Password & Social Login)
+- **AI Engine:** Google Gemini API (`gemini-1.5-pro` for chat, `gemini-1.5-flash` for vision)
+- **Backend:** Cloudflare Workers (Serverless API)
+- **Database:** Cloudflare D1 (SQL at the Edge)
+- **Storage:** Cloudflare R2 (Receipt images & Avatars)
+- **State Management:** React Context (`AuthContext`, `FinanceContext`)
+- **Notifications:** Expo Notifications
+
+## Architecture Overview
+
+### Frontend (Mobile/Web)
+- **Navigation:** `expo-router` (File-based routing in `app/`)
+- **Styling:** Standard React Native `StyleSheet` and `expo-linear-gradient`
+- **Data Flow:** Context providers sync with Cloudflare D1 on load.
+
+### Backend (API)
+- **Platform:** Cloudflare Workers (`backend/`)
+- **Security:** JWT Verification via Clerk JWKS
+- **API Pattern:** RESTful endpoints handling JSON data
+
 ## Features
 
 - **Dashboard Overview**: Real-time financial snapshot with net worth, income, expenses, and savings rate
@@ -13,42 +36,44 @@ This is a personal finance tracking application built with Expo that helps users
 - **AI Insights**: Personalized financial recommendations
 - **Receipt Scanner**: Scan receipts using your camera to automatically extract transaction details
 
-## New Feature: Receipt Scanner
+## Receipt Scanner (How it Works)
 
-The receipt scanner allows users to:
-- Capture receipts using their device's camera
-- Automatically extract transaction details (amount, date, merchant)
-- Pre-fill transaction forms with scanned data
-- Quickly add expenses without manual data entry
+The receipt scanner leverages Gemini 1.5 Flash's multimodal capabilities to process images directly:
 
-Access the scanner from:
-1. Dashboard quick actions (Scan button)
-2. Transactions screen (Scan button)
+1.  **Capture:** User takes a photo using `expo-camera`.
+2.  **Preprocessing:** Image is resized and converted to Base64.
+3.  **AI Analysis:** Sent to Gemini Vision with a prompt to extract:
+    *   Merchant Name
+    *   Date
+    *   Total Amount
+    *   Line Items
+    *   Category (Auto-classified)
+4.  **Verification:** User reviews the extracted data before saving to D1.
 
-## New Feature: Investment Portfolio
+## AI Insights Implementation
 
-The investment portfolio feature allows users to:
-- Track various investment types (stocks, bonds, ETFs, crypto, real estate)
-- View portfolio performance with gain/loss calculations
-- See asset allocation by investment type
-- Add, edit, and delete investments
-- Monitor current values vs. purchase prices
+We use `gemini-1.5-pro` to provide context-aware financial advice.
 
-Access the portfolio from:
-1. Dashboard quick actions (Invest button)
-2. Portfolio tab in the navigation
+- **Context Injection:** The AI is fed a summary of the user's current financial state (Net Worth, Recent Transactions, Budget Status) with every prompt.
+- **Privacy:** Only anonymized financial data is sent to the model. No PII (Personally Identifiable Information) is shared in the prompt context.
+- **Capabilities:**
+    - Spending anomaly detection
+    - Budget overrun predictions
+    - Personalized savings tips
 
-## New Feature: Budget Alerts
+## Project Structure
 
-The budget alerts feature notifies users when they reach critical budget thresholds:
-- Receive notifications when you've used 80% of your budget (warning)
-- Receive notifications when you've exceeded 100% of your budget (alert)
-- View all notifications in the dedicated notifications center
-- Mark notifications as read to keep track of what you've seen
-
-Access notifications from:
-1. Notification badge on the dashboard
-2. Notifications tab in the navigation
+```
+├── app/                  # Expo Router pages
+│   ├── (auth)/           # Authentication screens (Login, Signup)
+│   ├── (tabs)/           # Main app tabs (Dashboard, Budget, etc.)
+│   └── onboarding/       # New user setup flow
+├── backend/              # Cloudflare Worker API
+├── components/           # Reusable UI components
+├── context/              # Global state (Auth, Finance)
+├── services/             # API clients (Gemini, Cloudflare)
+└── constants/            # App-wide constants (Colors, Layout)
+```
 
 ## Get started
 
@@ -69,6 +94,9 @@ Access notifications from:
 
    # Google Gemini API Key (get from https://aistudio.google.com/)
    EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key_here
+   
+   # Backend URL (if running local worker or deployed)
+   EXPO_PUBLIC_API_URL=https://your-worker.workers.dev
    ```
 
 3. Start the app
