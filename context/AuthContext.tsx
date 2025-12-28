@@ -42,62 +42,66 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const loading = !clerkLoaded || !userLoaded || !signInLoaded || !signUpLoaded || profileLoading;
 
   useEffect(() => {
-    // ... (rest of profile sync logic remains same)
-    const syncProfile = async () => {
-      if (clerkLoaded && userId && clerkUser) {
-        setProfileLoading(true);
-        try {
-          const idToken = await getToken();
-          if (idToken) {
-            let profile = await cloudflare.getProfile(userId, idToken);
-            
-            // If profile doesn't exist in D1, create it
-            if (!profile || !profile.user_id) {
-              const email = clerkUser.emailAddresses[0]?.emailAddress;
-              const name = clerkUser.fullName || clerkUser.firstName || email?.split('@')[0] || 'User';
+    // When Clerk is loaded, we consider the auth context initialized
+    if (clerkLoaded) {
+      // For authenticated users, sync their profile
+      if (userId && clerkUser) {
+        const syncProfile = async () => {
+          setProfileLoading(true);
+          try {
+            const idToken = await getToken();
+            if (idToken) {
+              let profile = await cloudflare.getProfile(userId, idToken);
               
-              await cloudflare.updateProfile({
-                user_id: userId,
-                name,
-                email,
-                plan: 'Starter',
-                monthly_income: 0,
-                savings_rate: 0,
-                currency: 'USD'
-              }, idToken);
-              
-              profile = {
-                user_id: userId,
-                name,
-                email,
-                plan: 'Starter',
-                monthly_income: 0
-              };
-            }
+              // If profile doesn't exist in D1, create it
+              if (!profile || !profile.user_id) {
+                const email = clerkUser.emailAddresses[0]?.emailAddress;
+                const name = clerkUser.fullName || clerkUser.firstName || email?.split('@')[0] || 'User';
+                
+                await cloudflare.updateProfile({
+                  user_id: userId,
+                  name,
+                  email,
+                  plan: 'Starter',
+                  monthly_income: 0,
+                  savings_rate: 0,
+                  currency: 'USD'
+                }, idToken);
+                
+                profile = {
+                  user_id: userId,
+                  name,
+                  email,
+                  plan: 'Starter',
+                  monthly_income: 0
+                };
+              }
 
-            setUser({
-              id: userId,
-              name: profile.name || clerkUser.fullName || 'User',
-              email: profile.email || clerkUser.emailAddresses[0]?.emailAddress || '',
-              plan: (profile.plan || 'Starter') as any,
-              emailVerified: clerkUser.emailAddresses[0]?.verification.status === 'verified',
-              onboardingComplete: !!(profile.monthly_income && profile.monthly_income > 0),
-              businessIndustry: profile.business_industry
-            });
+              setUser({
+                id: userId,
+                name: profile.name || clerkUser.fullName || 'User',
+                email: profile.email || clerkUser.emailAddresses[0]?.emailAddress || '',
+                plan: (profile.plan || 'Starter') as any,
+                emailVerified: clerkUser.emailAddresses[0]?.verification.status === 'verified',
+                onboardingComplete: !!(profile.monthly_income && profile.monthly_income > 0),
+                businessIndustry: profile.business_industry
+              });
+            }
+          } catch (error) {
+            console.error('Error syncing profile with Cloudflare:', error);
+          } finally {
+            setProfileLoading(false);
+            setInitialized(true);
           }
-        } catch (error) {
-          console.error('Error syncing profile with Cloudflare:', error);
-        } finally {
-          setProfileLoading(false);
-          setInitialized(true);
-        }
-      } else if (clerkLoaded && !userId) {
+        };
+
+        syncProfile();
+      } else {
+        // For unauthenticated users, just set initialized to true
         setUser(null);
         setInitialized(true);
       }
-    };
-
-    syncProfile();
+    }
   }, [clerkLoaded, userId, clerkUser]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
