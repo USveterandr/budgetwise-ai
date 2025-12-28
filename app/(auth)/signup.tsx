@@ -56,6 +56,7 @@ export default function SignupScreen() {
       if (err.errors && err.errors[0] && err.errors[0].message) {
         setError(err.errors[0].message);
       } else if (err.message) {
+        // Handle more specific error messages
         setError(err.message);
       } else {
         setError('An error occurred during sign up. Please try again.');
@@ -199,25 +200,11 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 15, color: Colors.textSecondary, textAlign: 'center' },
   form: { marginBottom: 30 },
   error: { color: Colors.error, fontSize: 14, marginBottom: 12, textAlign: 'center' },
-  dividerContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginVertical: 20 
-  },
-  dividerLine: { 
-    flex: 1, 
-    height: 1, 
-    backgroundColor: Colors.border 
-  },
-  dividerText: { 
-    color: Colors.textSecondary, 
-    paddingHorizontal: 10, 
-    fontSize: 14 
-  },
-  googleButton: { 
-    marginTop: 8 
-  },
-  footer: { flexDirection: 'row', justifyContent: 'center' },
+  dividerContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+  dividerText: { marginHorizontal: 15, color: Colors.textSecondary, fontSize: 14 },
+  googleButton: { marginTop: 12 },
+  footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
   footerText: { color: Colors.textSecondary, fontSize: 15 },
   link: { color: Colors.primary, fontSize: 15, fontWeight: '600' },
 });

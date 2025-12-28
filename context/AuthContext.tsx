@@ -136,8 +136,21 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       }
       console.log('Signup failed with status:', result.status);
       return { success: false, status: result.status || 'unknown' };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Clerk signup error:', error);
+      // Provide more specific error messages based on the error type
+      if (error.errors && error.errors[0]) {
+        const clerkError = error.errors[0];
+        if (clerkError.code === 'form_identifier_exists') {
+          throw new Error('An account with this email already exists. Please try logging in instead.');
+        } else if (clerkError.code === 'form_password_not_strong_enough') {
+          throw new Error('Password does not meet security requirements. Please try a stronger password.');
+        } else if (clerkError.code === 'failed_to_fetch') {
+          throw new Error('Could not connect to authentication service. Please check your internet connection.');
+        } else {
+          throw new Error(clerkError.message || 'Signup failed. Please try again.');
+        }
+      }
       throw error;
     }
   };
