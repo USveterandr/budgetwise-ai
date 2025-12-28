@@ -14,15 +14,9 @@ export default function Goals() {
 
   // Add error handling to ensure context is available
   useEffect(() => {
-    try {
-      if (data) {
-        setIsLoaded(true);
-        setError(null);
-      }
-    } catch (err) {
-      console.error("Error in Goals component:", err);
-      setError("Failed to load onboarding data");
-      Alert.alert("Error", "An error occurred while loading the page. Please try again.");
+    if (data !== undefined) {
+      setIsLoaded(true);
+      setError(null);
     }
   }, [data]);
 
@@ -60,7 +54,7 @@ export default function Goals() {
   }
 
   // Show loading state until context is properly loaded
-  if (!isLoaded || !data) {
+  if (!isLoaded || data === undefined) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#0F172A' }]}>
         <Text style={{ color: '#FFF' }}>Loading onboarding data...</Text>
