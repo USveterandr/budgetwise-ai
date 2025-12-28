@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { View, Text } from 'react-native';
 
 // Properly handle AsyncStorage for both web and native environments
 let storage: any;
@@ -130,7 +131,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   // Don't render children until data is loaded
   if (!isInitialized) {
-    return null; // Or a loading component
+    // Return a loading state instead of null to prevent white screens
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0F172A' }}>
+        <Text style={{ color: '#FFF' }}>Loading onboarding data...</Text>
+      </View>
+    );
   }
 
   return (
