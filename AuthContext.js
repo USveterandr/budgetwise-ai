@@ -1,12 +1,14 @@
 import React, { useContext, useState, useEffect } from "react";
-import { auth } from "./firebase";
+import { auth, db } from "./firebase";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signOut,
     onAuthStateChanged,
     GoogleAuthProvider,
-    signInWithPopup
+    signInWithPopup,
+    getAdditionalUserInfo
 } from "firebase/auth";
 
 const AuthContext = React.createContext();
@@ -19,17 +21,46 @@ export function AuthProvider({ children }) {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    function signup(email, password) {
-        return createUserWithEmailAndPassword(auth, email, password);
+    async function signup(email, password) {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Create a document for the new user in the 'users' collection
+        await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            email: user.email,
+            createdAt: new Date(),
+            // You can add any other default fields here
+            // e.g., displayName: 'New User'
+        });
+
+        return userCredential;
     }
 
     function login(email, password) {
         return signInWithEmailAndPassword(auth, email, password);
     }
 
-    function googleSignIn() {
+    async function googleSignIn() {
         const provider = new GoogleAuthProvider();
-        return signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        // Check if a user document already exists
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        // If the document doesn't exist (e.g., first-time Google sign-in), create it
+        if (!userDoc.exists()) {
+            await setDoc(userDocRef, {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+                createdAt: new Date(),
+            });
+        }
+        return result;
     }
 
     function logout() {
