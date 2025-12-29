@@ -17,7 +17,7 @@ export default function Login() {
       setError('');
       setLoading(true);
       await login(email, password);
-      router.replace('/');
+      router.replace('/dashboard');
     } catch (err: any) {
       setError('Failed to log in: ' + err.message);
     } finally {
@@ -30,7 +30,7 @@ export default function Login() {
       setError('');
       setLoading(true);
       await googleSignIn();
-      router.replace('/');
+      router.replace('/dashboard');
     } catch (err: any) {
       setError('Failed to log in with Google: ' + err.message);
     } finally {

@@ -22,7 +22,7 @@ export default function Signup() {
       setError('');
       setLoading(true);
       await signup(email, password);
-      router.replace('/');
+      router.replace('/dashboard');
     } catch (err: any) {
       setError('Failed to create account: ' + err.message);
     } finally {

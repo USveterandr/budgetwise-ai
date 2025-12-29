@@ -81,7 +81,8 @@ export function AuthProvider({ children }) {
         login,
         signup,
         logout,
-        googleSignIn
+        googleSignIn,
+        loading
     };
 
     return (

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, Redirect } from 'expo-router';
 import { Image } from 'expo-image';
 import { Colors } from '../constants/Colors';
 import { Button } from '../components/ui/Button';
@@ -15,6 +15,11 @@ const HERO_IMAGE = 'https://d64gsuwffb70l.cloudfront.net/6931d42fc95edfeb0aaaa60
 export default function LandingPage() {
   const { currentUser } = useAuth();
   const [timeLeft, setTimeLeft] = useState({ hours: 11, minutes: 59, seconds: 59 });
+
+  if (currentUser) {
+    // If the user is already authenticated, redirect them to the dashboard.
+    return <Redirect href="/dashboard" />;
+  }
 
   useEffect(() => {
     const timer = setInterval(() => {
