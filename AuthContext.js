@@ -19,6 +19,7 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
     const [currentUser, setCurrentUser] = useState(null);
+    const [userProfile, setUserProfile] = useState(null);
     const [loading, setLoading] = useState(true);
 
     async function signup(email, password) {
@@ -68,8 +69,23 @@ export function AuthProvider({ children }) {
     }
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
             setCurrentUser(user);
+            if (user) {
+                // User is signed in, fetch their profile from Firestore
+                const userDocRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists()) {
+                    // Combine auth data and firestore data
+                    setUserProfile({ ...user, ...userDoc.data() });
+                } else {
+                    // Fallback to just auth data if firestore doc is missing
+                    setUserProfile(user);
+                }
+            } else {
+                // User is signed out
+                setUserProfile(null);
+            }
             setLoading(false);
         });
 
@@ -78,6 +94,7 @@ export function AuthProvider({ children }) {
 
     const value = {
         currentUser,
+        userProfile,
         login,
         signup,
         logout,
