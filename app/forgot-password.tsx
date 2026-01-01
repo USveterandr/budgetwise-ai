@@ -4,35 +4,26 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function Login() {
+export default function ForgotPassword() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login, googleSignIn } = useAuth();
+  const [message, setMessage] = useState('');
+  const { resetPassword } = useAuth();
   const router = useRouter();
 
-  async function handleLogin() {
-    try {
-      setError('');
-      setLoading(true);
-      await login(email, password);
-      router.replace('/dashboard');
-    } catch (err: any) {
-      setError('Failed to log in: ' + err.message);
-    } finally {
-      setLoading(false);
+  async function handleResetPassword() {
+    if (!email) {
+      return setError('Please enter your email address.');
     }
-  }
-
-  async function handleGoogleLogin() {
     try {
       setError('');
+      setMessage('');
       setLoading(true);
-      await googleSignIn();
-      router.replace('/dashboard');
+      await resetPassword(email);
+      setMessage('Check your inbox for a password reset link.');
     } catch (err: any) {
-      setError('Failed to log in with Google: ' + err.message);
+      setError('Failed to reset password. Please check the email address.');
     } finally {
       setLoading(false);
     }
@@ -43,10 +34,11 @@ export default function Login() {
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
         <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
       </TouchableOpacity>
-      
+
       <View style={styles.card}>
-        <Text style={styles.title}>Welcome Back</Text>
+        <Text style={styles.title}>Reset Password</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
+        {message ? <Text style={styles.success}>{message}</Text> : null}
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Email</Text>
@@ -61,47 +53,21 @@ export default function Login() {
           />
         </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Enter your password"
-            placeholderTextColor="#64748B"
-            secureTextEntry
-          />
-        </View>
-
-        <TouchableOpacity onPress={() => router.push('/forgot-password')} style={styles.forgotPasswordButton}>
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
+          onPress={handleResetPassword}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#FFF" />
           ) : (
-            <Text style={styles.buttonText}>Log In</Text>
+            <Text style={styles.buttonText}>Send Reset Link</Text>
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.button, styles.googleButton, loading && styles.buttonDisabled]}
-          onPress={handleGoogleLogin}
-          disabled={loading}
-        >
-          <Ionicons name="logo-google" size={20} color="#FFF" style={{ marginRight: 8 }} />
-          <Text style={styles.buttonText}>Sign in with Google</Text>
-        </TouchableOpacity>
-
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => router.push('/signup')}>
-            <Text style={styles.link}>Sign Up</Text>
+          <TouchableOpacity onPress={() => router.push('/login')}>
+            <Text style={styles.link}>Back to Login</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -115,26 +81,13 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#1E293B', padding: 24, borderRadius: 16, borderWidth: 1, borderColor: '#334155' },
   title: { fontSize: 24, fontWeight: 'bold', color: '#F8FAFC', marginBottom: 24, textAlign: 'center' },
   error: { color: '#EF4444', marginBottom: 16, textAlign: 'center' },
+  success: { color: '#22C55E', marginBottom: 16, textAlign: 'center' },
   inputContainer: { marginBottom: 16 },
   label: { color: '#94A3B8', marginBottom: 8, fontSize: 14 },
   input: { backgroundColor: '#0F172A', borderWidth: 1, borderColor: '#334155', borderRadius: 8, padding: 12, color: '#F8FAFC', fontSize: 16 },
   button: { backgroundColor: '#3B82F6', padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 8 },
-  forgotPasswordButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 12,
-  },
-  forgotPasswordText: {
-    color: '#3B82F6',
-    fontSize: 14,
-  },
   buttonDisabled: { opacity: 0.7 },
-  googleButton: {
-    backgroundColor: '#DB4437',
-    marginTop: 12,
-    flexDirection: 'row',
-  },
   buttonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
-  footerText: { color: '#94A3B8' },
   link: { color: '#3B82F6', fontWeight: 'bold' },
 });

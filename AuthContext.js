@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
-import { auth, db } from "./firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { auth, db, storage } from "./firebase";
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
@@ -8,7 +9,8 @@ import {
     onAuthStateChanged,
     GoogleAuthProvider,
     signInWithPopup,
-    getAdditionalUserInfo
+    sendPasswordResetEmail,
+    updateProfile
 } from "firebase/auth";
 
 const AuthContext = React.createContext();
@@ -68,29 +70,76 @@ export function AuthProvider({ children }) {
         return signOut(auth);
     }
 
+    function resetPassword(email) {
+        return sendPasswordResetEmail(auth, email);
+    }
+
+    async function updateUserProfile(updates) {
+        if (!currentUser) throw new Error("No user is signed in.");
+
+        // Update Firebase Auth profile
+        if (updates.displayName) {
+            await updateProfile(currentUser, { displayName: updates.displayName });
+        }
+
+        // Update Firestore document
+        const userDocRef = doc(db, "users", currentUser.uid);
+        await updateDoc(userDocRef, updates);
+
+        // Update local state
+        setUserProfile(prev => prev ? { ...prev, ...updates } : null);
+    }
+
+    async function uploadProfilePicture(uri) {
+        if (!currentUser) throw new Error("No user is signed in.");
+
+        // Convert file URI to a blob that can be uploaded
+        const response = await fetch(uri);
+        const blob = await response.blob();
+
+        // Create a storage reference (e.g., 'profile-pictures/userId.jpg')
+        const storageRef = ref(storage, `profile-pictures/${currentUser.uid}`);
+
+        // Upload the file
+        await uploadBytes(storageRef, blob);
+
+        // Get the public download URL
+        const downloadURL = await getDownloadURL(storageRef);
+
+        // Use the existing updateUserProfile function to save the URL
+        await updateUserProfile({ photoURL: downloadURL });
+    }
+
+    function resetPassword(email) {
+        return sendPasswordResetEmail(auth, email);
+    }
+
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
             setCurrentUser(user);
-            if (user) {
-                // User is signed in, fetch their profile from Firestore
-                const userDocRef = doc(db, "users", user.uid);
-                const userDoc = await getDoc(userDocRef);
-                if (userDoc.exists()) {
-                    // Combine auth data and firestore data
-                    setUserProfile({ ...user, ...userDoc.data() });
-                } else {
-                    // Fallback to just auth data if firestore doc is missing
-                    setUserProfile(user);
-                }
-            } else {
-                // User is signed out
-                setUserProfile(null);
-            }
             setLoading(false);
         });
 
         return unsubscribe;
     }, []);
+
+    useEffect(() => {
+        if (currentUser) {
+            const fetchProfile = async () => {
+                const userDocRef = doc(db, "users", currentUser.uid);
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists()) {
+                    setUserProfile({ ...currentUser, ...userDoc.data() });
+                } else {
+                    // Fallback to just auth data if firestore doc is missing
+                    setUserProfile(currentUser);
+                }
+            };
+            fetchProfile();
+        } else {
+            setUserProfile(null);
+        }
+    }, [currentUser]);
 
     const value = {
         currentUser,
@@ -99,6 +148,9 @@ export function AuthProvider({ children }) {
         signup,
         logout,
         googleSignIn,
+        updateUserProfile,
+        uploadProfilePicture,
+        resetPassword,
         loading
     };
 
