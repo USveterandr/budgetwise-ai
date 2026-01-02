@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import { auth, db, storage } from "./firebase";
-import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
@@ -10,7 +10,12 @@ import {
     GoogleAuthProvider,
     signInWithPopup,
     sendPasswordResetEmail,
-    updateProfile
+    updateProfile,
+    deleteUser,
+    EmailAuthProvider,
+    reauthenticateWithCredential,
+    reauthenticateWithPopup,
+    updatePassword
 } from "firebase/auth";
 
 const AuthContext = React.createContext();
@@ -74,11 +79,33 @@ export function AuthProvider({ children }) {
         return sendPasswordResetEmail(auth, email);
     }
 
+    async function changePassword(oldPassword, newPassword) {
+        if (!currentUser) {
+            throw new Error("No user is signed in.");
+        }
+
+        const providerId = currentUser.providerData[0]?.providerId;
+        if (providerId !== 'password') {
+            throw new Error("Password can only be changed for email/password accounts.");
+        }
+
+        if (!currentUser.email) {
+            throw new Error("User email not found for re-authentication.");
+        }
+
+        // 1. Re-authenticate the user to confirm their identity.
+        const credential = EmailAuthProvider.credential(currentUser.email, oldPassword);
+        await reauthenticateWithCredential(currentUser, credential);
+
+        // 2. If re-authentication is successful, update the password.
+        await updatePassword(currentUser, newPassword);
+    }
+
     async function updateUserProfile(updates) {
         if (!currentUser) throw new Error("No user is signed in.");
 
         // Update Firebase Auth profile
-        if (updates.displayName) {
+        if (updates.displayName !== undefined) {
             await updateProfile(currentUser, { displayName: updates.displayName });
         }
 
@@ -110,8 +137,55 @@ export function AuthProvider({ children }) {
         await updateUserProfile({ photoURL: downloadURL });
     }
 
-    function resetPassword(email) {
-        return sendPasswordResetEmail(auth, email);
+    async function deleteAccount(password) {
+        if (!currentUser) throw new Error("No user is signed in.");
+
+        const providerId = currentUser.providerData[0]?.providerId;
+
+        // Step 1: Re-authenticate the user to confirm their identity.
+        if (providerId === 'password') {
+            if (!password) {
+                throw new Error("Password is required to delete this account.");
+            }
+            if (!currentUser.email) {
+                throw new Error("User email not found for re-authentication.");
+            }
+            const credential = EmailAuthProvider.credential(currentUser.email, password);
+            await reauthenticateWithCredential(currentUser, credential);
+        } else if (providerId === 'google.com') {
+            const provider = new GoogleAuthProvider();
+            await reauthenticateWithPopup(currentUser, provider);
+        } else {
+            throw new Error(`Re-authentication for provider "${providerId}" is not supported.`);
+        }
+
+        // If re-authentication is successful, proceed with deletion.
+        const userToDelete = currentUser;
+
+        // Step 2: Delete profile picture from Storage (if it exists)
+        try {
+            const storageRef = ref(storage, `profile-pictures/${userToDelete.uid}`);
+            await deleteObject(storageRef);
+        } catch (error) {
+            if (error.code !== 'storage/object-not-found') {
+                console.error("Error deleting profile picture:", error);
+            }
+        }
+
+        // Step 3: Delete user document from Firestore
+        const userDocRef = doc(db, "users", userToDelete.uid);
+        await deleteDoc(userDocRef);
+
+        // Step 4: Delete the user from Firebase Authentication
+        await deleteUser(userToDelete);
+    }
+
+    async function signOutFromAllDevices() {
+        if (!currentUser) throw new Error("No user is signed in.");
+        const userDocRef = doc(db, "users", currentUser.uid);
+        await updateDoc(userDocRef, {
+            lastGlobalSignOut: new Date()
+        });
     }
 
     useEffect(() => {
@@ -124,21 +198,35 @@ export function AuthProvider({ children }) {
     }, []);
 
     useEffect(() => {
+        let unsubscribeSnapshot;
         if (currentUser) {
-            const fetchProfile = async () => {
-                const userDocRef = doc(db, "users", currentUser.uid);
-                const userDoc = await getDoc(userDocRef);
-                if (userDoc.exists()) {
-                    setUserProfile({ ...currentUser, ...userDoc.data() });
+            // Capture the time when this session (or effect) started
+            const sessionStartTime = new Date();
+            const userDocRef = doc(db, "users", currentUser.uid);
+
+            unsubscribeSnapshot = onSnapshot(userDocRef, (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    const data = docSnapshot.data();
+                    setUserProfile({ ...currentUser, ...data });
+
+                    // Check if a global sign out occurred after this session started
+                    if (data.lastGlobalSignOut) {
+                        const lastGlobalSignOut = data.lastGlobalSignOut.toDate ? data.lastGlobalSignOut.toDate() : new Date(data.lastGlobalSignOut);
+                        if (lastGlobalSignOut > sessionStartTime) {
+                            logout();
+                        }
+                    }
                 } else {
-                    // Fallback to just auth data if firestore doc is missing
                     setUserProfile(currentUser);
                 }
-            };
-            fetchProfile();
+            });
         } else {
             setUserProfile(null);
         }
+
+        return () => {
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+        };
     }, [currentUser]);
 
     const value = {
@@ -150,6 +238,9 @@ export function AuthProvider({ children }) {
         googleSignIn,
         updateUserProfile,
         uploadProfilePicture,
+        deleteAccount,
+        signOutFromAllDevices,
+        changePassword,
         resetPassword,
         loading
     };

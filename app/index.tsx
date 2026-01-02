@@ -16,11 +16,6 @@ export default function LandingPage() {
   const { currentUser } = useAuth();
   const [timeLeft, setTimeLeft] = useState({ hours: 11, minutes: 59, seconds: 59 });
 
-  if (currentUser) {
-    // If the user is already authenticated, redirect them to the dashboard.
-    return <Redirect href="/dashboard" />;
-  }
-
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
@@ -32,6 +27,11 @@ export default function LandingPage() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  if (currentUser) {
+    // If the user is already authenticated, redirect them to the dashboard.
+    return <Redirect href="/dashboard" />;
+  }
 
   const features = [
     { icon: 'analytics' as const, title: 'AI-Powered Insights', description: 'Get personalized financial advice powered by advanced AI.' },

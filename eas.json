@@ -15,9 +15,7 @@
                 "buildType": "app-bundle",
                 "credentialsSource": "local"
             },
-            "ios": {
-                "buildType": "app-bundle"
-            }
+            "ios": {}
         }
     },
     "submit": {
