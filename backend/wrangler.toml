@@ -18,3 +18,14 @@ bucket_name = "avatars"
 
 [ai]
 binding = "AI"
+
+[[kv_namespaces]]
+binding = "AUTH_KV"
+id = "placeholder"
+# Run: wrangler kv:namespace create AUTH_KV to get the ID
+
+[vars]
+# These should be set via `wrangler secret put` for production
+# GOOGLE_CLIENT_ID = ""
+# GOOGLE_CLIENT_SECRET = ""
+# JWT_SECRET = ""
