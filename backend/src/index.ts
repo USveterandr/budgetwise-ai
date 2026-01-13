@@ -42,16 +42,16 @@ app.get('/auth/google', async (c) => {
   await c.env.AUTH_KV.put(`oauth_state:${state}`, redirectUri, { expirationTtl: 600 })
   
   const clientId = c.env.GOOGLE_CLIENT_ID
-  const scope = 'openid email profile'
   
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-    `client_id=${encodeURIComponent(clientId)}&` +
-    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-    `response_type=code&` +
-    `scope=${encodeURIComponent(scope)}&` +
-    `state=${encodeURIComponent(state)}`
+  // Build Google OAuth URL
+  const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
+  authUrl.searchParams.set('client_id', clientId)
+  authUrl.searchParams.set('redirect_uri', redirectUri)
+  authUrl.searchParams.set('response_type', 'code')
+  authUrl.searchParams.set('scope', 'openid email profile')
+  authUrl.searchParams.set('state', state)
   
-  return c.redirect(authUrl)
+  return c.redirect(authUrl.toString())
 })
 
 // GET /auth/callback - Handles OAuth callback from Google
@@ -103,6 +103,11 @@ app.get('/auth/callback', async (c) => {
   }
   
   const googleUserData = await userInfoResponse.json()
+  
+  // Validate required fields
+  if (!googleUserData.email) {
+    return c.json({ error: 'Email not provided by Google' }, 400)
+  }
   
   // Format Google user data to match GoogleUser interface
   const googleUser = {

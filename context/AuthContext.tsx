@@ -207,7 +207,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     }
 
-    async function updateUserProfile(updates) {
+    async function updateUserProfile(updates: Partial<UserProfile>) {
         if (!currentUser) throw new Error("No user is signed in.");
 
         try {
@@ -233,7 +233,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     }
 
-    async function uploadProfilePicture(uri) {
+    async function uploadProfilePicture(uri: string) {
         if (!currentUser) throw new Error("No user is signed in.");
 
         try {
