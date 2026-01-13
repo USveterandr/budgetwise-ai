@@ -12,9 +12,11 @@ web-build/
 metro-cache/
 .metro-cache-*/
 
+# Test coverage
+coverage/
+*.lcov
 
-
-
+# iOS
 ios
 android
 

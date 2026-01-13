@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Constants from 'expo-constants';
 
 // Types for our Gemini service
 export interface ChatMessage {
@@ -29,23 +30,46 @@ Format your responses nicely using Markdown.
 `;
 
 class GeminiService {
-  private genAI: GoogleGenerativeAI;
+  private genAI: GoogleGenerativeAI | null = null;
   private chatModel: string = "gemini-1.5-pro";
   private visionModel: string = "gemini-1.5-flash";
+  private initialized: boolean = false;
 
   constructor() {
-    // Initialize with the environment variable
-    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("EXPO_PUBLIC_GEMINI_API_KEY is not set");
+    // Initialize with the environment variable from expo-constants
+    const apiKey = Constants.expoConfig?.extra?.geminiApiKey || 
+                   (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_GEMINI_API_KEY);
+    
+    if (apiKey) {
+      try {
+        this.genAI = new GoogleGenerativeAI(apiKey);
+        this.initialized = true;
+      } catch (error) {
+        console.error("Failed to initialize Gemini AI:", error);
+        this.initialized = false;
+      }
+    } else {
+      console.warn("EXPO_PUBLIC_GEMINI_API_KEY is not set. AI features will be disabled.");
+      this.initialized = false;
     }
-    this.genAI = new GoogleGenerativeAI(apiKey);
+  }
+
+  private ensureInitialized(): boolean {
+    if (!this.initialized || !this.genAI) {
+      console.error("Gemini AI is not initialized. Please set EXPO_PUBLIC_GEMINI_API_KEY.");
+      return false;
+    }
+    return true;
   }
 
   async getFinancialAdvice(
     history: ChatMessage[],
     userContext: string
   ): Promise<string> {
+    if (!this.ensureInitialized() || !this.genAI) {
+      return "AI features are currently unavailable. Please configure the EXPO_PUBLIC_GEMINI_API_KEY environment variable.";
+    }
+
     try {
       const model = this.genAI.getGenerativeModel({ 
         model: this.chatModel,
@@ -76,6 +100,10 @@ class GeminiService {
   }
 
   async parseReceiptImage(base64Image: string): Promise<ReceiptData> {
+    if (!this.ensureInitialized() || !this.genAI) {
+      throw new Error("AI features are currently unavailable. Please configure the EXPO_PUBLIC_GEMINI_API_KEY environment variable.");
+    }
+
     try {
       const model = this.genAI.getGenerativeModel({ model: this.visionModel });
       
@@ -115,6 +143,11 @@ class GeminiService {
   }
 
   async generateBudgetPlan(industry: string, monthlyIncome: number, currency: string): Promise<BudgetCategory[]> {
+    if (!this.ensureInitialized() || !this.genAI) {
+      console.error("AI features are currently unavailable.");
+      return [];
+    }
+
     try {
       const model = this.genAI.getGenerativeModel({ model: this.chatModel });
       

@@ -12,14 +12,11 @@ COPY . .
 # Build the application for web
 RUN npm run build
 
-# Install serve globally to serve the static files
-RUN npm install -g serve
-
 # Cloud Run sets the PORT environment variable (default 8080)
 ENV PORT=8080
 
 # Expose the port
 EXPOSE 8080
 
-# Start the server
-CMD ["sh", "-c", "serve -s dist -l $PORT"]
+# Start the Express server that serves the static build
+CMD ["node", "server.js"]
