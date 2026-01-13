@@ -8,24 +8,133 @@ type Bindings = {
   BANK_BUCKET: R2Bucket
   AVATAR_BUCKET: R2Bucket
   AI: any
+  RATE_LIMITER: any
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
 
+// Simple in-memory rate limiter (for development)
+// In production, use Cloudflare Rate Limiting or similar
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+
+function checkRateLimit(identifier: string, maxRequests: number = 100, windowMs: number = 60000): boolean {
+  const now = Date.now()
+  const record = rateLimitMap.get(identifier)
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(identifier, { count: 1, resetTime: now + windowMs })
+    return true
+  }
+  
+  if (record.count >= maxRequests) {
+    return false
+  }
+  
+  record.count++
+  return true
+}
+
+// Middleware for rate limiting
+app.use('/*', async (c, next) => {
+  const identifier = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown'
+  
+  if (!checkRateLimit(identifier, 100, 60000)) {
+    return c.json({ error: 'Too many requests. Please try again later.' }, 429)
+  }
+  
+  await next()
+})
+
+// CORS configuration for production
+const allowedOrigins = [
+  'http://localhost:8081',
+  'http://localhost:19006',
+  'https://budgetwise-ai.web.app',
+  'https://budgetwise-ai.firebaseapp.com',
+  // Add your production domain here
+]
+
 app.use('/*', cors({
-  origin: '*',
+  origin: (origin) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return '*'
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) return origin
+    // In development, allow all origins
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) return origin
+    // Default deny
+    return allowedOrigins[0]
+  },
   allowHeaders: ['Content-Type', 'Authorization'],
-  allowMethods: ['POST', 'GET', 'OPTIONS']
+  allowMethods: ['POST', 'GET', 'PUT', 'DELETE', 'OPTIONS'],
+  maxAge: 86400,
 }))
+
+// =====================
+// Health Check & Info
+// =====================
+
+// GET /health
+app.get('/health', (c) => {
+  return c.json({
+    status: 'healthy',
+    timestamp: Date.now(),
+    version: '1.0.0'
+  })
+})
+
+// GET /
+app.get('/', (c) => {
+  return c.json({
+    name: 'BudgetWise AI Backend',
+    version: '1.0.0',
+    endpoints: [
+      'GET /health',
+      'GET /api/profile',
+      'POST /api/profile',
+      'GET /api/transactions',
+      'POST /api/transactions',
+      'DELETE /api/transactions/:id',
+      'GET /api/budgets',
+      'POST /api/budgets',
+      'PUT /api/budgets',
+      'GET /api/investments',
+      'POST /api/investments',
+      'PUT /api/investments/:id',
+      'DELETE /api/investments/:id',
+      'GET /api/notifications',
+      'POST /api/notifications',
+      'PUT /api/notifications/:id/read',
+      'POST /api/storage/upload',
+      'GET /storage/*'
+    ]
+  })
+})
 
 // =====================
 // User Profile Management
 // =====================
 
+// Helper function to validate user input
+function validateUserId(userId: string | null): boolean {
+  return !!userId && typeof userId === 'string' && userId.length > 0 && userId.length < 256
+}
+
+function sanitizeString(input: any, maxLength: number = 500): string {
+  if (typeof input !== 'string') return ''
+  return input.substring(0, maxLength).trim()
+}
+
+function validateNumber(input: any, min: number = 0, max: number = Number.MAX_SAFE_INTEGER): number {
+  const num = parseFloat(input)
+  if (isNaN(num)) return 0
+  return Math.max(min, Math.min(max, num))
+}
+
 // GET /api/profile?userId=...
 app.get('/api/profile', async (c) => {
   const userId = c.req.query('userId')
-  if (!userId) return c.json({ error: 'userId required' }, 400)
+  if (!validateUserId(userId)) return c.json({ error: 'Invalid userId' }, 400)
 
   const user = await c.env.DB.prepare(
     "SELECT * FROM profiles WHERE user_id = ?"
@@ -42,23 +151,38 @@ app.get('/api/profile', async (c) => {
 
 // POST /api/profile
 app.post('/api/profile', async (c) => {
-  const body = await c.req.json()
-  const {
-    user_id, email, name, plan, monthly_income,
-    currency, business_industry, bio, savings_rate,
-    onboarding_complete
-  } = body
+  try {
+    const body = await c.req.json()
+    const {
+      user_id, email, name, plan, monthly_income,
+      currency, business_industry, bio, savings_rate,
+      onboarding_complete
+    } = body
 
-  if (!user_id) return c.json({ error: 'user_id required' }, 400)
+    if (!validateUserId(user_id)) return c.json({ error: 'Invalid user_id' }, 400)
 
-  // Check if user exists
-  const existing = await c.env.DB.prepare(
-    "SELECT user_id FROM profiles WHERE user_id = ?"
-  ).bind(user_id).first()
+    // Sanitize inputs
+    const sanitizedData = {
+      user_id: sanitizeString(user_id, 255),
+      email: sanitizeString(email, 255),
+      name: sanitizeString(name, 100),
+      plan: sanitizeString(plan, 50) || 'Starter',
+      monthly_income: validateNumber(monthly_income, 0, 999999999),
+      currency: sanitizeString(currency, 10) || 'USD',
+      business_industry: sanitizeString(business_industry, 100) || 'General',
+      bio: sanitizeString(bio, 1000),
+      savings_rate: validateNumber(savings_rate, 0, 100),
+      onboarding_complete: onboarding_complete ? 1 : 0
+    }
 
-  if (existing) {
-    // Update
-    await c.env.DB.prepare(`
+    // Check if user exists
+    const existing = await c.env.DB.prepare(
+      "SELECT user_id FROM profiles WHERE user_id = ?"
+    ).bind(sanitizedData.user_id).first()
+
+    if (existing) {
+      // Update
+      await c.env.DB.prepare(`
         UPDATE profiles SET 
           name = COALESCE(?, name),
           email = COALESCE(?, email),
@@ -72,23 +196,44 @@ app.post('/api/profile', async (c) => {
           updated_at = ?
         WHERE user_id = ?
       `).bind(
-      name, email, plan, monthly_income || null, currency,
-      business_industry || null, bio || null, savings_rate || null,
-      onboarding_complete || null, Date.now(), user_id
-    ).run()
-  } else {
-    // Insert
-    await c.env.DB.prepare(`
+        sanitizedData.name || null,
+        sanitizedData.email || null,
+        sanitizedData.plan,
+        sanitizedData.monthly_income,
+        sanitizedData.currency,
+        sanitizedData.business_industry,
+        sanitizedData.bio || null,
+        sanitizedData.savings_rate,
+        sanitizedData.onboarding_complete,
+        Date.now(),
+        sanitizedData.user_id
+      ).run()
+    } else {
+      // Insert
+      await c.env.DB.prepare(`
         INSERT INTO profiles (user_id, email, name, plan, monthly_income, currency, business_industry, bio, savings_rate, onboarding_complete, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-      user_id, email, name, plan || 'Starter', monthly_income || 0,
-      currency || 'USD', business_industry || 'General', bio || null, savings_rate || 0,
-      onboarding_complete || 0, Date.now(), Date.now()
-    ).run()
-  }
+        sanitizedData.user_id,
+        sanitizedData.email,
+        sanitizedData.name,
+        sanitizedData.plan,
+        sanitizedData.monthly_income,
+        sanitizedData.currency,
+        sanitizedData.business_industry,
+        sanitizedData.bio || null,
+        sanitizedData.savings_rate,
+        sanitizedData.onboarding_complete,
+        Date.now(),
+        Date.now()
+      ).run()
+    }
 
-  return c.json({ success: true })
+    return c.json({ success: true })
+  } catch (error) {
+    console.error('Profile update error:', error)
+    return c.json({ error: 'Failed to update profile' }, 500)
+  }
 })
 
 // =====================
