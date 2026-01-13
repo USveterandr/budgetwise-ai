@@ -1,9 +1,8 @@
 import React, { Component, ReactNode } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
-import * as Updates from 'expo-updates';
 
 interface Props {
   children: ReactNode;
@@ -50,7 +49,15 @@ export class ErrorBoundary extends Component<Props, State> {
 
   handleReload = async () => {
     try {
-      await Updates.reloadAsync();
+      // expo-updates only works on native platforms
+      if (Platform.OS === 'web') {
+        // On web, reload the page
+        window.location.reload();
+      } else {
+        // On native, use expo-updates
+        const Updates = await import('expo-updates');
+        await Updates.reloadAsync();
+      }
     } catch (error) {
       console.error('Error reloading app:', error);
       // Fallback to state reset if reload fails
@@ -75,7 +82,7 @@ export class ErrorBoundary extends Component<Props, State> {
               Don't worry, your data is safe. Try reloading the app.
             </Text>
 
-            {__DEV__ && this.state.error && (
+            {(typeof __DEV__ !== 'undefined' && __DEV__) && this.state.error && (
               <ScrollView style={styles.errorDetails}>
                 <Text style={styles.errorTitle}>Error Details:</Text>
                 <Text style={styles.errorText}>{this.state.error.toString()}</Text>
