@@ -1,6 +1,6 @@
 import React from "react";
 import { Stack } from "expo-router";
-import { AuthProvider } from "../CloudflareAuthContext";
+import { AuthProvider } from "../context/AuthContext";
 import { StatusBar } from "expo-status-bar";
 import { InstallPrompt } from "../components/InstallPrompt";
 import { WebContainer } from "../components/WebContainer";
