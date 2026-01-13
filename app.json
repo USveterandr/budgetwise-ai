@@ -84,7 +84,17 @@
       "router": {},
       "eas": {
         "projectId": "41079632-3bca-44cd-b03a-488aba1ca818"
-      }
+      },
+      "geminiApiKey": "${EXPO_PUBLIC_GEMINI_API_KEY}",
+      "apiUrl": "${EXPO_PUBLIC_API_URL}",
+      "isDevelopment": "${EXPO_PUBLIC_DEV_MODE}",
+      "firebaseApiKey": "${EXPO_PUBLIC_FIREBASE_API_KEY}",
+      "firebaseAuthDomain": "${EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN}",
+      "firebaseProjectId": "${EXPO_PUBLIC_FIREBASE_PROJECT_ID}",
+      "firebaseStorageBucket": "${EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET}",
+      "firebaseMessagingSenderId": "${EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}",
+      "firebaseAppId": "${EXPO_PUBLIC_FIREBASE_APP_ID}",
+      "firebaseMeasurementId": "${EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID}"
     },
     "updates": {
       "url": "https://u.expo.dev/41079632-3bca-44cd-b03a-488aba1ca818"

@@ -216,4 +216,253 @@ app.post('/profile/bank-upload', async (c) => {
   })
 })
 
+// =====================
+// Transactions
+// =====================
+
+// GET /api/transactions?userId=...
+app.get('/api/transactions', async (c) => {
+  const userId = c.req.query('userId')
+  if (!userId) return c.json({ error: 'userId required' }, 400)
+
+  const result = await c.env.DB.prepare(
+    "SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC"
+  ).bind(userId).all()
+
+  return c.json({ transactions: result.results || [] })
+})
+
+// POST /api/transactions
+app.post('/api/transactions', async (c) => {
+  const body = await c.req.json()
+  const { user_id, type, amount, category, description, date } = body
+
+  if (!user_id || !type || !amount || !category) {
+    return c.json({ error: 'Missing required fields' }, 400)
+  }
+
+  const id = nanoid()
+  await c.env.DB.prepare(
+    `INSERT INTO transactions (id, user_id, type, amount, category, description, date, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, user_id, type, amount, category, description || '', date || Date.now(), Date.now()).run()
+
+  return c.json({ success: true, id })
+})
+
+// DELETE /api/transactions/:id
+app.delete('/api/transactions/:id', async (c) => {
+  const id = c.req.param('id')
+  if (!id) return c.json({ error: 'id required' }, 400)
+
+  await c.env.DB.prepare(
+    "DELETE FROM transactions WHERE id = ?"
+  ).bind(id).run()
+
+  return c.json({ success: true })
+})
+
+// =====================
+// Budgets
+// =====================
+
+// GET /api/budgets?userId=...&month=...
+app.get('/api/budgets', async (c) => {
+  const userId = c.req.query('userId')
+  const month = c.req.query('month')
+  
+  if (!userId || !month) return c.json({ error: 'userId and month required' }, 400)
+
+  const result = await c.env.DB.prepare(
+    "SELECT * FROM budgets WHERE user_id = ? AND month = ?"
+  ).bind(userId, month).all()
+
+  return c.json({ budgets: result.results || [] })
+})
+
+// POST /api/budgets
+app.post('/api/budgets', async (c) => {
+  const body = await c.req.json()
+  const { user_id, category, limit, month } = body
+
+  if (!user_id || !category || !limit || !month) {
+    return c.json({ error: 'Missing required fields' }, 400)
+  }
+
+  const id = nanoid()
+  await c.env.DB.prepare(
+    `INSERT INTO budgets (id, user_id, category, limit_amount, spent, month, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, user_id, category, limit, 0, month, Date.now()).run()
+
+  return c.json({ success: true, id })
+})
+
+// PUT /api/budgets
+app.put('/api/budgets', async (c) => {
+  const body = await c.req.json()
+  const { id, spent } = body
+
+  if (!id || spent === undefined) {
+    return c.json({ error: 'Missing required fields' }, 400)
+  }
+
+  await c.env.DB.prepare(
+    "UPDATE budgets SET spent = ? WHERE id = ?"
+  ).bind(spent, id).run()
+
+  return c.json({ success: true })
+})
+
+// =====================
+// Investments
+// =====================
+
+// GET /api/investments?userId=...
+app.get('/api/investments', async (c) => {
+  const userId = c.req.query('userId')
+  if (!userId) return c.json({ error: 'userId required' }, 400)
+
+  const result = await c.env.DB.prepare(
+    "SELECT * FROM investments WHERE user_id = ? ORDER BY created_at DESC"
+  ).bind(userId).all()
+
+  return c.json({ investments: result.results || [] })
+})
+
+// POST /api/investments
+app.post('/api/investments', async (c) => {
+  const body = await c.req.json()
+  const { user_id, name, type, amount, current_value, purchase_date } = body
+
+  if (!user_id || !name || !type || !amount) {
+    return c.json({ error: 'Missing required fields' }, 400)
+  }
+
+  const id = nanoid()
+  await c.env.DB.prepare(
+    `INSERT INTO investments (id, user_id, name, type, amount, current_value, purchase_date, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, user_id, name, type, amount, current_value || amount, purchase_date || Date.now(), Date.now()).run()
+
+  return c.json({ success: true, id })
+})
+
+// PUT /api/investments/:id
+app.put('/api/investments/:id', async (c) => {
+  const id = c.req.param('id')
+  const body = await c.req.json()
+  const { current_value, amount } = body
+
+  if (!id) return c.json({ error: 'id required' }, 400)
+
+  await c.env.DB.prepare(
+    "UPDATE investments SET current_value = COALESCE(?, current_value), amount = COALESCE(?, amount) WHERE id = ?"
+  ).bind(current_value, amount, id).run()
+
+  return c.json({ success: true })
+})
+
+// DELETE /api/investments/:id
+app.delete('/api/investments/:id', async (c) => {
+  const id = c.req.param('id')
+  if (!id) return c.json({ error: 'id required' }, 400)
+
+  await c.env.DB.prepare(
+    "DELETE FROM investments WHERE id = ?"
+  ).bind(id).run()
+
+  return c.json({ success: true })
+})
+
+// =====================
+// Notifications
+// =====================
+
+// GET /api/notifications?userId=...
+app.get('/api/notifications', async (c) => {
+  const userId = c.req.query('userId')
+  if (!userId) return c.json({ error: 'userId required' }, 400)
+
+  const result = await c.env.DB.prepare(
+    "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50"
+  ).bind(userId).all()
+
+  return c.json({ notifications: result.results || [] })
+})
+
+// POST /api/notifications
+app.post('/api/notifications', async (c) => {
+  const body = await c.req.json()
+  const { user_id, title, message, type } = body
+
+  if (!user_id || !title || !message) {
+    return c.json({ error: 'Missing required fields' }, 400)
+  }
+
+  const id = nanoid()
+  await c.env.DB.prepare(
+    `INSERT INTO notifications (id, user_id, title, message, type, is_read, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, user_id, title, message, type || 'info', 0, Date.now()).run()
+
+  return c.json({ success: true, id })
+})
+
+// PUT /api/notifications/:id/read
+app.put('/api/notifications/:id/read', async (c) => {
+  const id = c.req.param('id')
+  if (!id) return c.json({ error: 'id required' }, 400)
+
+  await c.env.DB.prepare(
+    "UPDATE notifications SET is_read = 1 WHERE id = ?"
+  ).bind(id).run()
+
+  return c.json({ success: true })
+})
+
+// =====================
+// Storage (Generic file upload to R2)
+// =====================
+
+// POST /api/storage/upload?userId=...&filename=...
+app.post('/api/storage/upload', async (c) => {
+  const userId = c.req.query('userId')
+  const filename = c.req.query('filename')
+  
+  if (!userId || !filename) {
+    return c.json({ error: 'userId and filename required' }, 400)
+  }
+
+  const fileData = await c.req.arrayBuffer()
+  const fileId = nanoid()
+  const key = `${userId}/${fileId}-${filename}`
+
+  await c.env.BANK_BUCKET.put(key, fileData)
+
+  return c.json({
+    success: true,
+    url: `/storage/${key}`,
+    key
+  })
+})
+
+// GET /storage/:key (serve files from R2)
+app.get('/storage/*', async (c) => {
+  const key = c.req.path.replace('/storage/', '')
+  
+  const object = await c.env.BANK_BUCKET.get(key)
+  
+  if (!object) {
+    return c.json({ error: 'File not found' }, 404)
+  }
+
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+      'Cache-Control': 'public, max-age=31536000',
+    }
+  })
+})
+
 export default app

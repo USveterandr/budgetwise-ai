@@ -3,12 +3,19 @@
  * This replaces Supabase by calling our Cloudflare Worker API
  */
 
-// Placeholder URL - update this after deploying the worker
+import Constants from 'expo-constants';
+
 // Placeholder URL - update this after deploying the worker
 // Use localhost for development, production URL for release
-const CLOUDFLARE_WORKER_URL = __DEV__
+const isDevelopment = Constants.expoConfig?.extra?.isDevelopment || 
+                     (typeof __DEV__ !== 'undefined' && __DEV__) || 
+                     false;
+
+const CLOUDFLARE_WORKER_URL = isDevelopment
     ? 'http://localhost:8787'
-    : 'https://budgetwise-backend.isaactrinidadllc.workers.dev';
+    : Constants.expoConfig?.extra?.apiUrl || 
+      (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
+      'https://budgetwise-backend.isaactrinidadllc.workers.dev';
 
 export const cloudflare = {
     // Profiles
