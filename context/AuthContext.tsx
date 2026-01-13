@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, ReactNode } from "react";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
@@ -7,10 +7,45 @@ import { Platform } from "react-native";
 // Enable dismissal on iOS
 WebBrowser.maybeCompleteAuthSession();
 
-const AuthContext = React.createContext();
+interface User {
+    id: string;
+    email: string;
+}
 
-export function useAuth() {
-    return useContext(AuthContext);
+interface UserProfile {
+    id: string;
+    email: string;
+    name?: string;
+    avatar_url?: string;
+    plan?: string;
+    monthly_income?: number;
+    currency?: string;
+    [key: string]: any;
+}
+
+interface AuthContextType {
+    currentUser: User | null;
+    userProfile: UserProfile | null;
+    authToken: string | null;
+    googleSignIn: () => Promise<any>;
+    logout: () => Promise<void>;
+    updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
+    uploadProfilePicture: (uri: string) => Promise<void>;
+    loading: boolean;
+}
+
+interface AuthProviderProps {
+    children: ReactNode;
+}
+
+const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
+
+export function useAuth(): AuthContextType {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
 }
 
 const API_URL = Platform.select({
@@ -18,12 +53,12 @@ const API_URL = Platform.select({
     default: 'https://budgetwise-backend.isaactrinidadllc.workers.dev'
 });
 
-export function AuthProvider({ children }) {
-    const [currentUser, setCurrentUser] = useState(null);
-    const [userProfile, setUserProfile] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [authToken, setAuthToken] = useState(null);
-    const [sessionId, setSessionId] = useState(null);
+export function AuthProvider({ children }: AuthProviderProps) {
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [authToken, setAuthToken] = useState<string | null>(null);
+    const [sessionId, setSessionId] = useState<string | null>(null);
 
     // Create redirect URI
     const redirectUri = AuthSession.makeRedirectUri({

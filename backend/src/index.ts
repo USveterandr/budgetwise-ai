@@ -102,7 +102,15 @@ app.get('/auth/callback', async (c) => {
     return c.json({ error: 'Failed to get user info' }, 400)
   }
   
-  const googleUser = await userInfoResponse.json()
+  const googleUserData = await userInfoResponse.json()
+  
+  // Format Google user data to match GoogleUser interface
+  const googleUser = {
+    id: googleUserData.id || googleUserData.sub,
+    email: googleUserData.email,
+    name: googleUserData.name || googleUserData.email.split('@')[0],
+    picture: googleUserData.picture
+  }
   
   // Create/get user and generate session
   const result = await handleOAuthCallback(c, googleUser)

@@ -22,7 +22,9 @@ binding = "AI"
 [[kv_namespaces]]
 binding = "AUTH_KV"
 id = "placeholder"
-# Run: wrangler kv:namespace create AUTH_KV to get the ID
+# TODO: Replace 'placeholder' with actual KV namespace ID
+# Run: npx wrangler kv:namespace create AUTH_KV
+# Then update this id with the output value
 
 [vars]
 # These should be set via `wrangler secret put` for production

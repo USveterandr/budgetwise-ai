@@ -110,16 +110,11 @@ export function setupGoogleAuth(clientId: string, clientSecret: string) {
  */
 export async function handleOAuthCallback(
   c: Context<{ Bindings: Bindings }>,
-  googleUser: any
+  googleUser: GoogleUser
 ) {
   try {
     // Get or create user in database
-    const user = await getOrCreateUser(c.env.DB, {
-      id: googleUser.sub || googleUser.id,
-      email: googleUser.email,
-      name: googleUser.name || googleUser.email.split('@')[0],
-      picture: googleUser.picture
-    })
+    const user = await getOrCreateUser(c.env.DB, googleUser)
 
     // Generate JWT token
     const token = await generateJWT(user.id, user.email, c.env.JWT_SECRET)
