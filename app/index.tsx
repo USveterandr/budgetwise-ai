@@ -11,6 +11,7 @@ import { TestimonialCard } from '../components/landing/TestimonialCard';
 import { useAuth } from '../AuthContext';
 
 const HERO_IMAGE = 'https://d64gsuwffb70l.cloudfront.net/6931d42fc95edfeb0aaaa606_1764873445881_ef508941.webp';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function LandingPage() {
   const { currentUser } = useAuth();
@@ -64,7 +65,13 @@ export default function LandingPage() {
           <Button title="Learn More" onPress={() => router.push('/learn-more')} variant="outline" size="large" style={{ marginTop: 12 }} />
         </View>
 
-        <Image source={{ uri: HERO_IMAGE }} style={styles.heroImage} contentFit="contain" />
+        <Image 
+          source={{ uri: HERO_IMAGE }} 
+          style={styles.heroImage} 
+          contentFit="cover"
+          placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
+          transition={300}
+        />
 
         <Text style={styles.sectionTitle}>Why Choose BudgetWise?</Text>
         {features.map((f, i) => <FeatureCard key={i} {...f} />)}
@@ -99,7 +106,14 @@ const styles = StyleSheet.create({
   title: { fontSize: 36, fontWeight: '800', color: Colors.text, textAlign: 'center', lineHeight: 44, marginBottom: 16 },
   subtitle: { fontSize: 16, color: Colors.textSecondary, textAlign: 'center', lineHeight: 24, marginBottom: 32, paddingHorizontal: 10 },
   ctas: { marginBottom: 40 },
-  heroImage: { width: '100%', height: 200, borderRadius: 16, marginBottom: 40, resizeMode: 'contain' },
+  heroImage: { 
+    width: SCREEN_WIDTH - 40, 
+    height: (SCREEN_WIDTH - 40) * 0.6, // Maintain 5:3 aspect ratio
+    borderRadius: 16, 
+    marginBottom: 40,
+    alignSelf: 'center',
+    maxHeight: 400,
+  },
   sectionTitle: { fontSize: 24, fontWeight: '700', color: Colors.text, marginBottom: 20 },
   stats: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 20, marginBottom: 40 },
   statItem: { alignItems: 'center' },
