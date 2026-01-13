@@ -2,12 +2,23 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { nanoid } from 'nanoid'
 import * as XLSX from 'xlsx'
+import { googleAuth } from '@hono/oauth-providers/google'
+import { 
+  handleOAuthCallback, 
+  authMiddleware, 
+  verifyJWT,
+  generateJWT 
+} from './oauth'
 
 type Bindings = {
   DB: D1Database
   BANK_BUCKET: R2Bucket
   AVATAR_BUCKET: R2Bucket
   AI: any
+  AUTH_KV: KVNamespace
+  GOOGLE_CLIENT_ID: string
+  GOOGLE_CLIENT_SECRET: string
+  JWT_SECRET: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -15,8 +26,145 @@ const app = new Hono<{ Bindings: Bindings }>()
 app.use('/*', cors({
   origin: '*',
   allowHeaders: ['Content-Type', 'Authorization'],
-  allowMethods: ['POST', 'GET', 'OPTIONS']
+  allowMethods: ['POST', 'GET', 'PUT', 'DELETE', 'OPTIONS']
 }))
+
+// =====================
+// OAuth Authentication Routes
+// =====================
+
+// GET /auth/google - Initiates Google OAuth flow
+app.get('/auth/google', async (c) => {
+  const redirectUri = c.req.query('redirect_uri') || `${new URL(c.req.url).origin}/auth/callback`
+  const state = nanoid()
+  
+  // Store state in KV for verification
+  await c.env.AUTH_KV.put(`oauth_state:${state}`, redirectUri, { expirationTtl: 600 })
+  
+  const clientId = c.env.GOOGLE_CLIENT_ID
+  
+  // Build Google OAuth URL
+  const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
+  authUrl.searchParams.set('client_id', clientId)
+  authUrl.searchParams.set('redirect_uri', redirectUri)
+  authUrl.searchParams.set('response_type', 'code')
+  authUrl.searchParams.set('scope', 'openid email profile')
+  authUrl.searchParams.set('state', state)
+  
+  return c.redirect(authUrl.toString())
+})
+
+// GET /auth/callback - Handles OAuth callback from Google
+app.get('/auth/callback', async (c) => {
+  const code = c.req.query('code')
+  const state = c.req.query('state')
+  const error = c.req.query('error')
+  
+  if (error) {
+    return c.json({ error: `OAuth error: ${error}` }, 400)
+  }
+  
+  if (!code || !state) {
+    return c.json({ error: 'Missing code or state' }, 400)
+  }
+  
+  // Verify state
+  const storedRedirectUri = await c.env.AUTH_KV.get(`oauth_state:${state}`)
+  if (!storedRedirectUri) {
+    return c.json({ error: 'Invalid state' }, 400)
+  }
+  
+  // Exchange code for tokens
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      code,
+      client_id: c.env.GOOGLE_CLIENT_ID,
+      client_secret: c.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: storedRedirectUri,
+      grant_type: 'authorization_code'
+    })
+  })
+  
+  if (!tokenResponse.ok) {
+    return c.json({ error: 'Failed to exchange code for tokens' }, 400)
+  }
+  
+  const tokens = await tokenResponse.json()
+  
+  // Get user info
+  const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    headers: { Authorization: `Bearer ${tokens.access_token}` }
+  })
+  
+  if (!userInfoResponse.ok) {
+    return c.json({ error: 'Failed to get user info' }, 400)
+  }
+  
+  const googleUserData = await userInfoResponse.json()
+  
+  // Validate required fields
+  if (!googleUserData.email) {
+    return c.json({ error: 'Email not provided by Google' }, 400)
+  }
+  
+  // Format Google user data to match GoogleUser interface
+  const googleUser = {
+    id: googleUserData.id || googleUserData.sub,
+    email: googleUserData.email,
+    name: googleUserData.name || googleUserData.email.split('@')[0],
+    picture: googleUserData.picture
+  }
+  
+  // Create/get user and generate session
+  const result = await handleOAuthCallback(c, googleUser)
+  
+  // Clean up state
+  await c.env.AUTH_KV.delete(`oauth_state:${state}`)
+  
+  // Redirect to frontend with token
+  const redirectUrl = new URL(storedRedirectUri)
+  redirectUrl.searchParams.set('token', result.token)
+  redirectUrl.searchParams.set('sessionId', result.sessionId)
+  if (result.user.isNewUser) {
+    redirectUrl.searchParams.set('isNewUser', 'true')
+  }
+  
+  return c.redirect(redirectUrl.toString())
+})
+
+// POST /auth/verify - Verify JWT token
+app.post('/auth/verify', async (c) => {
+  const { token } = await c.req.json()
+  
+  if (!token) {
+    return c.json({ error: 'Token required' }, 400)
+  }
+  
+  const payload = await verifyJWT(token, c.env.JWT_SECRET)
+  
+  if (!payload) {
+    return c.json({ valid: false }, 401)
+  }
+  
+  return c.json({
+    valid: true,
+    userId: payload.userId,
+    email: payload.email
+  })
+})
+
+// POST /auth/logout - Logout (invalidate session)
+app.post('/auth/logout', async (c) => {
+  const { sessionId } = await c.req.json()
+  
+  if (sessionId) {
+    await c.env.AUTH_KV.delete(`session:${sessionId}`)
+  }
+  
+  return c.json({ success: true })
+})
 
 // =====================
 // User Profile Management
@@ -28,16 +176,12 @@ app.get('/api/profile', async (c) => {
   if (!userId) return c.json({ error: 'userId required' }, 400)
 
   const user = await c.env.DB.prepare(
-    "SELECT * FROM profiles WHERE user_id = ?"
+    "SELECT * FROM users WHERE id = ?"
   ).bind(userId).first()
 
   if (!user) return c.json({ error: 'User not found' }, 404)
 
-  // Map DB columns to expected profile format if needed, or return as is
-  return c.json({
-    user_id: user.user_id,
-    ...user
-  })
+  return c.json(user)
 })
 
 // POST /api/profile
@@ -53,13 +197,13 @@ app.post('/api/profile', async (c) => {
 
   // Check if user exists
   const existing = await c.env.DB.prepare(
-    "SELECT user_id FROM profiles WHERE user_id = ?"
+    "SELECT id FROM users WHERE id = ?"
   ).bind(user_id).first()
 
   if (existing) {
     // Update
     await c.env.DB.prepare(`
-        UPDATE profiles SET 
+        UPDATE users SET 
           name = COALESCE(?, name),
           email = COALESCE(?, email),
           plan = COALESCE(?, plan),
@@ -68,23 +212,22 @@ app.post('/api/profile', async (c) => {
           business_industry = COALESCE(?, business_industry),
           bio = COALESCE(?, bio),
           savings_rate = COALESCE(?, savings_rate),
-          onboarding_complete = COALESCE(?, onboarding_complete),
           updated_at = ?
-        WHERE user_id = ?
+        WHERE id = ?
       `).bind(
       name, email, plan, monthly_income || null, currency,
       business_industry || null, bio || null, savings_rate || null,
-      onboarding_complete || null, Date.now(), user_id
+      Date.now(), user_id
     ).run()
   } else {
     // Insert
     await c.env.DB.prepare(`
-        INSERT INTO profiles (user_id, email, name, plan, monthly_income, currency, business_industry, bio, savings_rate, onboarding_complete, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users (id, email, name, plan, monthly_income, currency, business_industry, bio, savings_rate, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
       user_id, email, name, plan || 'Starter', monthly_income || 0,
       currency || 'USD', business_industry || 'General', bio || null, savings_rate || 0,
-      onboarding_complete || 0, Date.now(), Date.now()
+      Date.now(), Date.now()
     ).run()
   }
 
@@ -98,8 +241,8 @@ app.post('/profile/email-verify', async (c) => {
   const { email } = await c.req.json()
 
   await c.env.DB.prepare(
-    "INSERT OR IGNORE INTO profiles (user_id,email,created_at) VALUES (?, ?, ?)"
-  ).bind(nanoid(), email, Date.now()).run()
+    "INSERT OR IGNORE INTO users (id, email, created_at, updated_at) VALUES (?, ?, ?, ?)"
+  ).bind(nanoid(), email, Date.now(), Date.now()).run()
 
   // TODO: Send email link
   return c.json({ success: true })
@@ -122,7 +265,7 @@ app.post('/profile/avatar', async (c) => {
   const url = `/avatars/${id}`
 
   await c.env.DB.prepare(
-    "UPDATE profiles SET avatar_url=? WHERE user_id=?"
+    "UPDATE users SET avatar_url=? WHERE id=?"
   ).bind(url, form.get("userId") as string).run()
 
   return c.json({ success: true, url })
