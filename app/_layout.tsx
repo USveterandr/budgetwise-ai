@@ -1,6 +1,6 @@
 import React from "react";
 import { Stack } from "expo-router";
-import { AuthProvider } from "../AuthContext";
+import { AuthProvider } from "../CloudflareAuthContext";
 import { StatusBar } from "expo-status-bar";
 import { InstallPrompt } from "../components/InstallPrompt";
 import { WebContainer } from "../components/WebContainer";
@@ -15,6 +15,7 @@ export default function RootLayout() {
           <Stack.Screen name="login" />
           <Stack.Screen name="signup" />
           <Stack.Screen name="forgot-password" />
+          <Stack.Screen name="auth/callback" />
           <Stack.Screen name="(app)" />
         </Stack>
       </WebContainer>

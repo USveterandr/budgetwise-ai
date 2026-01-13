@@ -8,7 +8,7 @@ import { Colors } from '../constants/Colors';
 import { Button } from '../components/ui/Button';
 import { FeatureCard } from '../components/landing/FeatureCard';
 import { TestimonialCard } from '../components/landing/TestimonialCard';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../CloudflareAuthContext';
 
 const HERO_IMAGE = 'https://d64gsuwffb70l.cloudfront.net/6931d42fc95edfeb0aaaa606_1764873445881_ef508941.webp';
 
