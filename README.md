@@ -4,12 +4,12 @@ This is a personal finance tracking application built with Expo that helps users
 
 ## Tech Stack
 
-- **Frontend:** Expo (React Native), TypeScript, NativeWind (Tailwind CSS)
-- **Authentication:** Clerk (Secure Email/Password & Social Login)
+- **Frontend:** Expo (React Native), TypeScript
+- **Authentication:** Firebase Authentication (Email/Password & Google OAuth)
 - **AI Engine:** Google Gemini API (`gemini-1.5-pro` for chat, `gemini-1.5-flash` for vision)
 - **Backend:** Cloudflare Workers (Serverless API)
 - **Database:** Cloudflare D1 (SQL at the Edge)
-- **Storage:** Cloudflare R2 (Receipt images & Avatars)
+- **Storage:** Cloudflare R2 (Receipt images & Avatars) + Firebase Storage (User profile pictures)
 - **State Management:** React Context (`AuthContext`, `FinanceContext`)
 - **Notifications:** Expo Notifications
 
@@ -18,11 +18,17 @@ This is a personal finance tracking application built with Expo that helps users
 ### Frontend (Mobile/Web)
 - **Navigation:** `expo-router` (File-based routing in `app/`)
 - **Styling:** Standard React Native `StyleSheet` and `expo-linear-gradient`
-- **Data Flow:** Context providers sync with Cloudflare D1 on load.
+- **Data Flow:** Context providers sync with both Firebase and Cloudflare D1
+
+### Authentication Flow
+1. User authenticates via Firebase (Email/Password or Google OAuth)
+2. Firebase provides user authentication and profile management
+3. User financial data is stored in Cloudflare D1 for performance
+4. Profile pictures stored in Firebase Storage
 
 ### Backend (API)
 - **Platform:** Cloudflare Workers (`backend/`)
-- **Security:** JWT Verification via Clerk JWKS
+- **Security:** Request validation and user-based data isolation
 - **API Pattern:** RESTful endpoints handling JSON data
 
 ## Features
@@ -85,12 +91,17 @@ We use `gemini-1.5-pro` to provide context-aware financial advice.
 
 2. Configure environment variables
 
-   Create a `.env` file in the root directory with the following variables:
+   Create a `.env` file in the root directory with the following variables (see `.env.example`):
 
    ```env
-   # Clerk API Keys (get from https://dashboard.clerk.dev/)
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
-   CLERK_SECRET_KEY=your_clerk_secret_key_here
+   # Firebase Configuration
+   EXPO_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key_here
+   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain_here
+   EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id_here
+   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket_here
+   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id_here
+   EXPO_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id_here
+   EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=your_firebase_measurement_id_here
 
    # Google Gemini API Key (get from https://aistudio.google.com/)
    EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key_here
@@ -113,6 +124,10 @@ In the output, you'll find options to open the app in a
 - [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+
+## Production Deployment
+
+For detailed production build and deployment instructions for iOS, Android, and Web, see [PRODUCTION_BUILD_GUIDE.md](./PRODUCTION_BUILD_GUIDE.md).
 
 ## Get a fresh project
 

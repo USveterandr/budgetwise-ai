@@ -43,7 +43,7 @@ export function parseReceiptText(text: string): ReceiptData {
 /**
  * Format date string to YYYY-MM-DD format
  */
-function formatDate(dateString: string): string {
+export function formatDate(dateString: string): string {
   // Handle different date formats
   const parts = dateString.split(/[-/]/);
   if (parts.length === 3) {
@@ -58,7 +58,7 @@ function formatDate(dateString: string): string {
 /**
  * Categorize receipt based on keywords
  */
-function categorizeReceipt(text: string): string {
+export function categorizeReceipt(text: string): string {
   const lowerText = text.toLowerCase();
   
   if (lowerText.includes('food') || lowerText.includes('restaurant') || lowerText.includes('cafe')) {
