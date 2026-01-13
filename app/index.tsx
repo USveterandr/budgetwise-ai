@@ -13,7 +13,7 @@ import { useAuth } from '../AuthContext';
 const HERO_IMAGE = 'https://d64gsuwffb70l.cloudfront.net/6931d42fc95edfeb0aaaa606_1764873445881_ef508941.webp';
 const HORIZONTAL_PADDING = 40; // Total horizontal padding (20px on each side)
 const MAX_HERO_IMAGE_HEIGHT = 400; // Maximum height for hero image on large screens
-const ASPECT_RATIO = 3 / 5; // 5:3 width:height ratio (0.6)
+const ASPECT_RATIO = 3 / 5; // Height multiplier for 5:3 aspect ratio (width:height = 5:3, so height = width × 3/5)
 
 export default function LandingPage() {
   const { currentUser } = useAuth();
@@ -76,7 +76,7 @@ export default function LandingPage() {
             borderRadius: 16,
             marginBottom: 40,
             alignSelf: 'center',
-            maxHeight: MAX_HERO_IMAGE_HEIGHT,
+            maxHeight: MAX_HERO_IMAGE_HEIGHT, // Cap height on large screens; contentFit="cover" maintains visual quality
           }}
           contentFit="cover"
           placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
