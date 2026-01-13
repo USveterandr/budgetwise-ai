@@ -1,6 +1,12 @@
 /*
   Set additional security headers for the app
   More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
+  
+  NOTE: 'unsafe-inline' is currently required for React Native Web compatibility.
+  For maximum security in future, consider:
+  1. Implementing CSP nonces for inline scripts
+  2. Using hash-based CSP for static inline scripts
+  3. Migrating all inline scripts to external files
 */
 
 # Apply to all routes

@@ -368,31 +368,62 @@ app.post('/profile/bank-upload', async (c) => {
 // GET /api/transactions?userId=...
 app.get('/api/transactions', async (c) => {
   const userId = c.req.query('userId')
-  if (!userId) return c.json({ error: 'userId required' }, 400)
+  if (!validateUserId(userId)) return c.json({ error: 'Invalid userId' }, 400)
 
-  const result = await c.env.DB.prepare(
-    "SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC"
-  ).bind(userId).all()
+  try {
+    const result = await c.env.DB.prepare(
+      "SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC"
+    ).bind(userId).all()
 
-  return c.json({ transactions: result.results || [] })
+    return c.json({ transactions: result.results || [] })
+  } catch (error) {
+    console.error('Get transactions error:', error)
+    return c.json({ error: 'Failed to retrieve transactions' }, 500)
+  }
 })
 
 // POST /api/transactions
 app.post('/api/transactions', async (c) => {
-  const body = await c.req.json()
-  const { user_id, type, amount, category, description, date } = body
+  try {
+    const body = await c.req.json()
+    const { user_id, type, amount, category, description, date } = body
 
-  if (!user_id || !type || !amount || !category) {
-    return c.json({ error: 'Missing required fields' }, 400)
+    if (!validateUserId(user_id)) return c.json({ error: 'Invalid user_id' }, 400)
+    if (!type || !['income', 'expense'].includes(type)) {
+      return c.json({ error: 'Invalid type. Must be "income" or "expense"' }, 400)
+    }
+    if (!category) return c.json({ error: 'Category required' }, 400)
+
+    const sanitizedData = {
+      user_id: sanitizeString(user_id, 255),
+      type: sanitizeString(type, 20),
+      amount: validateNumber(amount, 0, 999999999),
+      category: sanitizeString(category, 100),
+      description: sanitizeString(description, 500),
+      date: validateNumber(date, 0, Date.now() + 86400000) || Date.now() // Allow up to 1 day in future
+    }
+
+    const id = nanoid()
+    await c.env.DB.prepare(
+      `INSERT INTO transactions (id, user_id, type, amount, category, description, date, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      id,
+      sanitizedData.user_id,
+      sanitizedData.type,
+      sanitizedData.amount,
+      sanitizedData.category,
+      sanitizedData.description,
+      sanitizedData.date,
+      Date.now()
+    ).run()
+
+    return c.json({ success: true, id })
+  } catch (error) {
+    console.error('Create transaction error:', error)
+    return c.json({ error: 'Failed to create transaction' }, 500)
   }
-
-  const id = nanoid()
-  await c.env.DB.prepare(
-    `INSERT INTO transactions (id, user_id, type, amount, category, description, date, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, user_id, type, amount, category, description || '', date || Date.now(), Date.now()).run()
-
-  return c.json({ success: true, id })
+})
 })
 
 // DELETE /api/transactions/:id
@@ -411,36 +442,69 @@ app.delete('/api/transactions/:id', async (c) => {
 // Budgets
 // =====================
 
+// Helper to validate month format (YYYY-MM)
+function validateMonth(month: string | null): boolean {
+  if (!month || typeof month !== 'string') return false
+  const monthRegex = /^\d{4}-(0[1-9]|1[0-2])$/
+  return monthRegex.test(month)
+}
+
 // GET /api/budgets?userId=...&month=...
 app.get('/api/budgets', async (c) => {
   const userId = c.req.query('userId')
   const month = c.req.query('month')
   
-  if (!userId || !month) return c.json({ error: 'userId and month required' }, 400)
+  if (!validateUserId(userId)) return c.json({ error: 'Invalid userId' }, 400)
+  if (!validateMonth(month)) return c.json({ error: 'Invalid month format. Use YYYY-MM' }, 400)
 
-  const result = await c.env.DB.prepare(
-    "SELECT * FROM budgets WHERE user_id = ? AND month = ?"
-  ).bind(userId, month).all()
+  try {
+    const result = await c.env.DB.prepare(
+      "SELECT * FROM budgets WHERE user_id = ? AND month = ?"
+    ).bind(userId, month).all()
 
-  return c.json({ budgets: result.results || [] })
+    return c.json({ budgets: result.results || [] })
+  } catch (error) {
+    console.error('Get budgets error:', error)
+    return c.json({ error: 'Failed to retrieve budgets' }, 500)
+  }
 })
 
 // POST /api/budgets
 app.post('/api/budgets', async (c) => {
-  const body = await c.req.json()
-  const { user_id, category, limit, month } = body
+  try {
+    const body = await c.req.json()
+    const { user_id, category, limit, month } = body
 
-  if (!user_id || !category || !limit || !month) {
-    return c.json({ error: 'Missing required fields' }, 400)
+    if (!validateUserId(user_id)) return c.json({ error: 'Invalid user_id' }, 400)
+    if (!category) return c.json({ error: 'Category required' }, 400)
+    if (!validateMonth(month)) return c.json({ error: 'Invalid month format. Use YYYY-MM' }, 400)
+
+    const sanitizedData = {
+      user_id: sanitizeString(user_id, 255),
+      category: sanitizeString(category, 100),
+      limit: validateNumber(limit, 0, 999999999),
+      month: sanitizeString(month, 7)
+    }
+
+    const id = nanoid()
+    await c.env.DB.prepare(
+      `INSERT INTO budgets (id, user_id, category, limit_amount, spent, month, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      id,
+      sanitizedData.user_id,
+      sanitizedData.category,
+      sanitizedData.limit,
+      0,
+      sanitizedData.month,
+      Date.now()
+    ).run()
+
+    return c.json({ success: true, id })
+  } catch (error) {
+    console.error('Create budget error:', error)
+    return c.json({ error: 'Failed to create budget' }, 500)
   }
-
-  const id = nanoid()
-  await c.env.DB.prepare(
-    `INSERT INTO budgets (id, user_id, category, limit_amount, spent, month, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, user_id, category, limit, 0, month, Date.now()).run()
-
-  return c.json({ success: true, id })
 })
 
 // PUT /api/budgets

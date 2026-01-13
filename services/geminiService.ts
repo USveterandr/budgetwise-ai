@@ -66,12 +66,12 @@ class GeminiService {
     history: ChatMessage[],
     userContext: string
   ): Promise<string> {
-    if (!this.ensureInitialized()) {
+    if (!this.ensureInitialized() || !this.genAI) {
       return "AI features are currently unavailable. Please configure the EXPO_PUBLIC_GEMINI_API_KEY environment variable.";
     }
 
     try {
-      const model = this.genAI!.getGenerativeModel({ 
+      const model = this.genAI.getGenerativeModel({ 
         model: this.chatModel,
         systemInstruction: SYSTEM_INSTRUCTION
       });
@@ -100,12 +100,12 @@ class GeminiService {
   }
 
   async parseReceiptImage(base64Image: string): Promise<ReceiptData> {
-    if (!this.ensureInitialized()) {
+    if (!this.ensureInitialized() || !this.genAI) {
       throw new Error("AI features are currently unavailable. Please configure the EXPO_PUBLIC_GEMINI_API_KEY environment variable.");
     }
 
     try {
-      const model = this.genAI!.getGenerativeModel({ model: this.visionModel });
+      const model = this.genAI.getGenerativeModel({ model: this.visionModel });
       
       const prompt = `Perform OCR (Optical Character Recognition) on this receipt image to extract all visible text.
       Simultaneously, analyze the content to structure the following data:
@@ -143,13 +143,13 @@ class GeminiService {
   }
 
   async generateBudgetPlan(industry: string, monthlyIncome: number, currency: string): Promise<BudgetCategory[]> {
-    if (!this.ensureInitialized()) {
+    if (!this.ensureInitialized() || !this.genAI) {
       console.error("AI features are currently unavailable.");
       return [];
     }
 
     try {
-      const model = this.genAI!.getGenerativeModel({ model: this.chatModel });
+      const model = this.genAI.getGenerativeModel({ model: this.chatModel });
       
       const prompt = `
         Create a detailed monthly expense budget for a "${industry}" business with a total monthly income of ${monthlyIncome} ${currency}.
