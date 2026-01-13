@@ -13,6 +13,7 @@ import { useAuth } from '../AuthContext';
 const HERO_IMAGE = 'https://d64gsuwffb70l.cloudfront.net/6931d42fc95edfeb0aaaa606_1764873445881_ef508941.webp';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HORIZONTAL_PADDING = 40; // Total horizontal padding (20px on each side)
+const MAX_HERO_IMAGE_HEIGHT = 400; // Maximum height for hero image on large screens
 
 export default function LandingPage() {
   const { currentUser } = useAuth();
@@ -109,11 +110,11 @@ const styles = StyleSheet.create({
   ctas: { marginBottom: 40 },
   heroImage: { 
     width: SCREEN_WIDTH - HORIZONTAL_PADDING, 
-    height: (SCREEN_WIDTH - HORIZONTAL_PADDING) * 0.6, // Maintain 5:3 width:height aspect ratio (height = width * 3/5)
+    height: (SCREEN_WIDTH - HORIZONTAL_PADDING) * 0.6, // 5:3 width:height ratio (0.6 = 3/5)
     borderRadius: 16, 
     marginBottom: 40,
     alignSelf: 'center',
-    maxHeight: 400,
+    maxHeight: MAX_HERO_IMAGE_HEIGHT,
   },
   sectionTitle: { fontSize: 24, fontWeight: '700', color: Colors.text, marginBottom: 20 },
   stats: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 20, marginBottom: 40 },
