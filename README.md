@@ -4,8 +4,8 @@ This is a personal finance tracking application built with Expo that helps users
 
 ## Tech Stack
 
-- **Frontend:** Expo (React Native), TypeScript, NativeWind (Tailwind CSS)
-- **Authentication:** Clerk (Secure Email/Password & Social Login)
+- **Frontend:** Expo (React Native), TypeScript
+- **Authentication:** Cloudflare Workers OAuth (Google OAuth 2.0)
 - **AI Engine:** Google Gemini API (`gemini-1.5-pro` for chat, `gemini-1.5-flash` for vision)
 - **Backend:** Cloudflare Workers (Serverless API)
 - **Database:** Cloudflare D1 (SQL at the Edge)
@@ -22,7 +22,8 @@ This is a personal finance tracking application built with Expo that helps users
 
 ### Backend (API)
 - **Platform:** Cloudflare Workers (`backend/`)
-- **Security:** JWT Verification via Clerk JWKS
+- **Authentication:** Google OAuth 2.0 with JWT tokens
+- **Security:** JWT token verification with state validation
 - **API Pattern:** RESTful endpoints handling JSON data
 
 ## Features
@@ -85,19 +86,24 @@ We use `gemini-1.5-pro` to provide context-aware financial advice.
 
 2. Configure environment variables
 
-   Create a `.env` file in the root directory with the following variables:
+   **Backend Configuration:**
+   
+   Create `backend/.dev.vars` for local development:
 
    ```env
-   # Clerk API Keys (get from https://dashboard.clerk.dev/)
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
-   CLERK_SECRET_KEY=your_clerk_secret_key_here
-
-   # Google Gemini API Key (get from https://aistudio.google.com/)
-   EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key_here
+   # Google OAuth Credentials
+   GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
    
-   # Backend URL (if running local worker or deployed)
-   EXPO_PUBLIC_API_URL=https://your-worker.workers.dev
+   # JWT Secret (generate a random 32+ character string)
+   JWT_SECRET=your_random_secret_key_min_32_chars
    ```
+
+   **Frontend Configuration:**
+   
+   No environment variables needed. Update API URL in `context/AuthContext.tsx` if needed.
+
+   For detailed OAuth setup instructions, see [CLOUDFLARE_OAUTH_SETUP.md](./CLOUDFLARE_OAUTH_SETUP.md)
 
 3. Start the app
 
