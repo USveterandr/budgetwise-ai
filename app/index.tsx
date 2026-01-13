@@ -12,6 +12,7 @@ import { useAuth } from '../AuthContext';
 
 const HERO_IMAGE = 'https://d64gsuwffb70l.cloudfront.net/6931d42fc95edfeb0aaaa606_1764873445881_ef508941.webp';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const HORIZONTAL_PADDING = 40; // Total horizontal padding (20px on each side)
 
 export default function LandingPage() {
   const { currentUser } = useAuth();
@@ -107,8 +108,8 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 16, color: Colors.textSecondary, textAlign: 'center', lineHeight: 24, marginBottom: 32, paddingHorizontal: 10 },
   ctas: { marginBottom: 40 },
   heroImage: { 
-    width: SCREEN_WIDTH - 40, 
-    height: (SCREEN_WIDTH - 40) * 0.6, // Maintain 5:3 aspect ratio
+    width: SCREEN_WIDTH - HORIZONTAL_PADDING, 
+    height: (SCREEN_WIDTH - HORIZONTAL_PADDING) * 0.6, // Maintain 5:3 width:height aspect ratio (height = width * 3/5)
     borderRadius: 16, 
     marginBottom: 40,
     alignSelf: 'center',
