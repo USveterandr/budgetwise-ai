@@ -1,27 +1,50 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
+const isWeb = Platform.OS === 'web';
+
 export const tokenCache = {
   async getToken(key: string) {
+    if (isWeb) {
+        if (typeof localStorage !== 'undefined') {
+            return localStorage.getItem(key);
+        }
+        return null; 
+    }
     try {
-      const item = await SecureStore.getItemAsync(key);
-      if (item) {
-        console.log(`${key} was used 🔐 \n`);
-      } else {
-        console.log('No values stored under key: ' + key);
-      }
-      return item;
+      // SecureStore is only for native
+      return await SecureStore.getItemAsync(key);
     } catch (error) {
       console.error('SecureStore get item error: ', error);
-      await SecureStore.deleteItemAsync(key);
       return null;
     }
   },
+  
   async saveToken(key: string, value: string) {
+    if (isWeb) {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(key, value);
+        }
+        return;
+    }
     try {
-      return SecureStore.setItemAsync(key, value);
-    } catch (err) {
-      return;
+      await SecureStore.setItemAsync(key, value);
+    } catch (error) {
+       console.error("Error storing token", error);
     }
   },
+
+  async deleteToken(key: string) {
+    if (isWeb) {
+         if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem(key);
+         }
+         return;
+    }
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch (error) {
+       console.error("Error deleting token", error);
+    }
+  }
 };

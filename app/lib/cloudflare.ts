@@ -31,6 +31,17 @@ export const cloudflare = {
         return data; // { token, userId }
     },
 
+    async resetPassword(email) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Reset failed');
+        return data; 
+    },
+
     // Profiles
     async getProfile(token) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/profile`, {

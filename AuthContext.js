@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
-import * as SecureStore from 'expo-secure-store';
 import { cloudflare } from "./app/lib/cloudflare";
+import { tokenCache } from "./utils/tokenCache";
 
 const TOKEN_KEY = "budgetwise_jwt_token";
 
@@ -11,6 +11,7 @@ const AuthContext = React.createContext({
   loading: true,
   login: async (email, password) => {},
   signup: async (email, password, name) => {},
+  resetPassword: async (email) => {},
   logout: async () => {},
   refreshProfile: async () => {} 
 });
@@ -30,7 +31,7 @@ export function AuthProvider({ children }) {
 
     const loadUser = async () => {
         try {
-            const token = await SecureStore.getItemAsync(TOKEN_KEY);
+            const token = await tokenCache.getToken(TOKEN_KEY);
             if (token) {
                 // Determine user from token or just fetch profile using token
                 const profile = await cloudflare.getProfile(token);
@@ -51,7 +52,7 @@ export function AuthProvider({ children }) {
 
     const login = async (email, password) => {
         const data = await cloudflare.login(email, password);
-        await SecureStore.setItemAsync(TOKEN_KEY, data.token);
+        await tokenCache.saveToken(TOKEN_KEY, data.token);
         
         setCurrentUser({ uid: data.userId, email: email });
         setUserProfile(data.profile);
@@ -60,21 +61,25 @@ export function AuthProvider({ children }) {
     const signup = async (email, password, name) => {
         // name is optional
         const data = await cloudflare.signup(email, password, name);
-        await SecureStore.setItemAsync(TOKEN_KEY, data.token);
+        await tokenCache.saveToken(TOKEN_KEY, data.token);
         
         setCurrentUser({ uid: data.userId, email: email });
         setUserProfile({ user_id: data.userId, email, name }); 
     };
 
+    const resetPassword = async (email) => {
+        return await cloudflare.resetPassword(email);
+    };
+
     const logout = async () => {
-        await SecureStore.deleteItemAsync(TOKEN_KEY);
+        await tokenCache.deleteToken(TOKEN_KEY);
         setCurrentUser(null);
         setUserProfile(null);
     };
     
     const refreshProfile = async () => {
         try {
-             const token = await SecureStore.getItemAsync(TOKEN_KEY);
+             const token = await tokenCache.getToken(TOKEN_KEY);
              if (token) {
                  const profile = await cloudflare.getProfile(token);
                  setUserProfile(profile);
@@ -91,6 +96,7 @@ export function AuthProvider({ children }) {
         loading,
         login,
         signup,
+        resetPassword,
         logout,
         refreshProfile
     };
