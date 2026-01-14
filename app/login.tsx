@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../AuthContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,30 +9,23 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login, googleSignIn } = useAuth();
+  
+  const { login } = useAuth();
   const router = useRouter();
 
   async function handleLogin() {
+    if (!email || !password) return setError("Please fill in all fields");
+    
     try {
       setError('');
       setLoading(true);
+      
       await login(email, password);
-      router.replace('/dashboard');
+      router.replace('/(app)/dashboard'); 
+      
     } catch (err: any) {
+      console.error(err);
       setError('Failed to log in: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleGoogleLogin() {
-    try {
-      setError('');
-      setLoading(true);
-      await googleSignIn();
-      router.replace('/dashboard');
-    } catch (err: any) {
-      setError('Failed to log in with Google: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -89,15 +82,6 @@ export default function Login() {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.button, styles.googleButton, loading && styles.buttonDisabled]}
-          onPress={handleGoogleLogin}
-          disabled={loading}
-        >
-          <Ionicons name="logo-google" size={20} color="#FFF" style={{ marginRight: 8 }} />
-          <Text style={styles.buttonText}>Sign in with Google</Text>
-        </TouchableOpacity>
-
         <View style={styles.footer}>
           <Text style={styles.footerText}>Don't have an account? </Text>
           <TouchableOpacity onPress={() => router.push('/signup')}>
@@ -110,31 +94,101 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A', justifyContent: 'center', padding: 20 },
-  backButton: { position: 'absolute', top: 60, left: 20, zIndex: 10 },
-  card: { backgroundColor: '#1E293B', padding: 24, borderRadius: 16, borderWidth: 1, borderColor: '#334155' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#F8FAFC', marginBottom: 24, textAlign: 'center' },
-  error: { color: '#EF4444', marginBottom: 16, textAlign: 'center' },
-  inputContainer: { marginBottom: 16 },
-  label: { color: '#94A3B8', marginBottom: 8, fontSize: 14 },
-  input: { backgroundColor: '#0F172A', borderWidth: 1, borderColor: '#334155', borderRadius: 8, padding: 12, color: '#F8FAFC', fontSize: 16 },
-  button: { backgroundColor: '#3B82F6', padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 8 },
+  container: {
+    flex: 1,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 48,
+    left: 24,
+    zIndex: 10,
+  },
+  card: {
+    backgroundColor: '#1E293B',
+    borderRadius: 24,
+    padding: 32,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#F8FAFC',
+    marginBottom: 32,
+    textAlign: 'center',
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  label: {
+    color: '#94A3B8',
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  input: {
+    backgroundColor: '#334155',
+    borderRadius: 12,
+    padding: 16,
+    color: '#F8FAFC',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#475569',
+  },
   forgotPasswordButton: {
     alignSelf: 'flex-end',
-    marginBottom: 12,
+    marginTop: -8,
+    marginBottom: 24,
   },
   forgotPasswordText: {
-    color: '#3B82F6',
+    color: '#818CF8',
     fontSize: 14,
+    fontWeight: '600',
   },
-  buttonDisabled: { opacity: 0.7 },
-  googleButton: {
-    backgroundColor: '#DB4437',
-    marginTop: 12,
+  button: {
+    backgroundColor: '#7C3AED',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  error: {
+    color: '#EF4444',
+    textAlign: 'center',
+    marginBottom: 16,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    padding: 12,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  footer: {
     flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 16,
   },
-  buttonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
-  footerText: { color: '#94A3B8' },
-  link: { color: '#3B82F6', fontWeight: 'bold' },
+  footerText: {
+    color: '#94A3B8',
+  },
+  link: {
+    color: '#818CF8',
+    fontWeight: 'bold',
+  },
 });

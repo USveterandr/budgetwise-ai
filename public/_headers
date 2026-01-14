@@ -5,7 +5,8 @@
 
 # Apply to all routes
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.dev; style-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.dev; img-src 'self' data: https:; font-src 'self' https://*.clerk.com https://*.clerk.dev; connect-src 'self' https://*.clerk.com https://*.clerk.dev https://*.isaacllc.com; frame-src https://*.clerk.com https://*.clerk.dev;
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.dev https://*.cloudflare.com https://*.pages.dev; style-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.dev; img-src 'self' data: https:; font-src 'self' https://*.clerk.com https://*.clerk.dev; connect-src 'self' https://*.clerk.com https://*.clerk.dev https://budgetwise-backend.isaactrinidadllc.workers.dev https://generativelanguage.googleapis.com; frame-src https://*.clerk.com https://*.clerk.dev;
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
-*/
+  Referrer-Policy: strict-origin-when-cross-origin
+  Cross-Origin-Opener-Policy: same-origin-allow-popups

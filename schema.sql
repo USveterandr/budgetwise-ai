@@ -1,6 +1,15 @@
 -- D1 Schema for Budgetwise AI
 
--- Profiles table
+-- Users table (Private Auth Data)
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Profiles table (Public/App Data)
+-- user_id matches users.id
 CREATE TABLE IF NOT EXISTS profiles (
   user_id TEXT PRIMARY KEY,
   name TEXT,
@@ -14,7 +23,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   onboarding_complete INTEGER DEFAULT 0,
   email_verified BOOLEAN DEFAULT FALSE,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- Transactions table
@@ -27,7 +37,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   type TEXT NOT NULL, -- 'income' or 'expense'
   date TEXT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES profiles(user_id)
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- Budgets table
@@ -40,7 +50,7 @@ CREATE TABLE IF NOT EXISTS budgets (
   month TEXT NOT NULL, -- YYYY-MM
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES profiles(user_id)
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- Investments table
@@ -48,24 +58,9 @@ CREATE TABLE IF NOT EXISTS investments (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   name TEXT NOT NULL,
-  symbol TEXT NOT NULL,
-  quantity REAL NOT NULL,
-  purchase_price REAL NOT NULL,
-  current_price REAL NOT NULL,
-  purchase_date TEXT NOT NULL,
+  amount REAL NOT NULL,
   type TEXT NOT NULL,
+  current_value REAL DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES profiles(user_id)
-);
-
--- Notifications table
-CREATE TABLE IF NOT EXISTS notifications (
-  id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
-  title TEXT NOT NULL,
-  message TEXT NOT NULL,
-  category TEXT NOT NULL,
-  read BOOLEAN DEFAULT FALSE,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES profiles(user_id)
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );

@@ -5,15 +5,22 @@ import { useAuth } from '../AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Signup() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const { signup } = useAuth();
   const router = useRouter();
 
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Handle Sign Up
   async function handleSignup() {
+    if (!email || !password || !name) {
+        return setError("Please fill in all fields");
+    }
     if (password !== confirmPassword) {
       return setError('Passwords do not match');
     }
@@ -21,9 +28,15 @@ export default function Signup() {
     try {
       setError('');
       setLoading(true);
-      await signup(email, password);
-      router.replace('/dashboard');
+
+      // Create the user via Cloudflare API
+      await signup(email, password, name);
+
+      // Auto login happens in context, so just navigate
+      router.replace('/(app)/dashboard');
+      
     } catch (err: any) {
+      console.error(err);
       setError('Failed to create account: ' + err.message);
     } finally {
       setLoading(false);
@@ -39,6 +52,17 @@ export default function Signup() {
       <View style={styles.card}>
         <Text style={styles.title}>Create Account</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Name</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder="Your Name"
+            placeholderTextColor="#64748B"
+          />
+        </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Email</Text>
@@ -101,18 +125,91 @@ export default function Signup() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A', justifyContent: 'center', padding: 20 },
-  backButton: { position: 'absolute', top: 60, left: 20, zIndex: 10 },
-  card: { backgroundColor: '#1E293B', padding: 24, borderRadius: 16, borderWidth: 1, borderColor: '#334155' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#F8FAFC', marginBottom: 24, textAlign: 'center' },
-  error: { color: '#EF4444', marginBottom: 16, textAlign: 'center' },
-  inputContainer: { marginBottom: 16 },
-  label: { color: '#94A3B8', marginBottom: 8, fontSize: 14 },
-  input: { backgroundColor: '#0F172A', borderWidth: 1, borderColor: '#334155', borderRadius: 8, padding: 12, color: '#F8FAFC', fontSize: 16 },
-  button: { backgroundColor: '#3B82F6', padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 8 },
-  buttonDisabled: { opacity: 0.7 },
-  buttonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
-  footerText: { color: '#94A3B8' },
-  link: { color: '#3B82F6', fontWeight: 'bold' },
+  container: {
+    flex: 1,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 48,
+    left: 24,
+    zIndex: 10,
+  },
+  card: {
+    backgroundColor: '#1E293B',
+    borderRadius: 24,
+    padding: 32,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#F8FAFC',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  label: {
+    color: '#94A3B8',
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  input: {
+    backgroundColor: '#334155',
+    borderRadius: 12,
+    padding: 16,
+    color: '#F8FAFC',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#475569',
+  },
+  button: {
+    backgroundColor: '#7C3AED',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  error: {
+    color: '#EF4444',
+    textAlign: 'center',
+    marginBottom: 16,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    padding: 12,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  footerText: {
+    color: '#94A3B8',
+  },
+  link: {
+    color: '#818CF8',
+    fontWeight: 'bold',
+  },
 });

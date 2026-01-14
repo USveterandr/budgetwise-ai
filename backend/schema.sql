@@ -1,25 +1,66 @@
-DROP TABLE IF EXISTS users;
-CREATE TABLE users (
+-- D1 Schema for Budgetwise AI
+
+-- Users table (Private Auth Data)
+CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
-  email TEXT UNIQUE,
-  name TEXT,
-  plan TEXT DEFAULT 'Starter',
-  monthly_income REAL,
-  currency TEXT DEFAULT 'USD',
-  business_industry TEXT,
-  bio TEXT,
-  savings_rate REAL,
-  email_verified INTEGER DEFAULT 0,
-  avatar_url TEXT,
-  created_at INTEGER,
-  updated_at INTEGER
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS bank_uploads (
+-- Profiles table (Public/App Data)
+-- user_id matches users.id
+CREATE TABLE IF NOT EXISTS profiles (
+  user_id TEXT PRIMARY KEY,
+  name TEXT,
+  email TEXT,
+  plan TEXT DEFAULT 'Starter',
+  monthly_income REAL DEFAULT 0,
+  savings_rate REAL DEFAULT 0,
+  currency TEXT DEFAULT 'USD',
+  bio TEXT,
+  business_industry TEXT DEFAULT 'General',
+  onboarding_complete INTEGER DEFAULT 0,
+  email_verified BOOLEAN DEFAULT FALSE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Transactions table
+CREATE TABLE IF NOT EXISTS transactions (
   id TEXT PRIMARY KEY,
-  user_id TEXT,
-  file_url TEXT,
-  status TEXT,
-  insights TEXT,
-  created_at INTEGER
+  user_id TEXT NOT NULL,
+  description TEXT NOT NULL,
+  amount REAL NOT NULL,
+  category TEXT NOT NULL,
+  type TEXT NOT NULL, -- 'income' or 'expense'
+  date TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Budgets table
+CREATE TABLE IF NOT EXISTS budgets (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  category TEXT NOT NULL,
+  budget_limit REAL NOT NULL,
+  spent REAL DEFAULT 0,
+  month TEXT NOT NULL, -- YYYY-MM
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Investments table
+CREATE TABLE IF NOT EXISTS investments (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  amount REAL NOT NULL,
+  type TEXT NOT NULL,
+  current_value REAL DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );

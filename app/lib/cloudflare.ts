@@ -1,39 +1,60 @@
 /**
  * Cloudflare D1 & R2 Client Bridge
- * This replaces Supabase by calling our Cloudflare Worker API
+ * Authentication + Data Access
  */
 
-// Placeholder URL - update this after deploying the worker
-// Placeholder URL - update this after deploying the worker
-// Use localhost for development, production URL for release
-const CLOUDFLARE_WORKER_URL = __DEV__
-    ? 'http://localhost:8787'
-    : 'https://budgetwise-backend.isaactrinidadllc.workers.dev';
+// Point to production backend for stability during testing
+const CLOUDFLARE_WORKER_URL = 'https://budgetwise-backend.isaactrinidadllc.workers.dev';
 
 export const cloudflare = {
-    // Profiles
-    async getProfile(userId: string, idToken: string) {
-        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/profile?userId=${userId}&t=${Date.now()}`, {
-            headers: { 'Authorization': `Bearer ${idToken}` }
+    // Auth - Login
+    async login(email, password) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
         });
-        return res.json();
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Login failed');
+        return data; // { token, userId, profile }
     },
 
-    async updateProfile(profile: any, idToken: string) {
+    // Auth - Signup
+    async signup(email, password, name) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/auth/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, name })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Signup failed');
+        return data; // { token, userId }
+    },
+
+    // Profiles
+    async getProfile(token) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/profile`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Profile fetch failed');
+        return data;
+    },
+
+    async updateProfile(profile, token) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/profile`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${idToken}`
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(profile)
         });
         return res.json();
     },
 
-    async uploadAvatar(userId: string, imageUri: string, idToken: string) {
+    async uploadAvatar(imageUri, token) {
         const formData = new FormData();
-        formData.append('userId', userId);
 
         const filename = imageUri.split('/').pop() || 'avatar.jpg';
         const match = /\.(\w+)$/.exec(filename);
@@ -45,7 +66,7 @@ export const cloudflare = {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/profile/avatar`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${idToken}`
+                'Authorization': `Bearer ${token}`
             },
             body: formData
         });

@@ -1,6 +1,10 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { nanoid } from 'nanoid'
+// @ts-ignore
+import { hash, compare } from 'bcryptjs'
+// @ts-ignore
+import { sign, verify } from 'jsonwebtoken'
 import * as XLSX from 'xlsx'
 
 type Bindings = {
@@ -8,6 +12,7 @@ type Bindings = {
   BANK_BUCKET: R2Bucket
   AVATAR_BUCKET: R2Bucket
   AI: any
+  JWT_SECRET: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -18,202 +23,183 @@ app.use('/*', cors({
   allowMethods: ['POST', 'GET', 'OPTIONS']
 }))
 
+// Secret key for JWT (should be in .dev.vars or env)
+const getJwtSecret = (c: any) => c.env.JWT_SECRET || 'dev_secret_budgetwise_123'
+
+// =====================
+// Auth Routes
+// =====================
+
+/**
+ * SIGNUP
+ * POST /api/auth/signup
+ */
+app.post('/api/auth/signup', async (c) => {
+  try {
+    const { email, password, name } = await c.req.json()
+
+    if (!email || !password) {
+      return c.json({ error: 'Email and password required' }, 400)
+    }
+
+    const existing = await c.env.DB.prepare(
+      "SELECT id FROM users WHERE email = ?"
+    ).bind(email).first()
+
+    if (existing) {
+      return c.json({ error: 'User already exists' }, 409)
+    }
+
+    const userId = nanoid()
+    const hashedPassword = await hash(password, 8)
+
+    // Transaction: Insert user + Insert initial profile
+    const batch = await c.env.DB.batch([
+      c.env.DB.prepare("INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)").bind(userId, email, hashedPassword),
+      c.env.DB.prepare("INSERT INTO profiles (user_id, email, name) VALUES (?, ?, ?)").bind(userId, email, name || 'New User')
+    ])
+
+    const token = sign({ userId, email }, getJwtSecret(c), { expiresIn: '7d' })
+
+    return c.json({ token, userId, email, name })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+/**
+ * LOGIN
+ * POST /api/auth/login
+ */
+app.post('/api/auth/login', async (c) => {
+  try {
+    const { email, password } = await c.req.json()
+    
+    // Check if body is empty or invalid
+    if (!email || !password) {
+         return c.json({ error: 'Email and password required' }, 400);
+    }
+    
+    const user: any = await c.env.DB.prepare(
+      "SELECT * FROM users WHERE email = ?"
+    ).bind(email).first()
+
+    if (!user) {
+      return c.json({ error: 'Invalid credentials' }, 401)
+    }
+
+    const valid = await compare(password, user.password_hash)
+    if (!valid) {
+      return c.json({ error: 'Invalid credentials' }, 401)
+    }
+
+    const token = sign({ userId: user.id, email: user.email }, getJwtSecret(c), { expiresIn: '7d' })
+    
+    const profile = await c.env.DB.prepare(
+        "SELECT * FROM profiles WHERE user_id = ?"
+    ).bind(user.id).first()
+
+    return c.json({ token, userId: user.id, profile })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// Middleware to verify token for protected routes
+const authMiddleware = async (c: any, next: any) => {
+  const authHeader = c.req.header('Authorization')
+  if (!authHeader) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+  
+  const token = authHeader.split(' ')[1]
+  try {
+    const payload = verify(token, getJwtSecret(c))
+    c.set('user', payload)
+    await next()
+  } catch (e) {
+    return c.json({ error: 'Invalid token' }, 401)
+  }
+}
+
 // =====================
 // User Profile Management
 // =====================
 
-// GET /api/profile?userId=...
-app.get('/api/profile', async (c) => {
-  const userId = c.req.query('userId')
-  if (!userId) return c.json({ error: 'userId required' }, 400)
+app.get('/api/profile', authMiddleware, async (c) => {
+  const currentUser = c.get('user')
+  const userId = currentUser.userId
 
   const user = await c.env.DB.prepare(
     "SELECT * FROM profiles WHERE user_id = ?"
   ).bind(userId).first()
 
-  if (!user) return c.json({ error: 'User not found' }, 404)
+  if (!user) return c.json({ error: 'Profile not found' }, 404)
 
-  // Map DB columns to expected profile format if needed, or return as is
   return c.json({
     user_id: user.user_id,
     ...user
   })
 })
 
-// POST /api/profile
-app.post('/api/profile', async (c) => {
+app.post('/api/profile', authMiddleware, async (c) => {
+  const currentUser = c.get('user')
   const body = await c.req.json()
   const {
-    user_id, email, name, plan, monthly_income,
+    email, name, plan, monthly_income,
     currency, business_industry, bio, savings_rate,
     onboarding_complete
   } = body
+  
+  const user_id = currentUser.userId
 
-  if (!user_id) return c.json({ error: 'user_id required' }, 400)
-
-  // Check if user exists
-  const existing = await c.env.DB.prepare(
-    "SELECT user_id FROM profiles WHERE user_id = ?"
-  ).bind(user_id).first()
+  const existing = await c.env.DB.prepare("SELECT user_id FROM profiles WHERE user_id = ?").bind(user_id).first()
 
   if (existing) {
-    // Update
     await c.env.DB.prepare(`
-        UPDATE profiles SET 
-          name = COALESCE(?, name),
-          email = COALESCE(?, email),
-          plan = COALESCE(?, plan),
-          monthly_income = COALESCE(?, monthly_income),
-          currency = COALESCE(?, currency),
-          business_industry = COALESCE(?, business_industry),
-          bio = COALESCE(?, bio),
-          savings_rate = COALESCE(?, savings_rate),
-          onboarding_complete = COALESCE(?, onboarding_complete),
-          updated_at = ?
-        WHERE user_id = ?
-      `).bind(
-      name, email, plan, monthly_income || null, currency,
-      business_industry || null, bio || null, savings_rate || null,
-      onboarding_complete || null, Date.now(), user_id
+      UPDATE profiles SET 
+        name = ?2, email = ?3, plan = ?4, monthly_income = ?5,
+        currency = ?6, business_industry = ?7, bio = ?8,
+        savings_rate = ?9, onboarding_complete = ?10, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ?1
+    `).bind(
+      user_id, name, email, plan, monthly_income,
+      currency, business_industry, bio, savings_rate, onboarding_complete
     ).run()
   } else {
-    // Insert
     await c.env.DB.prepare(`
-        INSERT INTO profiles (user_id, email, name, plan, monthly_income, currency, business_industry, bio, savings_rate, onboarding_complete, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(
-      user_id, email, name, plan || 'Starter', monthly_income || 0,
-      currency || 'USD', business_industry || 'General', bio || null, savings_rate || 0,
-      onboarding_complete || 0, Date.now(), Date.now()
+      INSERT INTO profiles (
+        user_id, name, email, plan, monthly_income,
+        currency, business_industry, bio, savings_rate, onboarding_complete
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      user_id, name, email, plan, monthly_income,
+      currency, business_industry, bio, savings_rate, onboarding_complete
     ).run()
   }
 
-  return c.json({ success: true })
+  return c.json({ success: true, user_id })
 })
 
-// =====================
-// Email Verification
-// =====================
-app.post('/profile/email-verify', async (c) => {
-  const { email } = await c.req.json()
 
-  await c.env.DB.prepare(
-    "INSERT OR IGNORE INTO profiles (user_id,email,created_at) VALUES (?, ?, ?)"
-  ).bind(nanoid(), email, Date.now()).run()
-
-  // TODO: Send email link
-  return c.json({ success: true })
-})
-
-// =====================
-// Upload Avatar → R2 + Save URL
-// =====================
-app.post('/profile/avatar', async (c) => {
-  const form = await c.req.formData()
-  const file = form.get('avatar') as File
-
-  if (!file) return c.json({ error: "No file" }, 400)
-
-  const id = nanoid()
-  await c.env.AVATAR_BUCKET.put(id, await file.arrayBuffer())
-
-  // Assuming public access or worker serving. 
-  // For now, we'll construct a URL. In production, you'd map a custom domain or use the worker to serve it.
-  const url = `/avatars/${id}`
-
-  await c.env.DB.prepare(
-    "UPDATE profiles SET avatar_url=? WHERE user_id=?"
-  ).bind(url, form.get("userId") as string).run()
-
-  return c.json({ success: true, url })
-})
-
-// =====================
-// Upload Bank Statement
-// Supports: PDF, Excel, CSV
-// =====================
-app.post('/profile/bank-upload', async (c) => {
-  const form = await c.req.formData()
-  const file = form.get("statement") as File
-  const userId = form.get("userId") as string
-
-  if (!file) return c.json({ error: "File required" }, 400)
-
-  const uploadId = nanoid()
-
-  await c.env.BANK_BUCKET.put(uploadId, await file.arrayBuffer())
-
-  let transactions: any[] = []
-
-  // ========= PDF OCR =========
-  if (file.type === "application/pdf") {
-    const bytes = await file.arrayBuffer()
-    // Using Cloudflare AI for OCR if available, or Tesseract via AI binding
-    try {
-      // Note: @cf/tesseract-ocr is hypothetical or requires specific binding. 
-      // If using a specific model, ensure it is supported.
-      // For now, we assume the user has this model or similar.
-      // If not, this block might need adjustment.
-      // We will use a generic placeholder or the user's suggested model.
-      // The user suggested @cf/tesseract-ocr.
-      const response = await c.env.AI.run("@cf/tesseract-ocr", {
-        image: [...new Uint8Array(bytes)]
-      })
-      const text = response.result || ""
-      transactions = text.split("\n")
-    } catch (e) {
-      console.error("OCR failed", e)
-    }
+// POST /profile/avatar
+app.post('/profile/avatar', authMiddleware, async (c) => {
+  const currentUser = c.get('user')
+  const formData = await c.req.parseBody()
+  const file = formData['avatar']
+  
+  if (!file || !(file instanceof File)) {
+    return c.json({ error: 'No file uploaded' }, 400)
   }
 
-  // ========= Excel =========
-  if (
-    file.type.includes("spreadsheet") ||
-    file.name.endsWith(".xls") ||
-    file.name.endsWith(".xlsx") ||
-    file.name.endsWith(".csv")
-  ) {
-    const data = await file.arrayBuffer()
-    const workbook = XLSX.read(data)
-    const sheet = workbook.Sheets[workbook.SheetNames[0]]
-    transactions = XLSX.utils.sheet_to_json(sheet)
-  }
+  const userId = currentUser.userId
+  const key = `${userId}/avatar.jpg`
 
-  // Save upload record
-  await c.env.DB.prepare(
-    `INSERT INTO bank_uploads (id,user_id,file_url,status,created_at)
-     VALUES (?, ?, ?, ?, ?)`
-  ).bind(uploadId, userId, uploadId, "processed", Date.now()).run()
-
-  // =====================
-  // AI Auto Insights
-  // =====================
-  let aiResult = ""
-  try {
-    const response = await c.env.AI.run(
-      "@cf/meta/llama-3.1-70b-instruct",
-      {
-        messages: [
-          { role: "system", content: "You are a financial analyst." },
-          { role: "user", content: `Analyze these financial transactions and return spending trends, risks, savings ideas:\n${JSON.stringify(transactions).substring(0, 5000)}` }
-        ]
-      }
-    )
-    aiResult = response.response || JSON.stringify(response)
-  } catch (e) {
-    console.error("AI Analysis failed", e)
-    aiResult = "AI Analysis unavailable"
-  }
-
-  await c.env.DB.prepare(
-    "UPDATE bank_uploads SET insights=? WHERE id=?"
-  ).bind(aiResult, uploadId).run()
-
-  return c.json({
-    success: true,
-    uploadId,
-    insights: aiResult
+  await c.env.AVATAR_BUCKET.put(key, file.stream(), {
+    httpMetadata: { contentType: file.type }
   })
+
+  return c.json({ success: true, key })
 })
 
 export default app
