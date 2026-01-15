@@ -394,4 +394,40 @@ app.delete('/api/transactions/:id', authMiddleware, async (c) => {
   return c.json({ success: true })
 })
 
+// =====================
+// Budgets
+// =====================
+
+app.get('/api/budgets', authMiddleware, async (c) => {
+  const currentUser = c.get('user')
+  const { results } = await c.env.DB.prepare(
+    "SELECT * FROM budgets WHERE user_id = ?"
+  ).bind(currentUser.userId).all()
+  return c.json(results)
+})
+
+app.post('/api/budgets', authMiddleware, async (c) => {
+  const currentUser = c.get('user')
+  const { category, budget_limit } = await c.req.json()
+  const id = nanoid()
+
+  // Check if budget for category already exists
+  const existing = await c.env.DB.prepare(
+      "SELECT id FROM budgets WHERE user_id = ? AND category = ?"
+  ).bind(currentUser.userId, category).first()
+
+  if (existing) {
+       await c.env.DB.prepare(
+           "UPDATE budgets SET budget_limit = ? WHERE id = ?"
+       ).bind(budget_limit, existing.id).run()
+       return c.json({ success: true, id: existing.id, updated: true })
+  }
+
+  await c.env.DB.prepare(
+    "INSERT INTO budgets (id, user_id, category, budget_limit) VALUES (?, ?, ?, ?)"
+  ).bind(id, currentUser.userId, category, budget_limit).run()
+  
+  return c.json({ success: true, id })
+})
+
 export default app
