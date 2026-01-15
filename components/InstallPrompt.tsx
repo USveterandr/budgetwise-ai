@@ -1,151 +1,42 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
-
-const DISMISS_DURATION_DAYS = 7;
+import { useInstall } from '../InstallContext';
 
 export function InstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
-  const slideAnim = useState(new Animated.Value(100))[0]; // Start 100px below
+  const { showBanner, promptToInstall, isIOS, dismissBanner, isInstalled } = useInstall();
+  const slideAnim = React.useRef(new Animated.Value(200)).current;
 
   useEffect(() => {
-    // Only run on web
-    if (Platform.OS !== 'web') return;
-
-    // Check if app is already installed
-    if (
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone === true ||
-      localStorage.getItem('budgetwise_installed') === 'true'
-    ) {
-      setIsInstalled(true);
-      return;
-    }
-
-    // Check if user previously dismissed the prompt (with expiry)
-    const dismissedUntil = localStorage.getItem('install-prompt-dismissed-until');
-    if (dismissedUntil) {
-      const dismissedTimestamp = parseInt(dismissedUntil, 10);
-      if (Date.now() < dismissedTimestamp) {
-        return; // Still within dismissal period
-      } else {
-        // Dismissal period expired, clear it
-        localStorage.removeItem('install-prompt-dismissed-until');
-      }
-    }
-
-    // Detect iOS
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
-    setIsIOS(isIosDevice);
-
-    if (isIosDevice) {
-      // Show prompt for iOS after delay
-      setTimeout(() => {
-        setShowPrompt(true);
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-          tension: 50,
-          friction: 7,
-        }).start();
-      }, 3000);
-      return;
-    }
-
-    // Listen for the beforeinstallprompt event
-    const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault();
-      // Stash the event so it can be triggered later
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      // Show the install prompt after a short delay
-      setTimeout(() => {
-        setShowPrompt(true);
-        // Animate slide up
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-          tension: 50,
-          friction: 7,
-        }).start();
-      }, 3000);
-    };
-
-    // Listen for successful app installation
-    const handleAppInstalled = () => {
-      setIsInstalled(true);
-      setShowPrompt(false);
-      setDeferredPrompt(null);
-      localStorage.removeItem('install-prompt-dismissed-until');
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, [slideAnim]);
-
-  const handleInstallClick = async () => {
-    if (isIOS) {
-      alert('To install on iOS:\n1. Tap the Share button (square with arrow)\n2. Scroll down and tap "Add to Home Screen"');
-      return;
-    }
-
-    if (!deferredPrompt) return;
-
-    // Show the install prompt
-    await deferredPrompt.prompt();
-
-    // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice;
-
-    if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
-      setIsInstalled(true);
-      localStorage.setItem('budgetwise_installed', 'true');
-      localStorage.removeItem('install-prompt-dismissed-until');
+    if (showBanner) {
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 7,
+      }).start();
     } else {
-      console.log('User dismissed the install prompt');
+      Animated.timing(slideAnim, {
+        toValue: 200,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
     }
+  }, [showBanner]);
 
-    // Clear the saved prompt since it can only be used once
-    setDeferredPrompt(null);
-    animateOut();
-  };
-
-  const handleDismiss = () => {
-    // Remember user dismissed for 7 days
-    const dismissUntil = Date.now() + (DISMISS_DURATION_DAYS * 24 * 60 * 60 * 1000);
-    localStorage.setItem('install-prompt-dismissed-until', dismissUntil.toString());
-    animateOut();
-  };
-
-  const animateOut = () => {
-    Animated.timing(slideAnim, {
-      toValue: 100,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => setShowPrompt(false));
-  };
-
-  // Don't show on native apps or if already installed
-  if (Platform.OS !== 'web' || isInstalled || !showPrompt || (!deferredPrompt && !isIOS)) {
+  if (Platform.OS !== 'web' || isInstalled || !showBanner) {
     return null;
   }
+
+  const handleInstallClick = () => {
+    if (isIOS) {
+      alert('To install on iOS:\n1. Tap the Share button (square with arrow)\n2. Scroll down and tap "Add to Home Screen"');
+    } else {
+      promptToInstall();
+    }
+  };
 
   return (
     <Animated.View 
@@ -191,7 +82,7 @@ export function InstallPrompt() {
               </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity 
-              onPress={handleDismiss} 
+              onPress={dismissBanner} 
               style={styles.dismissButton}
               activeOpacity={0.6}
             >

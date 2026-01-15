@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, Image } from 'react-native';
 import { useAuth } from '../../AuthContext';
+import { useInstall } from '../../InstallContext';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +11,7 @@ import { CLOUDFLARE_API_URL } from '../lib/cloudflare';
 
 export default function Profile() {
   const { userProfile, updateProfile, getToken } = useAuth();
+  const { promptToInstall, isInstalled, isIOS } = useInstall();
   const router = useRouter();
   
   const [loading, setLoading] = useState(false);
@@ -216,6 +218,25 @@ export default function Profile() {
                     {loading ? <ActivityIndicator color="white" /> : <Text style={styles.saveText}>Save Changes</Text>}
                 </LinearGradient>
             </TouchableOpacity>
+
+            {!isInstalled && Platform.OS === 'web' && (
+              <TouchableOpacity 
+                style={[styles.saveButton, { marginTop: 12, opacity: 0.9 }]} 
+                onPress={promptToInstall}
+              >
+                  <LinearGradient
+                      colors={[Colors.secondary, '#FB923C']} // Orange/Gold gradient
+                      style={styles.saveGradient}
+                  >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Ionicons name="download-outline" size={20} color="white" />
+                        <Text style={styles.saveText}>
+                          {isIOS ? "Install App on Home Screen" : "Install App"}
+                        </Text>
+                      </View>
+                  </LinearGradient>
+              </TouchableOpacity>
+            )}
         </View>
 
       </ScrollView>
