@@ -1,13 +1,14 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform, Image } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform, Image, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../AuthContext';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/Colors';
 import { BlurView } from 'expo-blur';
-import { CLOUDFLARE_API_URL } from '../lib/cloudflare';
+import { CLOUDFLARE_API_URL, cloudflare } from '../lib/cloudflare';
 import { PaywallModal } from '../../components/PaywallModal';
+import { tokenCache } from '../../utils/tokenCache';
 
 const { width } = Dimensions.get('window');
 
@@ -21,9 +22,37 @@ const INDUSTRY_INSIGHTS: Record<string, string> = {
 };
 
 export default function Dashboard() {
-  const { logout, userProfile, trialStatus, isAuthenticated } = useAuth();
+  const { logout, userProfile, trialStatus, isAuthenticated, currentUser } = useAuth();
   const router = useRouter();
   const [menuVisible, setMenuVisible] = React.useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+
+  // Fetch transactions when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+        if (currentUser?.uid) {
+            fetchTransactions();
+        }
+    }, [currentUser])
+  );
+
+  const fetchTransactions = async () => {
+      try {
+          const token = await tokenCache.getToken("budgetwise_jwt_token");
+          if (token && currentUser?.uid) {
+             setLoadingTransactions(true);
+             const data = await cloudflare.getTransactions(currentUser.uid, token);
+             if (Array.isArray(data)) {
+                 setTransactions(data);
+             }
+          }
+      } catch (e) {
+          console.error("Failed to fetch transactions", e);
+      } finally {
+          setLoadingTransactions(false);
+      }
+  };
 
   const handleLogout = async () => {
       setMenuVisible(false);
@@ -168,13 +197,57 @@ export default function Dashboard() {
                 <TouchableOpacity style={styles.actionContainer} onPress={() => router.push('/budget')}>
                     <View style={[styles.actionCircle, { borderColor: Colors.platinum }]}>
                         <Ionicons name="pie-chart-outline" size={24} color={Colors.platinum} />
-                    </View>
-                    <Text style={styles.actionLabel}>Budget</Text>
-                </TouchableOpacity>
 
-                <TouchableOpacity style={styles.actionContainer} onPress={() => router.push('/scan')}>
-                     <View style={[styles.actionCircle, { borderColor: Colors.gold }]}>
-                        <Ionicons name="scan-outline" size={24} color={Colors.gold} />
+            {loadingTransactions ? (
+                <View style={{ padding: 20 }}>
+                     <ActivityIndicator color={Colors.gold} />
+                </View>
+            ) : transactions.length > 0 ? (
+                <View style={{ paddingHorizontal: 24, paddingBottom: 24 }}>
+                    {transactions.slice(0, 5).map((tx, index) => (
+                        <View key={tx.id || index} style={{ 
+                            flexDirection: 'row', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center', 
+                            paddingVertical: 12,
+                            borderBottomWidth: index !== transactions.length - 1 ? 1 : 0,
+                            borderBottomColor: 'rgba(255,255,255,0.05)'
+                        }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                                <View style={{ 
+                                    width: 36, height: 36, borderRadius: 18, 
+                                    backgroundColor: tx.type === 'income' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                    justifyContent: 'center', alignItems: 'center'
+                                }}>
+                                    <Ionicons 
+                                        name={tx.type === 'income' ? "arrow-down" : "arrow-up"} 
+                                        size={18} 
+                                        color={tx.type === 'income' ? '#10B981' : '#EF4444'} 
+                                    />
+                                </View>
+                                <View>
+                                    <Text style={{ color: 'white', fontWeight: '500', fontSize: 14 }}>{tx.description}</Text>
+                                    <Text style={{ color: Colors.textMuted, fontSize: 11 }}>{tx.category}</Text>
+                                </View>
+                            </View>
+                            <Text style={{ 
+                                color: tx.type === 'income' ? '#10B981' : 'white', 
+                                fontWeight: '600',
+                                fontSize: 15
+                            }}>
+                                {tx.type === 'income' ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
+                            </Text>
+                        </View>
+                    ))}
+                </View>
+            ) : (
+                <View style={styles.emptyState}>
+                    <View style={styles.emptyIconBg}>
+                        <Ionicons name="document-text-outline" size={24} color={Colors.textMuted} />
+                    </View>
+                    <Text style={styles.placeholderText}>No transactions recorded</Text>
+                </View>
+            )}     <Ionicons name="scan-outline" size={24} color={Colors.gold} />
                     </View>
                     <Text style={styles.actionLabel}>Scan</Text>
                 </TouchableOpacity>
