@@ -3,8 +3,10 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Activity
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { geminiService, ChatMessage } from '../services/geminiService';
-import { useFinance } from '../context/FinanceContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAuth } from '../AuthContext';
+import { cloudflare } from '../app/lib/cloudflare';
+import { tokenCache } from '../utils/tokenCache';
 
 interface Message {
   id: string;
@@ -14,18 +16,50 @@ interface Message {
 }
 
 export function AiAdvisor() {
-  const { transactions, netWorth, monthlyIncome, monthlyExpenses } = useFinance();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      role: 'model',
-      text: `Hello! I'm your BudgetWise AI Advisor. I see your current net worth is $${netWorth.toLocaleString()} with monthly income of $${monthlyIncome.toLocaleString()} and expenses of $${monthlyExpenses.toLocaleString()}. You have ${transactions.length} recent transactions. How can I help you optimize your finances today?`,
-      timestamp: new Date()
-    }
-  ]);
+  const { userProfile, currentUser } = useAuth();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  
+  // Real Financial Data State
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [netWorth, setNetWorth] = useState(0);
+  const [expenses, setExpenses] = useState(0);
+
+  useEffect(() => {
+    loadFinancialData();
+  }, [currentUser]);
+
+  const loadFinancialData = async () => {
+       if (!currentUser?.uid) return;
+       try {
+           const token = await tokenCache.getToken("budgetwise_jwt_token");
+           if (token) {
+               const txs = await cloudflare.getTransactions(currentUser.uid, token);
+               if (Array.isArray(txs)) {
+                   setTransactions(txs);
+                   // Calculate metrics
+                   const totalExp = txs.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+                   const totalInc = txs.filter(t => t.type === 'income').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+                   setExpenses(totalExp);
+                   setNetWorth(totalInc - totalExp); // Simplified math
+
+                   // Initial Message after loading data
+                   if (messages.length === 0) {
+                        setMessages([{
+                            id: 'welcome',
+                            role: 'model',
+                            text: `Hello ${userProfile?.name?.split(' ')[0] || ''}! I've analyzed your ${txs.length} transactions. Your current flow shows $${totalExp.toLocaleString()} in recent expenses. How can I help you optimize your wealth today?`,
+                            timestamp: new Date()
+                        }]);
+                   }
+               }
+           }
+       } catch (e) {
+           console.error("Failed to load generic data for AI", e);
+       }
+  };
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -52,9 +86,13 @@ export function AiAdvisor() {
     setIsLoading(true);
 
     try {
-      // Create user context string based on props
-      const recentTx = transactions.slice(0, 5).map(t => `${t.date}: ${t.description} ($${t.amount})`).join(', ');
-      const userContext = `Current Net Worth: $${netWorth}. Monthly Income: $${monthlyIncome}. Monthly Expenses: $${monthlyExpenses}. Recent Transactions: ${recentTx}.`;
+      const recentTx = transactions.slice(0, 5).map(t => `${t.date?.split('T')[0]}: ${t.description} ($${t.amount})`).join(', ');
+      
+      const userContext = `
+        User Profile: ${JSON.stringify(userProfile)}.
+        Recent Metrics: Net Worth ~$${netWorth}, Monthly Income: $${userProfile?.monthly_income || 0}, Recent Expenses: $${expenses}.
+        Recent Transactions: ${recentTx}
+      `;
       
       const history: ChatMessage[] = messages.map(m => ({ role: m.role, parts: m.text }));
       
