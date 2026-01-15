@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   business_industry TEXT DEFAULT 'General',
   onboarding_complete INTEGER DEFAULT 0,
   email_verified BOOLEAN DEFAULT FALSE,
+  subscription_status TEXT DEFAULT 'trial',
+  trial_start_date DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)

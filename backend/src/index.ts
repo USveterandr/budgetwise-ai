@@ -75,11 +75,12 @@ app.post('/api/auth/signup', async (c) => {
 
     const userId = nanoid()
     const hashedPassword = await hash(password, 8)
+    const trialStartDate = new Date().toISOString()
 
-    // Transaction: Insert user + Insert initial profile
+    // Transaction: Insert user + Insert initial profile with Trial Info
     const batch = await c.env.DB.batch([
       c.env.DB.prepare("INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)").bind(userId, email, hashedPassword),
-      c.env.DB.prepare("INSERT INTO profiles (user_id, email, name) VALUES (?, ?, ?)").bind(userId, email, name || 'New User')
+      c.env.DB.prepare("INSERT INTO profiles (user_id, email, name, subscription_status, trial_start_date) VALUES (?, ?, ?, 'trial', ?)").bind(userId, email, name || 'New User', trialStartDate)
     ])
 
     const token = sign({ userId, email }, getJwtSecret(c), { expiresIn: '7d' })
