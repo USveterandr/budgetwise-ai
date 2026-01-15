@@ -194,10 +194,31 @@ export default function Dashboard() {
                     <Text style={styles.actionLabel}>Add</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.actionContainer} onPress={() => router.push('/budget')}>
-                    <View style={[styles.actionCircle, { borderColor: Colors.platinum }]}>
-                        <Ionicons name="pie-chart-outline" size={24} color={Colors.platinum} />
+                <TouchableOpacity style={styles.actionContainer} onPress={() => router.push('/scan')}>
+                    <View style={[styles.actionCircle, { borderColor: Colors.gold }]}>
+                        <Ionicons name="scan-outline" size={24} color={Colors.gold} />
+                    </View>
+                    <Text style={styles.actionLabel}>Scan</Text>
+                </TouchableOpacity>
 
+                 <TouchableOpacity style={styles.actionContainer} onPress={() => router.push('/analyze')}>
+                     <View style={[styles.actionCircle, { borderColor: Colors.platinum }]}>
+                        <Ionicons name="analytics-outline" size={24} color={Colors.platinum} />
+                    </View>
+                    <Text style={styles.actionLabel}>Analyze</Text>
+                </TouchableOpacity>
+            </ScrollView>
+        </View>
+
+        {/* Transactions Portal */}
+        <View style={[styles.glassCard, { marginTop: 20, marginBottom: 40 }]}>
+            <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>Recent Activity</Text>
+                <TouchableOpacity onPress={() => router.push('/transactions')}>
+                    <Text style={styles.linkText}>View Ledger</Text>
+                </TouchableOpacity>
+            </View>
+            
             {loadingTransactions ? (
                 <View style={{ padding: 20 }}>
                      <ActivityIndicator color={Colors.gold} />
@@ -247,35 +268,7 @@ export default function Dashboard() {
                     </View>
                     <Text style={styles.placeholderText}>No transactions recorded</Text>
                 </View>
-            )}     <Ionicons name="scan-outline" size={24} color={Colors.gold} />
-                    </View>
-                    <Text style={styles.actionLabel}>Scan</Text>
-                </TouchableOpacity>
-
-                 <TouchableOpacity style={styles.actionContainer} onPress={() => router.push('/analyze')}>
-                     <View style={[styles.actionCircle, { borderColor: Colors.platinum }]}>
-                        <Ionicons name="analytics-outline" size={24} color={Colors.platinum} />
-                    </View>
-                    <Text style={styles.actionLabel}>Analyze</Text>
-                </TouchableOpacity>
-            </ScrollView>
-        </View>
-
-        {/* Transactions Portal */}
-        <View style={[styles.glassCard, { marginTop: 20, marginBottom: 40 }]}>
-            <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>Recent Activity</Text>
-                <TouchableOpacity>
-                    <Text style={styles.linkText}>View Ledger</Text>
-                </TouchableOpacity>
-            </View>
-            
-            <View style={styles.emptyState}>
-                <View style={styles.emptyIconBg}>
-                    <Ionicons name="document-text-outline" size={24} color={Colors.textMuted} />
-                </View>
-                <Text style={styles.placeholderText}>No transactions recorded</Text>
-            </View>
+            )}
         </View>
 
       </ScrollView>

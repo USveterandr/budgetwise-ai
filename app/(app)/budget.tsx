@@ -83,13 +83,22 @@ export default function BudgetScreen() {
                  <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
                     <Ionicons name="arrow-back" size={24} color="white" />
                  </TouchableOpacity>
-                 <Text style={styles.title}>Smart Budgets</Text>
+                 <Text style={styles.title}>Budget Planner</Text>
                  <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.addBtn}>
                     <Ionicons name="add" size={24} color={Colors.gold} />
                  </TouchableOpacity>
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
+                <View style={{ marginBottom: 24, paddingHorizontal: 4 }}>
+                    <Text style={{ color: Colors.gold, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6 }}>
+                        Budgeting Tools Coming Soon
+                    </Text>
+                    <Text style={{ color: '#94A3B8', fontSize: 14, lineHeight: 22 }}>
+                        Set limits for categories and track your spending against them.
+                    </Text>
+                </View>
+
                 {/* Summary Card */}
                 <View style={styles.summaryCard}>
                     <Text style={styles.summaryLabel}>Total Monthly Budget</Text>
