@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Redirect } from 'expo-router';
@@ -11,9 +11,13 @@ import { TestimonialCard } from '../components/landing/TestimonialCard';
 import { useAuth } from '../AuthContext';
 
 const HERO_IMAGE = 'https://d64gsuwffb70l.cloudfront.net/6931d42fc95edfeb0aaaa606_1764873445881_ef508941.webp';
+const HORIZONTAL_PADDING = 40; // Total horizontal padding (20px on each side)
+const MAX_HERO_IMAGE_HEIGHT = 400; // Maximum height for hero image on large screens
+const ASPECT_RATIO = 3 / 5; // Height multiplier for 5:3 aspect ratio (width:height = 5:3, so height = width × 3/5)
 
 export default function LandingPage() {
   const { currentUser } = useAuth();
+  const { width: screenWidth } = useWindowDimensions();
   const [timeLeft, setTimeLeft] = useState({ hours: 11, minutes: 59, seconds: 59 });
 
   useEffect(() => {
@@ -64,7 +68,20 @@ export default function LandingPage() {
           <Button title="Learn More" onPress={() => router.push('/learn-more')} variant="outline" size="large" style={{ marginTop: 12 }} />
         </View>
 
-        <Image source={{ uri: HERO_IMAGE }} style={styles.heroImage} contentFit="contain" />
+        <Image 
+          source={{ uri: HERO_IMAGE }} 
+          style={{
+            width: screenWidth - HORIZONTAL_PADDING,
+            height: (screenWidth - HORIZONTAL_PADDING) * ASPECT_RATIO,
+            borderRadius: 16,
+            marginBottom: 40,
+            alignSelf: 'center',
+            maxHeight: MAX_HERO_IMAGE_HEIGHT, // Cap height on large screens; contentFit="cover" maintains visual quality
+          }}
+          contentFit="cover"
+          placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
+          transition={300}
+        />
 
         <Text style={styles.sectionTitle}>Why Choose BudgetWise?</Text>
         {features.map((f, i) => <FeatureCard key={i} {...f} />)}
@@ -99,7 +116,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 36, fontWeight: '800', color: Colors.text, textAlign: 'center', lineHeight: 44, marginBottom: 16 },
   subtitle: { fontSize: 16, color: Colors.textSecondary, textAlign: 'center', lineHeight: 24, marginBottom: 32, paddingHorizontal: 10 },
   ctas: { marginBottom: 40 },
-  heroImage: { width: '100%', height: 200, borderRadius: 16, marginBottom: 40, resizeMode: 'contain' },
   sectionTitle: { fontSize: 24, fontWeight: '700', color: Colors.text, marginBottom: 20 },
   stats: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 20, marginBottom: 40 },
   statItem: { alignItems: 'center' },
