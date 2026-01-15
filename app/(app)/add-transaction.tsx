@@ -61,14 +61,12 @@ export default function AddTransaction() {
       console.log('[AddTransaction] Success:', result);
 
       if (Platform.OS === 'web') {
-        if (confirm('Transaction added successfully!')) {
-             router.back();
-        } else {
-             router.back(); // Fallback if they cancel, still go back or stay? Usually OK means proceed.
-        }
+        // Use a short timeout to let the UI update or just standard alert then move
+        alert('Transaction added!');
+        router.replace('/dashboard');
       } else {
         Alert.alert('Success', 'Transaction added successfully', [
-            { text: 'OK', onPress: () => router.back() }
+            { text: 'OK', onPress: () => router.replace('/dashboard') }
         ]);
       }
       
