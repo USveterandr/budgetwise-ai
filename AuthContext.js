@@ -12,6 +12,7 @@ const AuthContext = React.createContext({
   login: async (email, password) => {},
   signup: async (email, password, name) => {},
   resetPassword: async (email) => {},
+  confirmPasswordReset: async (token, newPassword) => {},
   logout: async () => {},
   refreshProfile: async () => {} 
 });

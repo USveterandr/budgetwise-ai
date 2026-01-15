@@ -138,7 +138,7 @@ export default function ScanScreen() {
     // --- Render Web Fallback ---
     if (Platform.OS === 'web') {
         return (
-            <View style={styles.container}>
+            <View style={[styles.container, { minHeight: 600 }]}>
                 <View style={styles.header}>
                      <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
                         <Ionicons name="close" size={24} color="white" />
