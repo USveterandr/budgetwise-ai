@@ -201,6 +201,13 @@ export default function Dashboard() {
                     <Text style={styles.actionLabel}>Scan</Text>
                 </TouchableOpacity>
 
+                <TouchableOpacity style={styles.actionContainer} onPress={() => router.push('/budget')}>
+                    <View style={[styles.actionCircle, { borderColor: Colors.platinum }]}>
+                        <Ionicons name="pie-chart-outline" size={24} color={Colors.platinum} />
+                    </View>
+                    <Text style={styles.actionLabel}>Budget</Text>
+                </TouchableOpacity>
+
                  <TouchableOpacity style={styles.actionContainer} onPress={() => router.push('/analyze')}>
                      <View style={[styles.actionCircle, { borderColor: Colors.platinum }]}>
                         <Ionicons name="analytics-outline" size={24} color={Colors.platinum} />
