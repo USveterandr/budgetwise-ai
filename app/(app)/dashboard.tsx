@@ -334,4 +334,5 @@ const styles = StyleSheet.create({
       borderWidth: 1,
       borderColor: 'rgba(255,255,255,0.05)'
   },
-  placeholderText: { color: Colors.textMuted, fontSize: 13,fontWeight: '300' }
+  placeholderText: { color: Colors.textMuted, fontSize: 13, fontWeight: '300' }
+});
