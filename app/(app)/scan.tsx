@@ -21,7 +21,16 @@ export default function ScanScreen() {
     const [editModalVisible, setEditModalVisible] = useState(false);
     const [scannedData, setScannedData] = useState<any>(null);
 
-    if (!permission) return <View />;
+    if (!permission) {
+        // Camera permissions are still loading
+        return (
+            <View style={styles.permissionContainer}>
+                <ActivityIndicator size="large" color={Colors.gold} />
+                <Text style={styles.permissionText}>Initializing Camera...</Text>
+            </View>
+        );
+    }
+    
     if (!permission.granted) {
         return (
             <View style={styles.permissionContainer}>
