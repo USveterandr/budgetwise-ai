@@ -100,18 +100,13 @@ class GeminiService {
       const response = await result.response;
       
       const text = response.text();
+      
+      if (!text) throw new Error("No response text");
+
       // Remove code block markers if present and trim
       const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
       
       return JSON.parse(jsonStr);
-      const text = response.text();
-      
-      if (!text) throw new Error("No response text");
-      
-      // Clean up the response to extract JSON
-      const jsonStart = text.indexOf('{');
-      const jsonEnd = text.lastIndexOf('}') + 1;
-      const jsonString = text.substring(jsonStart, jsonEnd);
       
       return JSON.parse(jsonString);
     } catch (error) {
