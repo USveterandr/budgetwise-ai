@@ -4,7 +4,7 @@ module.exports = function(api) {
     presets: ['babel-preset-expo'],
     plugins: [
       '@babel/plugin-transform-export-namespace-from', // For web support
-      'react-native-worklets/plugin' // Must be last
+      'react-native-reanimated/plugin' // Must be last
     ]
   };
 };
