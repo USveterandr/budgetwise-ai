@@ -79,15 +79,15 @@ class GeminiService {
     try {
       const model = this.genAI.getGenerativeModel({ model: this.visionModel });
       
-      const prompt = `Perform OCR (Optical Character Recognition) on this receipt image to extract all visible text.
-      Simultaneously, analyze the content to structure the following data:
-      1. Merchant Name
-      2. Date (YYYY-MM-DD format)
-      3. Total Amount (number only)
-      4. Category (Food, Transport, Utilities, Entertainment, Shopping, Health, Other)
-      5. List of items purchased (name and price)
+      const prompt = `Perform OCR (Optical Character Recognition) on this receipt image.
+      Extract the following data into a strict JSON object:
+      - merchant (string): Business name
+      - date (string): YYYY-MM-DD format (use today ${new Date().toISOString().split('T')[0]} if not found)
+      - amount (number): Total transaction amount
+      - category (string): One of [Food, Transport, Utilities, Entertainment, Shopping, Health, Other]
+      - items (array): List of {name, price} objects
       
-      Return JSON only with the extracted fields and the full raw OCR text.`;
+      Return ONLY the JSON object. Do not wrap in markdown code blocks.`;
 
       const image = {
         inlineData: {
@@ -98,6 +98,12 @@ class GeminiService {
 
       const result = await model.generateContent([prompt, image]);
       const response = await result.response;
+      
+      const text = response.text();
+      // Remove code block markers if present and trim
+      const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      
+      return JSON.parse(jsonStr);
       const text = response.text();
       
       if (!text) throw new Error("No response text");
