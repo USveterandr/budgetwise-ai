@@ -113,7 +113,9 @@ export const cloudflare = {
             },
             body: JSON.stringify(transaction)
         });
-        return res.json();
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to add transaction');
+        return data;
     },
 
     async deleteTransaction(id: string, idToken: string) {
