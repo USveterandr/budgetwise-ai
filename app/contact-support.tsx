@@ -92,7 +92,7 @@ export default function ContactSupportScreen() {
               <View style={styles.infoBox}>
                 <Ionicons name="information-circle-outline" size={20} color="#94A3B8" />
                 <Text style={styles.infoText}>
-                  Average response time is currently under 1 hour.
+                  Average response time is currently under 24-72 hours.
                 </Text>
               </View>
             </View>
