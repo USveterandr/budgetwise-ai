@@ -358,4 +358,40 @@ app.get('/api/assets/avatar/:userId', async (c) => {
     })
 })
 
+// =====================
+// Transactions
+// =====================
+
+app.get('/api/transactions', authMiddleware, async (c) => {
+  const currentUser = c.get('user')
+  const { results } = await c.env.DB.prepare(
+    "SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC"
+  ).bind(currentUser.userId).all()
+  return c.json(results)
+})
+
+app.post('/api/transactions', authMiddleware, async (c) => {
+  const currentUser = c.get('user')
+  const { description, amount, category, type, date } = await c.req.json()
+  
+  const id = nanoid()
+  
+  await c.env.DB.prepare(
+    "INSERT INTO transactions (id, user_id, description, amount, category, type, date) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  ).bind(id, currentUser.userId, description, amount, category, type, date).run()
+  
+  return c.json({ success: true, id })
+})
+
+app.delete('/api/transactions/:id', authMiddleware, async (c) => {
+  const currentUser = c.get('user')
+  const id = c.req.param('id')
+  
+  await c.env.DB.prepare(
+    "DELETE FROM transactions WHERE id = ? AND user_id = ?"
+  ).bind(id, currentUser.userId).run()
+  
+  return c.json({ success: true })
+})
+
 export default app
