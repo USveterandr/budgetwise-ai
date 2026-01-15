@@ -113,11 +113,34 @@ export function AuthProvider({ children }) {
         return await tokenCache.getToken(TOKEN_KEY);
     }
 
+    const getTrialStatus = () => {
+        if (!userProfile) return { daysLeft: 7, isExpired: false, isPaid: false };
+        
+        if (userProfile.subscription_status === 'active') {
+             return { daysLeft: 999, isExpired: false, isPaid: true };
+        }
+
+        const start = new Date(userProfile.trial_start_date || userProfile.created_at);
+        const now = new Date();
+        const diffTime = Math.abs(now - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        const daysLeft = Math.max(0, 7 - diffDays);
+
+        return { 
+            daysLeft, 
+            isExpired: diffDays > 7, // Strict > 7 check
+            isPaid: false 
+        };
+    };
+
+    const trialStatus = getTrialStatus();
+
     const value = {
         currentUser,
         userProfile,
         isAuthenticated: !!currentUser,
         loading,
+        trialStatus,
         tokenCache,
         getToken,
         login,

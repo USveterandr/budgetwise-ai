@@ -50,7 +50,8 @@ export default function Signup() {
       </TouchableOpacity>
 
       <View style={styles.card}>
-        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.title}>Start 7-Day Free Trial</Text>
+        <Text style={{ textAlign: 'center', color: '#94A3B8', marginBottom: 20 }}>No credit card required</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <View style={styles.inputContainer}>

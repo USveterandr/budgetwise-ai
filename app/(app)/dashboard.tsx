@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/Colors';
 import { BlurView } from 'expo-blur';
 import { CLOUDFLARE_API_URL } from '../lib/cloudflare';
+import { PaywallModal } from '../../components/PaywallModal';
 
 const { width } = Dimensions.get('window');
 
@@ -20,7 +21,7 @@ const INDUSTRY_INSIGHTS: Record<string, string> = {
 };
 
 export default function Dashboard() {
-  const { logout, userProfile } = useAuth();
+  const { logout, userProfile, trialStatus, isAuthenticated } = useAuth();
   const router = useRouter();
   const [menuVisible, setMenuVisible] = React.useState(false);
 
@@ -50,6 +51,14 @@ export default function Dashboard() {
 
   return (
     <View style={styles.container}>
+      <PaywallModal 
+        visible={trialStatus?.isExpired} 
+        onSubscribe={() => {
+             // In real app, trigger IAP or Stripe link
+             alert('Redirecting to subscription portal...');
+        }}
+      />
+
       {/* Background Ambience - Luxury Dark */}
       <LinearGradient
         colors={['#09090b', '#1c1917', '#000000']}
