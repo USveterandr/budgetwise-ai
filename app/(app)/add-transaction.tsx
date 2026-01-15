@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
@@ -18,8 +18,23 @@ export default function AddTransaction() {
   const [type, setType] = useState<'income' | 'expense'>('expense');
 
   const handleSave = async () => {
+    console.log('[AddTransaction] Attempting save...');
     if (!amount || !description) {
-      Alert.alert('Missing Fields', 'Please fill in amount and description');
+      if (Platform.OS === 'web') {
+        alert('Please fill in amount and description');
+      } else {
+        Alert.alert('Missing Fields', 'Please fill in amount and description');
+      }
+      return;
+    }
+
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount)) {
+      if (Platform.OS === 'web') {
+         alert('Invalid amount. Please enter a number.');
+      } else {
+         Alert.alert('Error', 'Invalid amount. Please enter a number.');
+      }
       return;
     }
 
@@ -27,24 +42,44 @@ export default function AddTransaction() {
     try {
       const token = await tokenCache.getToken("budgetwise_jwt_token");
       if (!token) {
-        Alert.alert('Error', 'Not authenticated');
-        return;
+        console.error('[AddTransaction] No token found');
+        throw new Error('Not authenticated. Please log in again.');
       }
 
-      await cloudflare.addTransaction({
-        amount: parseFloat(amount),
+      console.log('[AddTransaction] Sending data:', {
+        amount: numAmount, description, category, type
+      });
+
+      const result = await cloudflare.addTransaction({
+        amount: numAmount,
         description,
         category,
         type,
         date: new Date().toISOString()
       }, token);
 
-      Alert.alert('Success', 'Transaction added successfully', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
+      console.log('[AddTransaction] Success:', result);
+
+      if (Platform.OS === 'web') {
+        if (confirm('Transaction added successfully!')) {
+             router.back();
+        } else {
+             router.back(); // Fallback if they cancel, still go back or stay? Usually OK means proceed.
+        }
+      } else {
+        Alert.alert('Success', 'Transaction added successfully', [
+            { text: 'OK', onPress: () => router.back() }
+        ]);
+      }
       
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to save transaction');
+      console.error('[AddTransaction] Error:', error);
+      const msg = error.message || 'Failed to save transaction';
+      if (Platform.OS === 'web') {
+         alert(`Error: ${msg}`);
+      } else {
+         Alert.alert('Error', msg);
+      }
     } finally {
       setLoading(false);
     }
