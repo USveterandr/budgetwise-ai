@@ -18,6 +18,13 @@ export const Colors = {
   white: '#FFFFFF',
   black: '#000000',
   cardBg: 'rgba(15, 23, 42, 0.6)',
+  
+  // Luxury Theme
+  gold: '#D4AF37',
+  goldLight: '#FCD34D',
+  goldDark: '#92400E',
+  platinum: '#E2E8F0',
+  midnight: '#0F172A',
   gradientStart: '#8B5CF6',
   gradientEnd: '#06B6D4',
   luxe: '#F1F5F9',

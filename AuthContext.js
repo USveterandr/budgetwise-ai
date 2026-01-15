@@ -71,6 +71,10 @@ export function AuthProvider({ children }) {
         return await cloudflare.resetPassword(email);
     };
 
+    const confirmPasswordReset = async (token, newPassword) => {
+        return await cloudflare.confirmPasswordReset(token, newPassword);
+    };
+
     const logout = async () => {
         await tokenCache.deleteToken(TOKEN_KEY);
         setCurrentUser(null);
@@ -89,16 +93,40 @@ export function AuthProvider({ children }) {
         }
     }
 
+    const updateProfile = async (updates) => {
+        try {
+            const token = await tokenCache.getToken(TOKEN_KEY);
+            const success = await cloudflare.updateProfile(token, updates);
+            if (success) {
+                // Optimistic update or fetch fresh
+                 setUserProfile(prev => ({ ...prev, ...updates }));
+                 return true;
+            }
+            return false;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    }
+
+    const getToken = async () => {
+        return await tokenCache.getToken(TOKEN_KEY);
+    }
+
     const value = {
         currentUser,
         userProfile,
         isAuthenticated: !!currentUser,
         loading,
+        tokenCache,
+        getToken,
         login,
         signup,
         resetPassword,
+        confirmPasswordReset,
         logout,
-        refreshProfile
+        refreshProfile,
+        updateProfile
     };
 
     return (

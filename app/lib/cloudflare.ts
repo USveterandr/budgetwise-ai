@@ -4,7 +4,8 @@
  */
 
 // Point to production backend for stability during testing
-const CLOUDFLARE_WORKER_URL = 'https://budgetwise-backend.isaactrinidadllc.workers.dev';
+export const CLOUDFLARE_API_URL = 'https://budgetwise-backend.isaactrinidadllc.workers.dev';
+const CLOUDFLARE_WORKER_URL = CLOUDFLARE_API_URL;
 
 export const cloudflare = {
     // Auth - Login
@@ -40,6 +41,17 @@ export const cloudflare = {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Reset failed');
         return data; 
+    },
+
+    async confirmPasswordReset(token, newPassword) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/auth/update-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, newPassword })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Password update failed');
+        return data;
     },
 
     // Profiles

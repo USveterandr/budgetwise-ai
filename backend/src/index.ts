@@ -172,6 +172,45 @@ app.post('/api/auth/reset-password', async (c) => {
   }
 })
 
+/**
+ * UPDATE PASSWORD (from Reset Link)
+ * POST /api/auth/update-password
+ */
+app.post('/api/auth/update-password', async (c) => {
+  try {
+    const { token, newPassword } = await c.req.json()
+    if (!token || !newPassword) return c.json({ error: 'Token and password required' }, 400)
+
+    // Verify token
+    let payload: any
+    try {
+        payload = verify(token, getJwtSecret(c))
+    } catch (e) {
+        return c.json({ error: 'Invalid or expired token' }, 401)
+    }
+
+    if (payload.type !== 'reset') {
+        return c.json({ error: 'Invalid token type' }, 401)
+    }
+
+    const email = payload.email
+    const hashedPassword = await hash(newPassword, 8)
+
+    // Update password
+    const res = await c.env.DB.prepare(
+        "UPDATE users SET password_hash = ? WHERE email = ?"
+    ).bind(hashedPassword, email).run()
+
+    if (res.meta.changes === 0) {
+        return c.json({ error: 'User not found' }, 404)
+    }
+
+    return c.json({ success: true })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
 // Middleware to verify token for protected routes
 const authMiddleware = async (c: any, next: any) => {
   const authHeader = c.req.header('Authorization')
@@ -215,7 +254,7 @@ app.post('/api/profile', authMiddleware, async (c) => {
   const {
     email, name, plan, monthly_income,
     currency, business_industry, bio, savings_rate,
-    onboarding_complete
+    onboarding_complete, avatar_url
   } = body
   
   const user_id = currentUser.userId
@@ -223,25 +262,27 @@ app.post('/api/profile', authMiddleware, async (c) => {
   const existing = await c.env.DB.prepare("SELECT user_id FROM profiles WHERE user_id = ?").bind(user_id).first()
 
   if (existing) {
+    // Dynamically build update query or just update all
+    // Now including avatar_url
     await c.env.DB.prepare(`
       UPDATE profiles SET 
         name = ?2, email = ?3, plan = ?4, monthly_income = ?5,
         currency = ?6, business_industry = ?7, bio = ?8,
-        savings_rate = ?9, onboarding_complete = ?10, updated_at = CURRENT_TIMESTAMP
+        savings_rate = ?9, onboarding_complete = ?10, avatar_url = ?11, updated_at = CURRENT_TIMESTAMP
       WHERE user_id = ?1
     `).bind(
       user_id, name, email, plan, monthly_income,
-      currency, business_industry, bio, savings_rate, onboarding_complete
+      currency, business_industry, bio, savings_rate, onboarding_complete, avatar_url
     ).run()
   } else {
     await c.env.DB.prepare(`
       INSERT INTO profiles (
         user_id, name, email, plan, monthly_income,
-        currency, business_industry, bio, savings_rate, onboarding_complete
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        currency, business_industry, bio, savings_rate, onboarding_complete, avatar_url
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       user_id, name, email, plan, monthly_income,
-      currency, business_industry, bio, savings_rate, onboarding_complete
+      currency, business_industry, bio, savings_rate, onboarding_complete, avatar_url
     ).run()
   }
 
@@ -249,8 +290,9 @@ app.post('/api/profile', authMiddleware, async (c) => {
 })
 
 
-// POST /profile/avatar
-app.post('/profile/avatar', authMiddleware, async (c) => {
+// POST /api/profile/avatar
+// Uploads avatar to R2 and updates profile
+app.post('/api/profile/avatar', authMiddleware, async (c) => {
   const currentUser = c.get('user')
   const formData = await c.req.parseBody()
   const file = formData['avatar']
@@ -260,13 +302,59 @@ app.post('/profile/avatar', authMiddleware, async (c) => {
   }
 
   const userId = currentUser.userId
-  const key = `${userId}/avatar.jpg`
+  const timestamp = Date.now()
+  const key = `${userId}/avatar_${timestamp}.jpg` // Cache busting key
 
   await c.env.AVATAR_BUCKET.put(key, file.stream(), {
     httpMetadata: { contentType: file.type }
   })
+  
+  // Construct the URL (Using a GET route we will make below)
+  // Or assuming we set up a domain. For now, let's point to a helper route.
+  // We'll use the worker's own URL origin if possible, but for now relative path for API.
+  const avatarUrl = `/api/assets/avatar/${userId}`
 
-  return c.json({ success: true, key })
+  // Update DB
+  await c.env.DB.prepare("UPDATE profiles SET avatar_url = ? WHERE user_id = ?")
+    .bind(avatarUrl, userId)
+    .run()
+
+  return c.json({ success: true, avatar_url: avatarUrl })
+})
+
+// GET /api/assets/avatar/:userId
+// Serves the avatar from R2
+app.get('/api/assets/avatar/:userId', async (c) => {
+    const userId = c.req.param('userId')
+    
+    // We list objects to find the latest or just use the known pattern if we stored the key.
+    // Since we stored a generic URL, we need to know the KEY. 
+    // Ideally we should store the KEY in the DB or look it up.
+    // Let's assume we fetch the LATEST file for that user from the bucket.
+    
+    const list = await c.env.AVATAR_BUCKET.list({ prefix: userId + '/avatar_' })
+    if (!list.objects || list.objects.length === 0) {
+        // Return default avatar or 404
+        return c.text('No avatar', 404)
+    }
+    
+    // Sort by uploaded time (key has timestamp) or verify logic
+    // list.objects is usually sorted by key.
+    const latest = list.objects[list.objects.length - 1]
+    
+    const object = await c.env.AVATAR_BUCKET.get(latest.key)
+    
+    if (object === null) {
+      return c.text('Object Not Found', 404)
+    }
+  
+    const headers = new Headers()
+    object.writeHttpMetadata(headers)
+    headers.set('etag', object.httpEtag)
+  
+    return new Response(object.body, {
+      headers,
+    })
 })
 
 export default app
