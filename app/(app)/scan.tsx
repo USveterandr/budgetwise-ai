@@ -180,7 +180,7 @@ export default function ScanScreen() {
                             style={styles.input} 
                             value={scannedData?.amount}
                             onChangeText={(t) => setScannedData({...scannedData, amount: t})}
-                            keyboardType="numeric"
+                            keyboardType="decimal-pad"
                         />
                         
                         <Text style={styles.label}>Category</Text>
@@ -283,7 +283,7 @@ export default function ScanScreen() {
                             style={styles.input} 
                             value={scannedData?.amount}
                             onChangeText={(t) => setScannedData({...scannedData, amount: t})}
-                            keyboardType="numeric"
+                            keyboardType="decimal-pad"
                         />
                         
                         <Text style={styles.label}>Category</Text>

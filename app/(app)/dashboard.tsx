@@ -149,7 +149,7 @@ export default function Dashboard() {
                 >
                     <Ionicons name="wallet-outline" size={32} color={Colors.gold} />
                     <Text style={styles.statValue}>
-                         {userProfile?.currency || '$'}{userProfile?.monthly_income?.toLocaleString() || '0'}
+                         {userProfile?.currency || '$'}{(userProfile?.monthly_income || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Text>
                     <Text style={styles.statLabel}>Monthly Flow</Text>
                 </LinearGradient>

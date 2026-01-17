@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch, Alert, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../AuthContext';
 import { useFinance } from '../context/FinanceContext';
 import { cloudflare } from '../app/lib/cloudflare';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -32,7 +32,25 @@ interface UserProfile {
 }
 
 export function Profile() {
-  const { user, upgradePlan, getSubscriptionPlans, refreshProfile, getToken } = useAuth();
+  const { currentUser, userProfile, refreshProfile, getToken } = useAuth() as any;
+  
+  // Map auth context user to component expected user format
+  const user = { 
+    id: currentUser?.uid, 
+    ...currentUser, 
+    ...userProfile,
+    plan: userProfile?.subscription_tier || 'Starter'
+  };
+
+  const getSubscriptionPlans = () => [
+    { name: 'Starter', price: 0, period: 'month', features: ['Basic Budgeting', 'Manual Tracking'], limits: {} },
+    { name: 'Professional', price: 9.99, period: 'month', features: ['AI Advisor', 'Unlimited Budgets'], limits: {} }
+  ];
+
+  const upgradePlan = async (plan: any) => {
+    Alert.alert('Coming Soon', 'Subscription upgrades will be available shortly.');
+  };
+
   const { investments } = useFinance();
   const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
@@ -240,7 +258,7 @@ export function Profile() {
               style={styles.editInput}
               value={editValue}
               onChangeText={setEditValue}
-              keyboardType={typeof value === 'number' ? 'numeric' : 'default'}
+              keyboardType={typeof value === 'number' ? 'decimal-pad' : 'default'}
               placeholderTextColor="#64748B"
             />
           )}
@@ -377,7 +395,7 @@ export function Profile() {
                 placeholderTextColor="#64748B"
                 value={newSource.amount}
                 onChangeText={(text) => setNewSource({...newSource, amount: text})}
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
               />
               <TouchableOpacity 
                 style={styles.addButton}

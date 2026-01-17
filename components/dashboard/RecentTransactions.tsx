@@ -52,7 +52,7 @@ export function RecentTransactions({ transactions, onViewAll }: RecentTransactio
               <Text style={styles.category}>{t.category}</Text>
             </View>
             <Text style={[styles.amount, isIncome ? styles.incomeText : styles.expenseText]}>
-              {isIncome ? '+' : '-'}${t.amount.toLocaleString()}
+              {isIncome ? '+' : '-'}${t.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </Text>
           </View>
         );

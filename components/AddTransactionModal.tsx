@@ -107,7 +107,7 @@ export function AddTransactionModal({ visible, onClose, onAdd, prefilledData }: 
           </View>
 
           <TextInput style={styles.input} placeholder="Description" value={description} onChangeText={setDescription} placeholderTextColor={DashboardColors.textSecondary} />
-          <TextInput style={styles.input} placeholder="Amount" keyboardType="numeric" value={amount} onChangeText={setAmount} placeholderTextColor={DashboardColors.textSecondary} />
+          <TextInput style={styles.input} placeholder="Amount" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} placeholderTextColor={DashboardColors.textSecondary} />
 
           <Text style={styles.label}>Type</Text>
           <View style={styles.typeRow}>

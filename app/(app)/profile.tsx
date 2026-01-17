@@ -185,7 +185,7 @@ export default function Profile() {
                 style={styles.input}
                 value={formData.monthly_income}
                 onChangeText={t => setFormData({...formData, monthly_income: t})}
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 placeholder="5000"
                 placeholderTextColor={Colors.textMuted}
             />
@@ -195,7 +195,7 @@ export default function Profile() {
                 style={styles.input} 
                 value={formData.savings_rate}
                 onChangeText={t => setFormData({...formData, savings_rate: t})}
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 placeholder="20"
                 placeholderTextColor={Colors.textMuted}
             />

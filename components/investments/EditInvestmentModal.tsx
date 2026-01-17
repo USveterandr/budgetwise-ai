@@ -126,7 +126,7 @@ export function EditInvestmentModal({ visible, onClose, investment, onUpdate }: 
               placeholder="e.g., 10"
               value={quantity}
               onChangeText={setQuantity}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               placeholderTextColor={DashboardColors.textSecondary}
             />
 
@@ -136,7 +136,7 @@ export function EditInvestmentModal({ visible, onClose, investment, onUpdate }: 
               placeholder="e.g., 150.00"
               value={purchasePrice}
               onChangeText={setPurchasePrice}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               placeholderTextColor={DashboardColors.textSecondary}
             />
 
@@ -146,7 +146,7 @@ export function EditInvestmentModal({ visible, onClose, investment, onUpdate }: 
               placeholder="e.g., 175.50"
               value={currentPrice}
               onChangeText={setCurrentPrice}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               placeholderTextColor={DashboardColors.textSecondary}
             />
 

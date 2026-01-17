@@ -117,7 +117,7 @@ export default function AddTransaction() {
                 style={styles.input}
                 placeholder="0.00"
                 placeholderTextColor="#64748B"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 value={amount}
                 onChangeText={setAmount}
             />
