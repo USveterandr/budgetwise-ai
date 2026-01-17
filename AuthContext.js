@@ -5,16 +5,16 @@ import { tokenCache } from "./utils/tokenCache";
 const TOKEN_KEY = "budgetwise_jwt_token";
 
 const AuthContext = React.createContext({
-  currentUser: null,
-  userProfile: null,
-  isAuthenticated: false,
-  loading: true,
-  login: async (email, password) => {},
-  signup: async (email, password, name) => {},
-  resetPassword: async (email) => {},
-  confirmPasswordReset: async (token, newPassword) => {},
-  logout: async () => {},
-  refreshProfile: async () => {} 
+    currentUser: null,
+    userProfile: null,
+    isAuthenticated: false,
+    loading: true,
+    login: async (email, password) => { },
+    signup: async (email, password, name) => { },
+    resetPassword: async (email) => { },
+    confirmPasswordReset: async (token, newPassword) => { },
+    logout: async () => { },
+    refreshProfile: async () => { }
 });
 
 export function useAuth() {
@@ -31,22 +31,30 @@ export function AuthProvider({ children }) {
     }, []);
 
     const loadUser = async () => {
+        console.log("[AuthContext] Initializing session...");
         try {
             const token = await tokenCache.getToken(TOKEN_KEY);
+            console.log("[AuthContext] Token found:", token ? "YES" : "NO");
+
             if (token) {
                 // Determine user from token or just fetch profile using token
+                console.log("[AuthContext] Fetching profile...");
                 const profile = await cloudflare.getProfile(token);
                 if (profile && !profile.error) {
+                    console.log("[AuthContext] Profile loaded:", profile.email);
                     setUserProfile(profile);
                     setCurrentUser({ uid: profile.user_id, email: profile.email });
                 } else {
+                    console.log("[AuthContext] Invalid profile or token, logging out");
                     await logout();
                 }
+            } else {
+                console.log("[AuthContext] No token found, user is guest");
             }
         } catch (e) {
-            console.error("Failed to load user session", e);
-            // Optionally clear token if invalid
+            console.error("[AuthContext] Failed to load user session:", e);
         } finally {
+            console.log("[AuthContext] Session initialization complete");
             setLoading(false);
         }
     };
@@ -54,7 +62,7 @@ export function AuthProvider({ children }) {
     const login = async (email, password) => {
         const data = await cloudflare.login(email, password);
         await tokenCache.saveToken(TOKEN_KEY, data.token);
-        
+
         setCurrentUser({ uid: data.userId, email: email });
         setUserProfile(data.profile);
     };
@@ -63,9 +71,9 @@ export function AuthProvider({ children }) {
         // name is optional
         const data = await cloudflare.signup(email, password, name);
         await tokenCache.saveToken(TOKEN_KEY, data.token);
-        
+
         setCurrentUser({ uid: data.userId, email: email });
-        setUserProfile({ user_id: data.userId, email, name }); 
+        setUserProfile({ user_id: data.userId, email, name });
     };
 
     const resetPassword = async (email) => {
@@ -81,14 +89,14 @@ export function AuthProvider({ children }) {
         setCurrentUser(null);
         setUserProfile(null);
     };
-    
+
     const refreshProfile = async () => {
         try {
-             const token = await tokenCache.getToken(TOKEN_KEY);
-             if (token) {
-                 const profile = await cloudflare.getProfile(token);
-                 setUserProfile(profile);
-             }
+            const token = await tokenCache.getToken(TOKEN_KEY);
+            if (token) {
+                const profile = await cloudflare.getProfile(token);
+                setUserProfile(profile);
+            }
         } catch (e) {
             console.error(e);
         }
@@ -100,8 +108,8 @@ export function AuthProvider({ children }) {
             const success = await cloudflare.updateProfile(token, updates);
             if (success) {
                 // Optimistic update or fetch fresh
-                 setUserProfile(prev => ({ ...prev, ...updates }));
-                 return true;
+                setUserProfile(prev => ({ ...prev, ...updates }));
+                return true;
             }
             return false;
         } catch (e) {
@@ -116,21 +124,21 @@ export function AuthProvider({ children }) {
 
     const getTrialStatus = () => {
         if (!userProfile) return { daysLeft: 7, isExpired: false, isPaid: false };
-        
+
         if (userProfile.subscription_status === 'active') {
-             return { daysLeft: 999, isExpired: false, isPaid: true };
+            return { daysLeft: 999, isExpired: false, isPaid: true };
         }
 
         const start = new Date(userProfile.trial_start_date || userProfile.created_at);
         const now = new Date();
         const diffTime = Math.abs(now - start);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const daysLeft = Math.max(0, 7 - diffDays);
 
-        return { 
-            daysLeft, 
+        return {
+            daysLeft,
             isExpired: diffDays > 7, // Strict > 7 check
-            isPaid: false 
+            isPaid: false
         };
     };
 

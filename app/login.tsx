@@ -5,27 +5,34 @@ import { useAuth } from '../AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Login() {
+  const { login, loading: authInitializing } = useAuth();
+  const router = useRouter();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  const { login } = useAuth();
-  const router = useRouter();
 
+  // Handle Login
   async function handleLogin() {
+    if (authInitializing) {
+        return setError("Authentication is still initializing. Please wait...");
+    }
+
     if (!email || !password) return setError("Please fill in all fields");
-    
+
     try {
       setError('');
       setLoading(true);
-      
+
+      console.log("[Login] Attempting login for:", email);
       await login(email, password);
-      router.replace('/(app)/dashboard'); 
       
+      console.log("[Login] Login successful, navigating to dashboard");
+      router.replace('/(app)/dashboard');
     } catch (err: any) {
-      console.error(err);
-      setError('Failed to log in: ' + err.message);
+      console.error("[Login] error:", err);
+      setError('Invalid email or password');
     } finally {
       setLoading(false);
     }
@@ -39,6 +46,7 @@ export default function Login() {
       
       <View style={styles.card}>
         <Text style={styles.title}>Welcome Back</Text>
+        <Text style={{ textAlign: 'center', color: '#94A3B8', marginBottom: 20 }}>Sign in to your account</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <View style={styles.inputContainer}>
@@ -50,7 +58,6 @@ export default function Login() {
             placeholder="Enter your email"
             placeholderTextColor="#64748B"
             autoCapitalize="none"
-            keyboardType="email-address"
           />
         </View>
 
@@ -71,14 +78,16 @@ export default function Login() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
+          style={[styles.button, (loading || authInitializing) && styles.buttonDisabled]}
           onPress={handleLogin}
-          disabled={loading}
+          disabled={loading || authInitializing}
         >
           {loading ? (
             <ActivityIndicator color="#FFF" />
           ) : (
-            <Text style={styles.buttonText}>Log In</Text>
+            <Text style={styles.buttonText}>
+                {authInitializing ? 'Initializing...' : 'Log In'}
+            </Text>
           )}
         </TouchableOpacity>
 

@@ -5,7 +5,7 @@ import { useAuth } from '../AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Signup() {
-  const { signup } = useAuth();
+  const { signup, loading: authInitializing } = useAuth();
   const router = useRouter();
 
   const [email, setEmail] = useState('');
@@ -18,6 +18,10 @@ export default function Signup() {
 
   // Handle Sign Up
   async function handleSignup() {
+    if (authInitializing) {
+        return setError("Authentication is still initializing. Please wait...");
+    }
+
     if (!email || !password || !name) {
         return setError("Please fill in all fields");
     }
@@ -29,14 +33,16 @@ export default function Signup() {
       setError('');
       setLoading(true);
 
+      console.log("[Signup] Attempting signup for:", email);
       // Create the user via Cloudflare API
       await signup(email, password, name);
 
+      console.log("[Signup] Signup successful, navigating to dashboard");
       // Auto login happens in context, so just navigate
       router.replace('/(app)/dashboard');
       
     } catch (err: any) {
-      console.error(err);
+      console.error("[Signup] error:", err);
       setError('Failed to create account: ' + err.message);
     } finally {
       setLoading(false);
@@ -50,8 +56,8 @@ export default function Signup() {
       </TouchableOpacity>
 
       <View style={styles.card}>
-        <Text style={styles.title}>Start 7-Day Free Trial</Text>
-        <Text style={{ textAlign: 'center', color: '#94A3B8', marginBottom: 20 }}>No credit card required</Text>
+        <Text style={styles.title}>Create Your Account</Text>
+        <Text style={{ textAlign: 'center', color: '#94A3B8', marginBottom: 20 }}>Join BudgetWise AI today</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <View style={styles.inputContainer}>
@@ -103,14 +109,16 @@ export default function Signup() {
         </View>
 
         <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
+          style={[styles.button, (loading || authInitializing) && styles.buttonDisabled]}
           onPress={handleSignup}
-          disabled={loading}
+          disabled={loading || authInitializing}
         >
           {loading ? (
             <ActivityIndicator color="#FFF" />
           ) : (
-            <Text style={styles.buttonText}>Start Free Trial</Text>
+            <Text style={styles.buttonText}>
+                {authInitializing ? 'Initializing...' : 'Create Account'}
+            </Text>
           )}
         </TouchableOpacity>
 
