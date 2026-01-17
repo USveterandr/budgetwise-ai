@@ -34,7 +34,7 @@ class GeminiService {
   private visionModel: string = "gemini-1.5-flash";
 
   constructor() {
-    this.init();
+    this.init(); // Initialize lazily
   }
 
   private init() {
