@@ -4,8 +4,7 @@ import { CameraView, Camera } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { DashboardColors, Colors } from '../../constants/Colors';
 import { Button } from '../ui/Button';
-import { ReceiptData } from '../../services/geminiService';
-import { geminiService } from '../../services/geminiService';
+import { ReceiptData, geminiService } from '../../services/geminiService';
 
 interface EnhancedReceiptScannerProps {
   onScanComplete: (data: ReceiptData) => void;

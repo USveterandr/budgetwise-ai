@@ -22,6 +22,7 @@ export default function AppLayout() {
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.background } }}>
       <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+      <Stack.Screen name="scan" options={{ headerShown: false }} />
     </Stack>
   );
 }

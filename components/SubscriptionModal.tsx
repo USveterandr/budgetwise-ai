@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../AuthContext';
 
 interface SubscriptionTier {
   id: 'individual' | 'family' | 'business' | 'enterprise';

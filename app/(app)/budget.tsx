@@ -60,6 +60,8 @@ export default function BudgetScreen() {
                 setModalVisible(false);
                 setLimit('');
                 fetchData(); // Refresh
+            } else {
+                Alert.alert('Error', 'Session expired. Please log in again.');
             }
         } catch (e) {
             Alert.alert('Error', 'Failed to save budget');

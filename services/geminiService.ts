@@ -29,7 +29,7 @@ Format your responses nicely using Markdown.
 `;
 
 class GeminiService {
-  private genAI: GoogleGenerativeAI;
+  private genAI?: GoogleGenerativeAI;
   private chatModel: string = "gemini-1.5-pro";
   private visionModel: string = "gemini-1.5-flash";
 
@@ -37,9 +37,11 @@ class GeminiService {
     // Initialize with the environment variable
     const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error("EXPO_PUBLIC_GEMINI_API_KEY is not set");
+      console.warn("EXPO_PUBLIC_GEMINI_API_KEY is not set. Gemini features will be disabled.");
+      // We don't throw here to prevent app crash on import
+    } else {
+      this.genAI = new GoogleGenerativeAI(apiKey);
     }
-    this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
   async getFinancialAdvice(
@@ -47,7 +49,9 @@ class GeminiService {
     userContext: string
   ): Promise<string> {
     try {
-      const model = this.genAI.getGenerativeModel({ 
+      if (!this.genAI) return "I'm not configured properly (missing API key).";
+
+      const model = this.genAI.getGenerativeModel({
         model: this.chatModel,
         systemInstruction: SYSTEM_INSTRUCTION
       });
@@ -60,14 +64,14 @@ class GeminiService {
 
       // Add user context to the conversation
       const contextPrompt = `User Context: ${userContext}`;
-      
+
       const chat = model.startChat({
         history: chatHistory
       });
 
       const result = await chat.sendMessage(contextPrompt);
       const response = await result.response;
-      
+
       return response.text() || "I apologize, I couldn't generate a financial insight at this moment.";
     } catch (error) {
       console.error("Gemini API Error:", error);
@@ -77,8 +81,10 @@ class GeminiService {
 
   async parseReceiptImage(base64Image: string): Promise<ReceiptData> {
     try {
+      if (!this.genAI) throw new Error("Gemini API not initialized");
+
       const model = this.genAI.getGenerativeModel({ model: this.visionModel });
-      
+
       const prompt = `Perform OCR (Optical Character Recognition) on this receipt image.
       Extract the following data into a strict JSON object:
       - merchant (string): Business name
@@ -98,17 +104,17 @@ class GeminiService {
 
       const result = await model.generateContent([prompt, image]);
       const response = await result.response;
-      
+
       const text = response.text();
-      
+
       if (!text) throw new Error("No response text");
 
       // Remove code block markers if present and trim
       const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      
+
       return JSON.parse(jsonStr);
-      
-      return JSON.parse(jsonString);
+
+
     } catch (error) {
       console.error("Receipt scanning error:", error);
       throw error;
@@ -117,8 +123,10 @@ class GeminiService {
 
   async generateBudgetPlan(industry: string, monthlyIncome: number, currency: string): Promise<BudgetCategory[]> {
     try {
+      if (!this.genAI) return [];
+
       const model = this.genAI.getGenerativeModel({ model: this.chatModel });
-      
+
       const prompt = `
         Create a detailed monthly expense budget for a "${industry}" business with a total monthly income of ${monthlyIncome} ${currency}.
         Identify 5-8 key expense categories specific to this industry (e.g., Fuel/Maintenance for Truck Driver, Tools/Parts for Plumber, Marketing/Software for Insurance Agent).
@@ -134,14 +142,14 @@ class GeminiService {
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       if (!text) return [];
-      
+
       // Clean up the response to extract JSON
       const jsonStart = text.indexOf('[');
       const jsonEnd = text.lastIndexOf(']') + 1;
       const jsonString = text.substring(jsonStart, jsonEnd);
-      
+
       return JSON.parse(jsonString);
     } catch (error) {
       console.error("Budget generation error:", error);

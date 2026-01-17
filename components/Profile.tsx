@@ -87,7 +87,7 @@ export function Profile() {
       }
     };
     loadProfile();
-  }, [user?.id]);
+  }, [user?.id, getToken]);
   const [goals, setGoals] = useState<Goal[]>([
     {
       id: '1',

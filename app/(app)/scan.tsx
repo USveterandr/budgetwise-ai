@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { cloudflare } from '../lib/cloudflare';
 import { tokenCache } from '../../utils/tokenCache';
-import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { geminiService } from '../../services/geminiService';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -13,7 +13,7 @@ export default function ScanScreen() {
     const router = useRouter();
     const [permission, requestPermission] = useCameraPermissions();
     const cameraRef = useRef<CameraView>(null);
-    const [facing] = useState<CameraType>('back');
+    const [facing] = useState<'front' | 'back'>('back');
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState(''); // 'scanning' | 'processing' | 'saving'
     

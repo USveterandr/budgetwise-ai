@@ -221,7 +221,7 @@ export function BudgetPlanning() {
       <View style={styles.card}>
         <View style={styles.sectionHeader}>
           <Text style={styles.cardTitle}>Budget Categories</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowAddModal(true)}>
             <Ionicons name="add" size={20} color={Colors.primary} />
           </TouchableOpacity>
         </View>
@@ -278,6 +278,65 @@ export function BudgetPlanning() {
           );
         })}
       </View>
+
+      <Modal
+        visible={showAddModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAddModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add New Budget</Text>
+            
+            <Text style={styles.inputLabel}>Category Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Groceries"
+              placeholderTextColor="#64748B"
+              value={newBudget.category}
+              onChangeText={(text) => setNewBudget(prev => ({ ...prev, category: text }))}
+            />
+            
+            <Text style={styles.inputLabel}>Monthly Limit</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="0.00"
+              placeholderTextColor="#64748B"
+              keyboardType="decimal-pad"
+              value={newBudget.limit}
+              onChangeText={(text) => setNewBudget(prev => ({ ...prev, limit: text }))}
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setShowAddModal(false);
+                  setNewBudget({ category: '', limit: '' });
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={async () => {
+                   if (!newBudget.category || !newBudget.limit) {
+                     Alert.alert('Error', 'Please fill in all fields');
+                     return;
+                   }
+                   await handleAddBudget(newBudget.category, parseFloat(newBudget.limit));
+                   setNewBudget({ category: '', limit: '' });
+                   setShowAddModal(false);
+                }}
+              >
+                <Text style={styles.saveButtonText}>Save Budget</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -442,4 +501,68 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#94A3B8',
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 20
+  },
+  modalContent: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#334155'
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginBottom: 20,
+    textAlign: 'center'
+  },
+  inputLabel: {
+    color: '#94A3B8',
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: '500'
+  },
+  input: {
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 8,
+    padding: 12,
+    color: '#FFF',
+    fontSize: 16,
+    marginBottom: 20
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 10
+  },
+  modalButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  cancelButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#475569'
+  },
+  saveButton: {
+    backgroundColor: Colors.primary
+  },
+  cancelButtonText: {
+    color: '#CBD5E1',
+    fontWeight: '600'
+  },
+  saveButtonText: {
+    color: '#FFF',
+    fontWeight: '600'
+  }
 });
