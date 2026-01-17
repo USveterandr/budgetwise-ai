@@ -34,11 +34,16 @@ class GeminiService {
   private visionModel: string = "gemini-1.5-flash";
 
   constructor() {
+    this.init();
+  }
+
+  private init() {
+    if (this.genAI) return;
+
     // Initialize with the environment variable
     const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
       console.warn("EXPO_PUBLIC_GEMINI_API_KEY is not set. Gemini features will be disabled.");
-      // We don't throw here to prevent app crash on import
     } else {
       this.genAI = new GoogleGenerativeAI(apiKey);
     }
@@ -49,6 +54,7 @@ class GeminiService {
     userContext: string
   ): Promise<string> {
     try {
+      this.init();
       if (!this.genAI) return "I'm not configured properly (missing API key).";
 
       const model = this.genAI.getGenerativeModel({
@@ -81,7 +87,8 @@ class GeminiService {
 
   async parseReceiptImage(base64Image: string): Promise<ReceiptData> {
     try {
-      if (!this.genAI) throw new Error("Gemini API not initialized");
+      this.init();
+      if (!this.genAI) throw new Error("Gemini API not initialized. Please check that EXPO_PUBLIC_GEMINI_API_KEY is set in your .env file.");
 
       const model = this.genAI.getGenerativeModel({ model: this.visionModel });
 
@@ -123,6 +130,7 @@ class GeminiService {
 
   async generateBudgetPlan(industry: string, monthlyIncome: number, currency: string): Promise<BudgetCategory[]> {
     try {
+      this.init();
       if (!this.genAI) return [];
 
       const model = this.genAI.getGenerativeModel({ model: this.chatModel });
