@@ -42,6 +42,14 @@ class GeminiService {
 
     // Initialize with the environment variable
     const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    
+    // Debug logging to help troubleshoot
+    console.log("BudgetWise - Initializing Gemini Service");
+    console.log("BudgetWise - API Key Present:", !!apiKey);
+    if (apiKey) {
+       console.log("BudgetWise - API Key Length:", apiKey.length);
+    }
+
     if (!apiKey) {
       console.warn("EXPO_PUBLIC_GEMINI_API_KEY is not set. Gemini features will be disabled.");
     } else {
@@ -55,7 +63,9 @@ class GeminiService {
   ): Promise<string> {
     try {
       this.init();
-      if (!this.genAI) return "I'm not configured properly (missing API key).";
+      if (!this.genAI) {
+         return "I'm not configured properly (missing API key). Please restart your app to load the new settings.";
+      }
 
       const model = this.genAI.getGenerativeModel({
         model: this.chatModel,
