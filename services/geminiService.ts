@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Constants from "expo-constants";
 
 // Types for our Gemini service
 export interface ChatMessage {
@@ -41,14 +42,17 @@ class GeminiService {
     if (this.genAI) return;
 
     // Initialize with the environment variable
-    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    // Fallback order:
+    // 1. process.env (Standard/Web)
+    // 2. Constants.expoConfig.extra (Managed Expo)
+    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || Constants.expoConfig?.extra?.geminiApiKey;
     
     // Debug logging to help troubleshoot
     console.log("BudgetWise - Initializing Gemini Service");
     console.log("BudgetWise - API Key Present:", !!apiKey);
     if (apiKey) {
        console.log("BudgetWise - API Key Length:", apiKey.length);
-    }
+    } // else { console.log("BudgetWise - Available Keys in Extra:", JSON.stringify(Constants.expoConfig?.extra)); }
 
     if (!apiKey) {
       console.warn("EXPO_PUBLIC_GEMINI_API_KEY is not set. Gemini features will be disabled.");
