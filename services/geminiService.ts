@@ -102,7 +102,13 @@ class GeminiService {
   async parseReceiptImage(base64Image: string): Promise<ReceiptData> {
     try {
       this.init();
-      if (!this.genAI) throw new Error("Gemini API not initialized. Please check that EXPO_PUBLIC_GEMINI_API_KEY is set in your .env file.");
+      if (!this.genAI) {
+        throw new Error(
+          "Gemini API not initialized. Please ensure EXPO_PUBLIC_GEMINI_API_KEY is set in your .env file, " +
+          "and restart your app to load the new settings. If the issue persists, check that your app.config.js " +
+          "properly passes the environment variable to the app."
+        );
+      }
 
       const model = this.genAI.getGenerativeModel({ model: this.visionModel });
 
@@ -138,7 +144,14 @@ class GeminiService {
 
     } catch (error) {
       console.error("Receipt scanning error:", error);
-      throw error;
+      
+      // If it's a specific API key error, re-throw it with more helpful information
+      if (error instanceof Error && error.message.includes('not initialized')) {
+        throw error;
+      }
+      
+      // For other errors, provide a generic fallback
+      throw new Error("Failed to process receipt image. Please ensure your API key is valid and you have internet connection.");
     }
   }
 

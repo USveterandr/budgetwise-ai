@@ -18,7 +18,15 @@
         "NSMicrophoneUsageDescription": "This app uses the microphone for video recording features.",
         "NSRemindersUsageDescription": "This app uses reminders to notify you about budget alerts.",
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "associatedDomains": [
+        "applinks:*.pages.dev",
+        "applinks:expo.dev",
+        "applinks:*.expo.dev"
+      ]
     },
     "android": {
       "versionCode": 3,
