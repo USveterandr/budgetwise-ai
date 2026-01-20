@@ -70,7 +70,7 @@ export function Profile() {
           const idToken = await getToken();
           if (!idToken) return;
           
-          const data = await cloudflare.getProfile(user.id, idToken);
+          const data = await cloudflare.getProfile(idToken);
           if (data) {
             setProfileData(data);
             setProfile({

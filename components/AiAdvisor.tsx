@@ -32,11 +32,11 @@ export function AiAdvisor() {
   }, [currentUser]);
 
   const loadFinancialData = async () => {
-       if (!currentUser?.uid) return;
+       if (!(currentUser as any)?.uid) return;
        try {
            const token = await tokenCache.getToken("budgetwise_jwt_token");
            if (token) {
-               const txs = await cloudflare.getTransactions(currentUser.uid, token);
+               const txs = await cloudflare.getTransactions((currentUser as any).uid, token);
                if (Array.isArray(txs)) {
                    setTransactions(txs);
                    // Calculate metrics
@@ -50,7 +50,7 @@ export function AiAdvisor() {
                         setMessages([{
                             id: 'welcome',
                             role: 'model',
-                            text: `Hello ${userProfile?.name?.split(' ')[0] || ''}! I've analyzed your ${txs.length} transactions. Your current flow shows $${totalExp.toLocaleString()} in recent expenses. How can I help you optimize your wealth today?`,
+                            text: `Hello ${(userProfile as any)?.name?.split(' ')[0] || ''}! I've analyzed your ${txs.length} transactions. Your current flow shows $${totalExp.toLocaleString()} in recent expenses. How can I help you optimize your wealth today?`,
                             timestamp: new Date()
                         }]);
                    }
@@ -90,7 +90,7 @@ export function AiAdvisor() {
       
       const userContext = `
         User Profile: ${JSON.stringify(userProfile)}.
-        Recent Metrics: Net Worth ~$${netWorth}, Monthly Income: $${userProfile?.monthly_income || 0}, Recent Expenses: $${expenses}.
+        Recent Metrics: Net Worth ~$${netWorth}, Monthly Income: $${(userProfile as any)?.monthly_income || 0}, Recent Expenses: $${expenses}.
         Recent Transactions: ${recentTx}
       `;
       

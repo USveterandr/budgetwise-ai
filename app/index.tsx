@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1 },
   
   // Orbs
-  orb: { position: 'absolute', borderRadius: 999, opacity: 0.4, blurRadius: 100 },
+  orb: { position: 'absolute', borderRadius: 999, opacity: 0.4 },
   orb1: { width: 500, height: 500, backgroundColor: '#4338ca', top: -100, left: -200 },
   orb2: { width: 400, height: 400, backgroundColor: GOLD, bottom: 0, right: -150, opacity: 0.15 },
 
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   // Phone
   phoneContainer: { alignItems: 'center', marginVertical: 40, height: 400 },
   phoneImage: { width: width * 0.9, height: 400, zIndex: 10 },
-  glowBehindPhone: { position: 'absolute', width: 300, height: 300, backgroundColor: GOLD, top: 50, borderRadius: 150, opacity: 0.1, blurRadius: 80 },
+  glowBehindPhone: { position: 'absolute', width: 300, height: 300, backgroundColor: GOLD, top: 50, borderRadius: 150, opacity: 0.1 },
   
   floatCard: { position: 'absolute', padding: 16, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', zIndex: 20, width: 140 },
   floatCardLeft: { top: 60, left: 20 },

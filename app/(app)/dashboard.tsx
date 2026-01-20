@@ -22,7 +22,7 @@ const INDUSTRY_INSIGHTS: Record<string, string> = {
 };
 
 export default function Dashboard() {
-  const { logout, userProfile, trialStatus, isAuthenticated, currentUser, upgradeSubscription } = useAuth() as any;
+  const { logout, userProfile, trialStatus, isAuthenticated, currentUser, upgradeSubscription, restoreSubscription } = useAuth() as any;
   const router = useRouter();
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -91,19 +91,30 @@ export default function Dashboard() {
     <View style={styles.container}>
       <PaywallModal 
         visible={trialStatus?.isExpired} 
-        onSubscribe={async () => {
+        onSubscribe={async (pkg) => {
              if (isSubscribing) return;
              setIsSubscribing(true);
-             // Simulate payment processing
              try {
-                 const success = await upgradeSubscription();
+                 const success = await upgradeSubscription(pkg);
                  if (success) {
                     alert('Welcome to Premium! Your subscription is now active.');
-                 } else {
-                    alert('Subscription failed. Please try again.');
                  }
              } catch (e) {
                  alert('Error processing subscription.');
+             } finally {
+                 setIsSubscribing(false);
+             }
+        }}
+        onRestore={async () => {
+             if (isSubscribing) return;
+             setIsSubscribing(true);
+             try {
+                 const success = await restoreSubscription();
+                 if (success) {
+                     alert('Purchases restored successfully!');
+                 } else {
+                     alert('No active subscriptions found to restore.');
+                 }
              } finally {
                  setIsSubscribing(false);
              }

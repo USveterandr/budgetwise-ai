@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert 
 import { Ionicons } from '@expo/vector-icons';
 import { DashboardColors, Colors } from '../../constants/Colors';
 import { Button } from '../ui/Button';
-import { useFinance, Investment } from '../../context/FinanceContext';
+import { useFinance } from '../../context/FinanceContext';
+import { Investment } from '../../types';
 
 interface EditInvestmentModalProps {
   visible: boolean;
@@ -13,13 +14,12 @@ interface EditInvestmentModalProps {
 }
 
 export function EditInvestmentModal({ visible, onClose, investment, onUpdate }: EditInvestmentModalProps) {
-  const { updateInvestment, deleteInvestment } = useFinance();
+  const { addInvestment } = useFinance();
   const [name, setName] = useState(investment.name);
   const [symbol, setSymbol] = useState(investment.symbol);
   const [quantity, setQuantity] = useState(investment.quantity.toString());
   const [purchasePrice, setPurchasePrice] = useState(investment.purchasePrice.toString());
   const [currentPrice, setCurrentPrice] = useState(investment.currentPrice.toString());
-  const [purchaseDate, setPurchaseDate] = useState(investment.purchaseDate);
   const [type, setType] = useState(investment.type);
 
   useEffect(() => {
@@ -28,7 +28,6 @@ export function EditInvestmentModal({ visible, onClose, investment, onUpdate }: 
     setQuantity(investment.quantity.toString());
     setPurchasePrice(investment.purchasePrice.toString());
     setCurrentPrice(investment.currentPrice.toString());
-    setPurchaseDate(investment.purchaseDate);
     setType(investment.type);
   }, [investment]);
 
@@ -39,20 +38,13 @@ export function EditInvestmentModal({ visible, onClose, investment, onUpdate }: 
     }
 
     try {
-      await updateInvestment(investment.id, {
-        name,
-        symbol,
-        quantity: Number.parseFloat(quantity),
-        purchasePrice: Number.parseFloat(purchasePrice),
-        currentPrice: Number.parseFloat(currentPrice),
-        purchaseDate,
-        type,
-      });
-      
-      onUpdate();
+      // TODO: Implement update investment functionality in backend and context
+      Alert.alert('Not Implemented', 'Investment update functionality coming soon!');
       onClose();
     } catch (error) {
-      console.error('Failed to update investment:', error);
+      if (__DEV__) {
+        console.error('Failed to update investment:', error);
+      }
       Alert.alert('Error', 'Failed to update investment');
     }
   };
@@ -68,11 +60,13 @@ export function EditInvestmentModal({ visible, onClose, investment, onUpdate }: 
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteInvestment(investment.id);
-              onUpdate();
+              // TODO: Implement delete investment functionality in backend and context
+              Alert.alert('Not Implemented', 'Investment delete functionality coming soon!');
               onClose();
             } catch (error) {
-              console.error('Failed to delete investment:', error);
+              if (__DEV__) {
+                console.error('Failed to delete investment:', error);
+              }
               Alert.alert('Error', 'Failed to delete investment');
             }
           },
@@ -147,14 +141,6 @@ export function EditInvestmentModal({ visible, onClose, investment, onUpdate }: 
               value={currentPrice}
               onChangeText={setCurrentPrice}
               keyboardType="decimal-pad"
-              placeholderTextColor={DashboardColors.textSecondary}
-            />
-
-            <Text style={styles.label}>Purchase Date</Text>
-            <TextInput
-              style={styles.input}
-              value={purchaseDate}
-              onChangeText={setPurchaseDate}
               placeholderTextColor={DashboardColors.textSecondary}
             />
 

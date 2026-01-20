@@ -1,15 +1,35 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Alert } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { revenueCat } from '../services/revenueCatService';
+// import { PurchasesPackage } from 'react-native-purchases'; // Typescript types might be tricky without explicit install of types
 
 interface PaywallProps {
     visible: boolean;
-    onSubscribe: () => void;
+    onSubscribe: (pkg: any) => void;
+    onRestore: () => void;
 }
 
-export const PaywallModal = ({ visible, onSubscribe }: PaywallProps) => {
+export const PaywallModal = ({ visible, onSubscribe, onRestore }: PaywallProps) => {
+  const [offering, setOffering] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (visible) {
+        loadOfferings();
+    }
+  }, [visible]);
+
+  const loadOfferings = async () => {
+      const packages = await revenueCat.getOfferings();
+      if (packages.length > 0) {
+          setOffering(packages[0]); // Default to first available package (usually monthly)
+      }
+      setLoading(false);
+  }
+
   return (
     <Modal visible={visible} animationType="slide" transparent>
         <View style={styles.container}>
@@ -34,18 +54,30 @@ export const PaywallModal = ({ visible, onSubscribe }: PaywallProps) => {
                     <FeatureRow text="Advanced Trend Analysis" />
                 </View>
 
-                <TouchableOpacity style={styles.button} onPress={onSubscribe}>
-                    <LinearGradient
-                        colors={[Colors.gold, Colors.goldDark]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.buttonGradient}
+                {loading ? (
+                    <ActivityIndicator color={Colors.gold} style={{marginVertical: 20}} />
+                ) : (
+                    <TouchableOpacity 
+                        style={styles.button} 
+                        onPress={() => offering ? onSubscribe(offering) : loadOfferings()}
                     >
-                        <Text style={styles.buttonText}>Start Premium - $9.99/mo</Text>
-                    </LinearGradient>
-                </TouchableOpacity>
+                        <LinearGradient
+                            colors={[Colors.gold, Colors.goldDark]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.buttonGradient}
+                        >
+                            <Text style={styles.buttonText}>
+                                {offering 
+                                    ? `Start Premium - ${offering.product.priceString}/mo`
+                                    : "Retry Connection"
+                                }
+                            </Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                )}
 
-                 <TouchableOpacity style={{ marginTop: 16 }}>
+                 <TouchableOpacity style={{ marginTop: 16 }} onPress={onRestore}>
                     <Text style={styles.restoreText}>Restore Purchase</Text>
                 </TouchableOpacity>
             </LinearGradient>

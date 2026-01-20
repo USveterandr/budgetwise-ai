@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DashboardColors } from '../../constants/Colors';
-import { Transaction } from '../../context/FinanceContext';
+import { Transaction } from '../../types';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];

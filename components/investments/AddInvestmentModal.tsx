@@ -34,7 +34,6 @@ export function AddInvestmentModal({ visible, onClose, onAdd }: AddInvestmentMod
         quantity: parseFloat(quantity),
         purchasePrice: parseFloat(purchasePrice),
         currentPrice: parseFloat(currentPrice),
-        purchaseDate,
         type: type as any,
       });
       

@@ -172,7 +172,7 @@ export function ProfessionDashboard({ industry }: ProfessionDashboardProps) {
             key={index} 
             style={styles.actionBtn}
             onPress={() => router.push({
-              pathname: '/transactions/add',
+              pathname: '/add-transaction' as any,
               params: { category: action.category }
             })}
           >

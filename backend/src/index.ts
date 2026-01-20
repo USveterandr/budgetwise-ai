@@ -8,15 +8,22 @@ import { sign, verify } from 'jsonwebtoken'
 import * as XLSX from 'xlsx'
 
 type Bindings = {
-  DB: D1Database
-  BANK_BUCKET: R2Bucket
-  AVATAR_BUCKET: R2Bucket
+  DB: any // D1Database
+  BANK_BUCKET: any // R2Bucket
+  AVATAR_BUCKET: any // R2Bucket
   AI: any
   JWT_SECRET: string
   RESEND_API_KEY: string
 }
 
-const app = new Hono<{ Bindings: Bindings }>()
+type Variables = {
+  user: {
+    userId: string
+    email: string
+  }
+}
+
+const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
 app.use('/*', cors({
   origin: '*',

@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import { cloudflare } from "./app/lib/cloudflare";
 import { tokenCache } from "./utils/tokenCache";
+import { revenueCat } from "./services/revenueCatService";
 
 const TOKEN_KEY = "budgetwise_jwt_token";
 
@@ -44,6 +45,17 @@ export function AuthProvider({ children }) {
                     if (__DEV__) console.log("[AuthContext] Profile loaded:", profile.email);
                     setUserProfile(profile);
                     setCurrentUser({ uid: profile.user_id, email: profile.email });
+                    
+                    // Initialize RevenueCat
+                    await revenueCat.configure(profile.user_id);
+                    // Check if they have an active subscription from the app store that our DB missed
+                    const isSubscriber = await revenueCat.getSubscriptionStatus();
+                    if (isSubscriber && profile.subscription_status !== 'active') {
+                        // Sync back to DB
+                        await cloudflare.updateProfile({ subscription_status: 'active' }, token);
+                        setUserProfile(prev => ({ ...prev, subscription_status: 'active' }));
+                    }
+
                 } else {
                     if (__DEV__) console.log("[AuthContext] Invalid profile or token, logging out");
                     await logout();
@@ -65,6 +77,8 @@ export function AuthProvider({ children }) {
 
         setCurrentUser({ uid: data.userId, email: email });
         setUserProfile(data.profile);
+        
+        await revenueCat.configure(data.userId); // Configure purchases on login
     };
 
     const signup = async (email, password, name) => {
@@ -86,6 +100,7 @@ export function AuthProvider({ children }) {
 
     const logout = async () => {
         await tokenCache.deleteToken(TOKEN_KEY);
+        await revenueCat.logout();
         setCurrentUser(null);
         setUserProfile(null);
     };
@@ -118,23 +133,39 @@ export function AuthProvider({ children }) {
         }
     }
 
-    const upgradeSubscription = async () => {
+    const upgradeSubscription = async (packageToPurchase) => {
         try {
-            // Mock payment success - In production this would verify a receipt
-             const token = await tokenCache.getToken(TOKEN_KEY);
-             // Update remote profile
-             await cloudflare.updateProfile({ subscription_status: 'active' }, token);
+             // Real Purchase Flow
+             const success = await revenueCat.purchasePackage(packageToPurchase);
              
-             // Update local state
-             setUserProfile(prev => ({
-                 ...prev,
-                 subscription_status: 'active'
-             }));
-             return true;
+             if (success) {
+                const token = await tokenCache.getToken(TOKEN_KEY);
+                // Update remote profile
+                await cloudflare.updateProfile({ subscription_status: 'active' }, token);
+                
+                // Update local state
+                setUserProfile(prev => ({
+                    ...prev,
+                    subscription_status: 'active'
+                }));
+                return true;
+             }
+             return false;
         } catch (e) {
             console.error('Subscription upgrade failed:', e);
             return false;
         }
+    };
+
+    const restoreSubscription = async () => {
+        const success = await revenueCat.restorePurchases();
+        if (success) {
+            const token = await tokenCache.getToken(TOKEN_KEY);
+            await cloudflare.updateProfile({ subscription_status: 'active' }, token);
+            setUserProfile(prev => ({ ...prev, subscription_status: 'active' }));
+            return true;
+        }
+        return false;
     };
 
     const getToken = async () => {
@@ -178,7 +209,8 @@ export function AuthProvider({ children }) {
         logout,
         refreshProfile,
         updateProfile,
-        upgradeSubscription
+        upgradeSubscription,
+        restoreSubscription
     };
 
     return (

@@ -51,7 +51,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   onSuccess, 
   forceSubscription = false 
 }) => {
-  const { user } = useAuth();
+  const { currentUser } = useAuth() as any;
   const [loading, setLoading] = useState(false);
   const [selectedTier, setSelectedTier] = useState<'individual' | 'family' | 'business' | 'enterprise'>('individual');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
@@ -87,7 +87,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   };
 
   const handlePurchase = async () => {
-    if (!user) {
+    if (!currentUser) {
       setError('You must be logged in to subscribe');
       return;
     }
