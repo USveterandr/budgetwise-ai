@@ -1,10 +1,13 @@
-import Imports from 'react-native-purchases';
+import Imports, { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
 import { Platform } from 'react-native';
 
+// Configuration
 const API_KEYS = {
   apple: process.env.EXPO_PUBLIC_REVENUECAT_APPLE_KEY || 'appl_placeholder',
-  google: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_KEY || 'goog_placeholder',
+  google: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_KEY || 'test_FEEufnZipzIBFwqHOUrlDJdLlaL', // Using provided test key
 };
+
+const ENTITLEMENT_ID = 'Budgetwise AI Advisor Pro'; // Exact entitlement identifier
 
 class RevenueCatService {
   private isConfigured: boolean = false;
@@ -21,9 +24,14 @@ class RevenueCatService {
     } else if (Platform.OS === 'android') {
       Imports.configure({ apiKey: API_KEYS.google, appUserID: userId });
     }
+    
+    // Enable debug logs for testing
+    if (__DEV__) {
+        Imports.setLogLevel(Imports.LOG_LEVEL.DEBUG);
+    }
 
     this.isConfigured = true;
-    if (__DEV__) console.log("RevenueCat configured");
+    if (__DEV__) console.log("RevenueCat configured with", Platform.OS === 'android' ? API_KEYS.google : API_KEYS.apple);
   }
 
   async login(userId: string) {
@@ -49,7 +57,7 @@ class RevenueCatService {
     }
   }
 
-  async purchasePackage(pack: any) {
+  async purchasePackage(pack: PurchasesPackage) {
     try {
       const { customerInfo } = await Imports.purchasePackage(pack);
       return this.checkEntitlement(customerInfo);
@@ -80,10 +88,10 @@ class RevenueCatService {
     }
   }
 
-  checkEntitlement(customerInfo: any) {
-    // Replace 'premium' with your actual entitlement ID from RevenueCat dashboard
-    if (customerInfo.entitlements.active['premium']) {
-      return true;
+  checkEntitlement(customerInfo: CustomerInfo) {
+    // Check for specific entitlement
+    if (typeof customerInfo.entitlements.active[ENTITLEMENT_ID] !== "undefined") {
+        return true;
     }
     return false;
   }

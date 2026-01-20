@@ -5,13 +5,15 @@ import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { useFinance } from '../../context/FinanceContext';
 import { TransactionItem } from '../../components/transactions/TransactionItem';
+import { ReceiptScanner } from '../../components/ReceiptScanner';
 
 export default function TransactionsData() {
   const router = useRouter();
-  const { transactions, deleteTransaction, refreshData } = useFinance();
+  const { transactions, deleteTransaction, refreshData, addTransaction } = useFinance();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -40,6 +42,23 @@ export default function TransactionsData() {
     );
   };
 
+  const handleScanComplete = async (data: any) => {
+    try {
+      await addTransaction({
+        description: data.merchant || 'Scanned Receipt',
+        amount: Number(data.amount) || 0,
+        category: data.category || 'Other',
+        type: 'expense',
+        date: data.date || new Date().toISOString(),
+      });
+      Alert.alert('Success', 'Receipt added successfully');
+      setShowScanner(false);
+      refreshData();
+    } catch (e) {
+      Alert.alert('Error', 'Failed to add receipt transaction');
+    }
+  };
+
   // Filter transactions
   const filteredTransactions = transactions.filter(t => {
     const matchesSearch = t.description.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -58,9 +77,14 @@ export default function TransactionsData() {
             <Ionicons name="arrow-back" size={24} color="#FFF" />
           </TouchableOpacity>
           <Text style={styles.title}>Transactions</Text>
-          <TouchableOpacity onPress={() => router.push('/add-transaction')} style={styles.addButton}>
-            <Ionicons name="add" size={24} color={Colors.primary} />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={() => setShowScanner(!showScanner)} style={styles.actionButton}>
+              <Ionicons name={showScanner ? "close" : "scan"} size={24} color={Colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/add-transaction')} style={styles.actionButton}>
+              <Ionicons name="add" size={24} color={Colors.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Search & Filter */}
@@ -105,6 +129,12 @@ export default function TransactionsData() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
           }
         >
+          {showScanner && (
+            <View style={styles.scannerContainer}>
+              <ReceiptScanner onScanComplete={handleScanComplete} />
+            </View>
+          )}
+
           <View style={styles.transactionList}>
             {filteredTransactions.length > 0 ? (
               filteredTransactions.map((transaction) => (
@@ -152,7 +182,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFF',
   },
-  addButton: {
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
     padding: 8,
   },
   filterContainer: {
@@ -197,6 +231,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scannerContainer: {
+    padding: 16,
   },
   transactionList: {
     padding: 16,

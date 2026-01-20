@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { ExecutionContext, ScheduledEvent } from '@cloudflare/workers-types';
 import { cors } from 'hono/cors'
 import { nanoid } from 'nanoid'
 // @ts-ignore
@@ -8,12 +9,13 @@ import { sign, verify } from 'jsonwebtoken'
 import * as XLSX from 'xlsx'
 
 type Bindings = {
-  DB: any // D1Database
+  DB: D1Database
   BANK_BUCKET: any // R2Bucket
   AVATAR_BUCKET: any // R2Bucket
   AI: any
   JWT_SECRET: string
   RESEND_API_KEY: string
+  GEMINI_API_KEY: string
 }
 
 type Variables = {
@@ -437,4 +439,179 @@ app.post('/api/budgets', authMiddleware, async (c) => {
   return c.json({ success: true, id })
 })
 
-export default app
+// =====================
+// Subscription & Trial
+// =====================
+
+app.post('/api/subscribe', authMiddleware, async (c) => {
+    const { userId, tier, billingCycle, isTrial, email, name } = await c.req.json()
+
+    if (!userId || !tier) {
+        return c.json({ error: 'Missing required fields: userId, tier' }, 400);
+    }
+
+    const now = Date.now();
+    let status = 'active';
+    let trialEndsAt = null;
+
+    if (isTrial) {
+        status = 'trial';
+        trialEndsAt = now + (7 * 24 * 60 * 60 * 1000);
+    }
+
+    // Upsert user subscription data
+    await c.env.DB.prepare(`
+        INSERT INTO users (id, email, name, subscription_tier, subscription_status, billing_cycle, trial_ends_at, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+        subscription_tier = excluded.subscription_tier,
+        subscription_status = excluded.subscription_status,
+        billing_cycle = excluded.billing_cycle,
+        trial_ends_at = excluded.trial_ends_at,
+        updated_at = excluded.updated_at
+    `).bind(
+        userId, email || null, name || null, tier, status, billingCycle || 'monthly', trialEndsAt, now, now
+    ).run();
+
+    return c.json({ success: true, status, trialEndsAt });
+})
+
+app.get('/api/subscription/status', authMiddleware, async (c) => {
+    const userId = c.req.query('userId')
+    if (!userId) return c.json({ error: 'UserId required' }, 400);
+
+    const user: any = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first();
+    
+    if (!user) {
+        return c.json({ status: 'none', tier: 'none' });
+    }
+
+    let status = user.subscription_status;
+    if (status === 'trial' && user.trial_ends_at && user.trial_ends_at < Date.now()) {
+        status = 'expired';
+    }
+
+    return c.json({ ...user, subscription_status: status });
+})
+
+// =====================
+// AI Advisor
+// =====================
+
+app.post('/api/ai/chat', authMiddleware, async (c) => {
+  try {
+    const { history, userContext } = await c.req.json()
+    const apiKey = c.env.GEMINI_API_KEY
+
+    if (!apiKey) {
+      return c.json({ error: 'AI service not configured' }, 500)
+    }
+
+    const systemInstruction = `You are BudgetWise AI, a world-class financial advisor and personal finance expert. 
+Your goal is to help users manage their budget, categorize expenses, track net worth, and provide investment insights.
+Be concise, encouraging, and actionable. 
+If asked about specific investment advice, provide general educational information and recommend consulting the human specialist via the 'Consultation' tab.
+Format your responses nicely using Markdown.`
+
+    // Map history to Gemini format
+    const contents = history.map((msg: any) => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.parts }]
+    }))
+
+    // Add user context as the last message if provided
+    if (userContext) {
+        contents.push({
+            role: 'user',
+            parts: [{ text: `User Context: ${userContext}` }]
+        })
+    }
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents,
+        system_instruction: {
+          parts: [{ text: systemInstruction }]
+        }
+      })
+    })
+
+    if (!response.ok) {
+        const err = await response.text()
+        console.error('Gemini API Error:', err)
+        return c.json({ error: 'Failed to generate insight' }, response.status)
+    }
+
+    const data: any = await response.json()
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated."
+
+    return c.json({ text })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+app.post('/api/ai/ocr', authMiddleware, async (c) => {
+  try {
+    const { image } = await c.req.json()
+    const apiKey = c.env.GEMINI_API_KEY
+
+    if (!apiKey) {
+      return c.json({ error: 'AI service not configured' }, 500)
+    }
+
+    const model = "gemini-1.5-flash";
+    const prompt = `Perform OCR (Optical Character Recognition) on this receipt image.
+      Extract the following data into a strict JSON object:
+      - merchant (string): Business name
+      - date (string): YYYY-MM-DD format (use today ${new Date().toISOString().split('T')[0]} if not found)
+      - amount (number): Total transaction amount
+      - category (string): One of [Food, Transport, Utilities, Entertainment, Shopping, Health, Other]
+      - items (array): List of {name, price} objects
+      
+      Return ONLY the JSON object. Do not wrap in code blocks.`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            {
+              inline_data: {
+                mime_type: "image/jpeg",
+                data: image
+              }
+            }
+          ]
+        }]
+      })
+    })
+
+    if (!response.ok) {
+        const err = await response.text()
+        console.error('Gemini OCR Error:', err)
+        return c.json({ error: 'Failed to process receipt' }, response.status)
+    }
+
+    const data: any = await response.json()
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}"
+    const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    return c.json(JSON.parse(jsonStr))
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+export default {
+  fetch: app.fetch,
+  async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+    const now = Date.now();
+    const result = await env.DB.prepare("UPDATE users SET subscription_tier = 'none', subscription_status = 'expired', updated_at = ? WHERE subscription_status = 'trial' AND trial_ends_at < ?").bind(now, now).run();
+    console.log(`[Cron] Expired ${result.meta.changes} trials`);
+  }
+}

@@ -13,28 +13,22 @@ interface SubscriptionTier {
 
 const BASE_TIERS: SubscriptionTier[] = [
   {
-    id: 'individual',
-    name: 'Individual',
-    basePrice: 9.99,
-    features: ['Personal AI Advisor', 'Unlimited Receipt Scans', 'Budget Tracking', '1 User Account']
+    id: 'individual', // Mapping 'Starter' to existing ID or new one
+    name: 'Starter',
+    basePrice: 14.99,
+    features: ['Basic Budgeting', 'Expense Tracking', '1 User Account', 'Standard Support']
   },
   {
-    id: 'family',
-    name: 'Couple & Family',
-    basePrice: 19.99,
-    features: ['All Individual Features', 'Shared Budgets & Goals', 'Up to 5 Users', 'Family Net Worth View']
+    id: 'business', // Mapping 'Pro'
+    name: 'Pro (Most Popular)',
+    basePrice: 29.99,
+    features: ['AI Advisor', 'Unlimited Receipt Scans', 'Advanced Analytics', 'Priority Support']
   },
   {
-    id: 'business',
-    name: 'Small Business',
-    basePrice: 49.99,
-    features: ['All Family Features', 'Tax Export & Reports', 'Expense Categorization', 'Up to 10 Users']
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    basePrice: 199.99,
-    features: ['All Business Features', 'Dedicated API Access', 'Custom Integrations', 'Unlimited Users']
+    id: 'enterprise', // Mapping 'Elite'
+    name: 'Elite',
+    basePrice: 99.99,
+    features: ['Human Financial Consultation', 'Tax Optimization', 'Wealth Management', 'Dedicated Account Manager']
   }
 ];
 
@@ -53,7 +47,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 }) => {
   const { currentUser } = useAuth() as any;
   const [loading, setLoading] = useState(false);
-  const [selectedTier, setSelectedTier] = useState<'individual' | 'family' | 'business' | 'enterprise'>('individual');
+  const [selectedTier, setSelectedTier] = useState<'individual' | 'family' | 'business' | 'enterprise'>('business');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
   const [step, setStep] = useState<'SELECT' | 'PAYMENT'>('SELECT');
   const [error, setError] = useState('');
@@ -137,7 +131,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             onPress={() => setBillingCycle('yearly')}
           >
             <Text style={[styles.toggleText, billingCycle === 'yearly' && styles.activeToggleText]}>
-              Yearly <Text style={styles.discount}>(Save 20%)</Text>
+              Yearly <Text style={styles.discount}>(Save 50%)</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -167,14 +161,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 <Text style={styles.tierName}>{tier.name}</Text>
                 <View style={styles.priceContainer}>
                   <Text style={styles.price}>
-                    ${(billingCycle === 'yearly' ? tier.basePrice * 10 : tier.basePrice).toFixed(2)}
+                    ${(billingCycle === 'yearly' ? (tier.basePrice * 12 * 0.5) / 12 : tier.basePrice).toFixed(2)}
                   </Text>
                   <Text style={styles.billingPeriod}>
                     /{billingCycle === 'yearly' ? 'yr' : 'mo'}
                   </Text>
                 </View>
                 {billingCycle === 'yearly' && (
-                  <Text style={styles.savings}>Save ${(tier.basePrice * 2.4).toFixed(2)}</Text>
+                  <Text style={styles.savings}>Save ${(tier.basePrice * 12 * 0.5).toFixed(2)}/yr</Text>
                 )}
               </View>
 
@@ -203,14 +197,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             <Text style={styles.purchaseButtonText}>Processing...</Text>
           ) : (
             <Text style={styles.purchaseButtonText}>
-              Get {BASE_TIERS.find(t => t.id === selectedTier)?.name} Plan
+              Start 7-Day Free Trial
             </Text>
           )}
         </TouchableOpacity>
 
         <Text style={styles.footerText}>
-          By subscribing, you agree to our Terms of Service and Privacy Policy.
-          Cancel anytime.
+          No credit card required for trial. By subscribing, you agree to our Terms. Cancel anytime.
         </Text>
       </View>
     </View>

@@ -48,24 +48,16 @@ class GeminiService {
     const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || Constants.expoConfig?.extra?.geminiApiKey;
     
     // Debug logging to help troubleshoot
-    if (__DEV__) {
-      console.log("BudgetWise - Initializing Gemini Service");
-      console.log("BudgetWise - API Key Present:", !!apiKey);
-      if (apiKey) {
-         console.log("BudgetWise - API Key Length:", apiKey.length);
-         console.log("BudgetWise - First 10 chars of API key:", apiKey.substring(0, 10));
-      } else { 
-        console.log("BudgetWise - Available Keys in Extra:", JSON.stringify(Constants.expoConfig?.extra)); 
-        console.log("BudgetWise - Full Constants.expoConfig.extra:", JSON.stringify(Constants.expoConfig?.extra));
-        console.log("BudgetWise - process.env.EXPO_PUBLIC_GEMINI_API_KEY:", process.env.EXPO_PUBLIC_GEMINI_API_KEY ? "SET" : "NOT SET");
-      }
-    }
+    console.log("BudgetWise - Initializing Gemini Service");
+    console.log("BudgetWise - API Key Present:", !!apiKey);
+    if (apiKey) {
+       console.log("BudgetWise - API Key Length:", apiKey.length);
+    } // else { console.log("BudgetWise - Available Keys in Extra:", JSON.stringify(Constants.expoConfig?.extra)); }
 
     if (!apiKey) {
-      if (__DEV__) console.warn("EXPO_PUBLIC_GEMINI_API_KEY is not set. Gemini features will be disabled.");
+      console.warn("EXPO_PUBLIC_GEMINI_API_KEY is not set. Gemini features will be disabled.");
     } else {
       this.genAI = new GoogleGenerativeAI(apiKey);
-      if (__DEV__) console.log("BudgetWise - Gemini API initialized successfully");
     }
   }
 
@@ -128,7 +120,7 @@ class GeminiService {
       - category (string): One of [Food, Transport, Utilities, Entertainment, Shopping, Health, Other]
       - items (array): List of {name, price} objects
       
-      Return ONLY the JSON object. Do not wrap in markdown code blocks.`;
+      Return ONLY the JSON object. Do not wrap in code blocks.`;
 
       const image = {
         inlineData: {
@@ -158,8 +150,24 @@ class GeminiService {
         throw error;
       }
       
-      // For other errors, provide a generic fallback
-      throw new Error("Failed to process receipt image. Please ensure your API key is valid and you have internet connection. Check the console logs for more details.");
+      // Check for specific error types and provide more targeted messages
+      let errorMessage = "Failed to process receipt image. ";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('API key') || error.message.includes('400') || error.message.includes('403')) {
+          errorMessage += "Invalid or missing API key. Please verify your EXPO_PUBLIC_GEMINI_API_KEY is set correctly.";
+        } else if (error.message.includes('429')) {
+          errorMessage += "Rate limit exceeded. Please try again later.";
+        } else if (error.message.includes('network') || error.message.includes('ENOTFOUND') || error.message.includes('ETIMEDOUT')) {
+          errorMessage += "Network error occurred. Please check your internet connection and try again.";
+        } else {
+          errorMessage += "Please ensure your API key is valid and you have internet connection. Check the console logs for more details.";
+        }
+      } else {
+        errorMessage += "Please ensure your API key is valid and you have internet connection. Check the console logs for more details.";
+      }
+      
+      throw new Error(errorMessage);
     }
   }
 

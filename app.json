@@ -71,6 +71,12 @@
       }
     },
     "plugins": [
+      [
+        "react-native-purchases",
+        {
+          "googlePlayApiKey": "test_FEEufnZipzIBFwqHOUrlDJdLlaL"
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",

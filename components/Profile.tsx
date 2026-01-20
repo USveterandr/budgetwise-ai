@@ -43,8 +43,9 @@ export function Profile() {
   };
 
   const getSubscriptionPlans = () => [
-    { name: 'Starter', price: 0, period: 'month', features: ['Basic Budgeting', 'Manual Tracking'], limits: {} },
-    { name: 'Professional', price: 9.99, period: 'month', features: ['AI Advisor', 'Unlimited Budgets'], limits: {} }
+    { name: 'Starter', price: 14.99, period: 'month', features: ['Basic Budgeting', 'Expense Tracking'], limits: {} },
+    { name: 'Pro', price: 29.99, period: 'month', features: ['AI Advisor', 'Unlimited Scans'], limits: {} },
+    { name: 'Elite', price: 99.99, period: 'month', features: ['Human Consultation', 'Tax Optimization'], limits: {} }
   ];
 
   const upgradePlan = async (plan: any) => {

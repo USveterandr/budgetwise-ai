@@ -8,12 +8,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/Colors';
 import * as ImagePicker from 'expo-image-picker';
 import { CLOUDFLARE_API_URL } from '../lib/cloudflare';
+import PaywallModal from '../../components/PaywallModal';
+import CustomerCenterModal from '../../components/CustomerCenterModal';
 
 export default function Profile() {
   const { userProfile, updateProfile, getToken } = useAuth() as any;
   const { promptToInstall, isInstalled, isIOS } = useInstall();
   const router = useRouter();
   
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [showCustomerCenter, setShowCustomerCenter] = useState(false);
+  const isPro = userProfile?.subscription_status === 'active';
+
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
@@ -219,6 +225,19 @@ export default function Profile() {
                 </LinearGradient>
             </TouchableOpacity>
 
+            {/* Subscription Management */}
+            <TouchableOpacity 
+                style={[styles.saveButton, { marginTop: 24, backgroundColor: isPro ? 'rgba(16, 185, 129, 0.1)' : 'rgba(124, 58, 237, 0.1)', borderWidth: 1, borderColor: isPro ? '#10B981' : Colors.primary }]}
+                onPress={() => isPro ? setShowCustomerCenter(true) : setShowPaywall(true)}
+            >
+                <View style={[styles.saveGradient, { backgroundColor: 'transparent', flexDirection: 'row', justifyContent: 'center' }]}>
+                   <Ionicons name={isPro ? "star" : "star-outline"} size={20} color={isPro ? "#10B981" : Colors.primary} style={{ marginRight: 8 }} />
+                   <Text style={[styles.saveText, { color: isPro ? "#10B981" : Colors.primary }]}>
+                       {isPro ? "Manage Subscription" : "Upgrade to Pro"}
+                   </Text>
+                </View>
+            </TouchableOpacity>
+
             {/* Data Export Button (GDPR) */}
             <TouchableOpacity 
                 style={[styles.saveButton, { marginTop: 12, backgroundColor: 'transparent', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }]} 
@@ -250,6 +269,9 @@ export default function Profile() {
         </View>
 
       </ScrollView>
+
+      <PaywallModal visible={showPaywall} onClose={() => setShowPaywall(false)} />
+      <CustomerCenterModal visible={showCustomerCenter} onClose={() => setShowCustomerCenter(false)} />
     </View>
   );
 }

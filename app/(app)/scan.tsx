@@ -37,10 +37,13 @@ export default function ScanScreen() {
             
             setEditModalVisible(true);
         } catch (e: any) {
+            if (__DEV__) console.error('Receipt scanning error:', e);
             if (Platform.OS === 'web') {
                 alert(`Scan Failed: ${e.message}`);
             } else {
-                Alert.alert("Scan Failed", e.message);
+                Alert.alert("Scan Failed", e.message, [
+                    { text: 'OK', style: 'default' }
+                ]);
             }
         } finally {
             setLoading(false);
@@ -90,7 +93,10 @@ export default function ScanScreen() {
             await processImage(photo.base64);
 
         } catch (e: any) {
-            Alert.alert("Scan Failed", e.message);
+            if (__DEV__) console.error('Camera error:', e);
+            Alert.alert("Scan Failed", e.message, [
+                { text: 'OK', style: 'default' }
+            ]);
             setLoading(false);
             setStatus('');
         }

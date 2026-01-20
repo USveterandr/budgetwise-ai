@@ -1,20 +1,13 @@
 name = "budgetwise-backend"
 main = "src/index.ts"
-compatibility_date = "2025-01-01"
-compatibility_flags = [ "nodejs_compat" ]
+compatibility_date = "2024-04-01"
 
+# D1 Database Binding
 [[d1_databases]]
 binding = "DB"
 database_name = "budgetwise_db"
 database_id = "e003aed8-6834-4435-9f3e-413bf257c8e8"
 
-[[r2_buckets]]
-binding = "BANK_BUCKET"
-bucket_name = "bank-statements"
-
-[[r2_buckets]]
-binding = "AVATAR_BUCKET"
-bucket_name = "avatars"
-
-[ai]
-binding = "AI"
+# Cron Trigger for Trial Expiration
+[triggers]
+crons = ["0 * * * *"] # Runs every hour

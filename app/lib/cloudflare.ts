@@ -239,5 +239,34 @@ export const cloudflare = {
             body: file
         });
         return res.json();
+    },
+
+    // AI
+    async getFinancialAdvice(history: any[], userContext: string, idToken: string) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/ai/chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify({ history, userContext })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to get advice');
+        return data.text;
+    },
+
+    async parseReceiptImage(base64Image: string, idToken: string) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/ai/ocr`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify({ image: base64Image })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to parse receipt');
+        return data;
     }
 };
