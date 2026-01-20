@@ -33,16 +33,16 @@ export default function Signup() {
       setError('');
       setLoading(true);
 
-      console.log("[Signup] Attempting signup for:", email);
+      if (__DEV__) console.log("[Signup] Attempting signup for:", email);
       // Create the user via Cloudflare API
       await signup(email, password, name);
 
-      console.log("[Signup] Signup successful, navigating to dashboard");
+      if (__DEV__) console.log("[Signup] Signup successful, navigating to dashboard");
       // Auto login happens in context, so just navigate
       router.replace('/(app)/dashboard');
       
     } catch (err: any) {
-      console.error("[Signup] error:", err);
+      if (__DEV__) console.error("[Signup] error:", err);
       setError('Failed to create account: ' + err.message);
     } finally {
       setLoading(false);

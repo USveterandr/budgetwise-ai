@@ -18,7 +18,7 @@ export default function AddTransaction() {
   const [type, setType] = useState<'income' | 'expense'>('expense');
 
   const handleSave = async () => {
-    console.log('[AddTransaction] Attempting save...');
+    if (__DEV__) console.log('[AddTransaction] Attempting save...');
     if (!amount || !description) {
       if (Platform.OS === 'web') {
         alert('Please fill in amount and description');
@@ -42,11 +42,11 @@ export default function AddTransaction() {
     try {
       const token = await tokenCache.getToken("budgetwise_jwt_token");
       if (!token) {
-        console.error('[AddTransaction] No token found');
+        if (__DEV__) console.error('[AddTransaction] No token found');
         throw new Error('Not authenticated. Please log in again.');
       }
 
-      console.log('[AddTransaction] Sending data:', {
+      if (__DEV__) console.log('[AddTransaction] Sending data:', {
         amount: numAmount, description, category, type
       });
 
@@ -58,7 +58,7 @@ export default function AddTransaction() {
         date: new Date().toISOString()
       }, token);
 
-      console.log('[AddTransaction] Success:', result);
+      if (__DEV__) console.log('[AddTransaction] Success:', result);
 
       if (Platform.OS === 'web') {
         // Use a short timeout to let the UI update or just standard alert then move
@@ -71,7 +71,7 @@ export default function AddTransaction() {
       }
       
     } catch (error: any) {
-      console.error('[AddTransaction] Error:', error);
+      if (__DEV__) console.error('[AddTransaction] Error:', error);
       const msg = error.message || 'Failed to save transaction';
       if (Platform.OS === 'web') {
          alert(`Error: ${msg}`);

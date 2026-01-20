@@ -12,6 +12,7 @@ interface FinanceContextType {
   loading: boolean;
   refreshData: () => Promise<void>;
   addTransaction: (transaction: Partial<Transaction>) => Promise<any>;
+  deleteTransaction: (id: string) => Promise<any>;
   addBudget: (budget: Partial<Budget> & { month?: string }) => Promise<any>;
   updateBudget: (id: string, spent: number) => Promise<any>;
   addInvestment: (investment: Partial<Investment>) => Promise<any>;
@@ -47,7 +48,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       // Fetch all data in parallel
       const [txData, budgetData, investData] = await Promise.all([
         cloudflare.getTransactions(currentUser.uid, token),
-        cloudflare.getBudgets(currentUser.uid, new Date().toISOString().slice(0, 7), token),
+        cloudflare.getBudgets(currentUser.uid, 'current', token),
         cloudflare.getInvestments(currentUser.uid, token)
       ]);
 
@@ -94,6 +95,22 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Add transaction error:', error);
       throw error;
+    }
+  };
+
+  const deleteTransaction = async (id: string) => {
+    try {
+      const token = await tokenCache.getToken("budgetwise_jwt_token");
+      if (!token) throw new Error("No token");
+
+      const result = await cloudflare.deleteTransaction(id, token);
+      
+      // Optimistic update
+      setTransactions(prev => prev.filter(t => t.id !== id));
+      return result;
+    } catch (error) {
+       console.error('Delete transaction error:', error);
+       throw error;
     }
   };
 
@@ -157,6 +174,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       loading,
       refreshData: fetchFinanceData,
       addTransaction,
+      deleteTransaction,
       addBudget,
       updateBudget,
       addInvestment,

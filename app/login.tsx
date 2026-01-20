@@ -25,13 +25,13 @@ export default function Login() {
       setError('');
       setLoading(true);
 
-      console.log("[Login] Attempting login for:", email);
+      if (__DEV__) console.log("[Login] Attempting login for:", email);
       await login(email, password);
       
-      console.log("[Login] Login successful, navigating to dashboard");
+      if (__DEV__) console.log("[Login] Login successful, navigating to dashboard");
       router.replace('/(app)/dashboard');
     } catch (err: any) {
-      console.error("[Login] error:", err);
+      if (__DEV__) console.error("[Login] error:", err);
       setError('Invalid email or password');
     } finally {
       setLoading(false);

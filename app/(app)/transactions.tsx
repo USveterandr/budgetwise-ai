@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, StatusBar, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, StatusBar, TextInput, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/Colors';
@@ -8,9 +8,37 @@ import { TransactionItem } from '../../components/transactions/TransactionItem';
 
 export default function TransactionsData() {
   const router = useRouter();
-  const { transactions } = useFinance();
+  const { transactions, deleteTransaction, refreshData } = useFinance();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refreshData();
+    setRefreshing(false);
+  };
+
+  const handleDelete = (id: string) => {
+    Alert.alert(
+      "Delete Transaction",
+      "Are you sure you want to delete this transaction?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive", 
+          onPress: async () => {
+             try {
+               await deleteTransaction(id);
+             } catch (e) {
+               Alert.alert("Error", "Failed to delete transaction");
+             }
+          }
+        }
+      ]
+    );
+  };
 
   // Filter transactions
   const filteredTransactions = transactions.filter(t => {
@@ -71,14 +99,19 @@ export default function TransactionsData() {
         </View>
 
         {/* List */}
-        <ScrollView style={styles.content}>
+        <ScrollView 
+          style={styles.content}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+          }
+        >
           <View style={styles.transactionList}>
             {filteredTransactions.length > 0 ? (
               filteredTransactions.map((transaction) => (
                 <TransactionItem 
                   key={transaction.id} 
                   transaction={transaction} 
-                  onDelete={() => {}} // Delete not implemented in list view for safety, or add modal later
+                  onDelete={handleDelete}
                 />
               ))
             ) : (

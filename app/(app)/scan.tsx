@@ -69,7 +69,7 @@ export default function ScanScreen() {
                 await processImage(result.assets[0].base64);
             }
         } catch (e: any) {
-            console.error(e);
+            if (__DEV__) console.error(e);
             alert('Failed to pick image');
         }
     };

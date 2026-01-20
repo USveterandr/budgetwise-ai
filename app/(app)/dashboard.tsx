@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { useAuth } from '../../AuthContext';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,11 +22,13 @@ const INDUSTRY_INSIGHTS: Record<string, string> = {
 };
 
 export default function Dashboard() {
-  const { logout, userProfile, trialStatus, isAuthenticated, currentUser } = useAuth();
+  const { logout, userProfile, trialStatus, isAuthenticated, currentUser, upgradeSubscription } = useAuth() as any;
   const router = useRouter();
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Fetch transactions when screen comes into focus
   useFocusEffect(
@@ -41,18 +43,25 @@ export default function Dashboard() {
       try {
           const token = await tokenCache.getToken("budgetwise_jwt_token");
           if (token && currentUser?.uid) {
-             setLoadingTransactions(true);
+             // Only show loading spinner if not refreshing
+             if (!refreshing) setLoadingTransactions(true);
              const data = await cloudflare.getTransactions(currentUser.uid, token);
              if (Array.isArray(data)) {
                  setTransactions(data);
              }
           }
       } catch (e) {
-          console.error("Failed to fetch transactions", e);
+          if (__DEV__) console.error("Failed to fetch transactions", e);
       } finally {
           setLoadingTransactions(false);
+          setRefreshing(false);
       }
   };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchTransactions();
+  }, [currentUser]);
 
   const handleLogout = async () => {
       setMenuVisible(false);
@@ -75,16 +84,29 @@ export default function Dashboard() {
           }
           return { uri: userProfile.avatar_url };
       }
-      return null;
+      return undefined;
   };
 
   return (
     <View style={styles.container}>
       <PaywallModal 
         visible={trialStatus?.isExpired} 
-        onSubscribe={() => {
-             // In real app, trigger IAP or Stripe link
-             alert('Redirecting to subscription portal...');
+        onSubscribe={async () => {
+             if (isSubscribing) return;
+             setIsSubscribing(true);
+             // Simulate payment processing
+             try {
+                 const success = await upgradeSubscription();
+                 if (success) {
+                    alert('Welcome to Premium! Your subscription is now active.');
+                 } else {
+                    alert('Subscription failed. Please try again.');
+                 }
+             } catch (e) {
+                 alert('Error processing subscription.');
+             } finally {
+                 setIsSubscribing(false);
+             }
         }}
       />
 
@@ -98,7 +120,13 @@ export default function Dashboard() {
       <View style={[styles.orb, styles.orb1]} />
       <View style={[styles.orb, styles.orb2]} />
 
-      <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.contentContainer} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.gold} />
+        }
+      >
         
         {/* Header Section */}
         <View style={styles.header}>
@@ -300,7 +328,6 @@ const styles = StyleSheet.create({
       top: -150,
       right: -100,
       transform: [{ scale: 1.2 }],
-      blurRadius: 80,
   },
   orb2: {
       width: 300,
@@ -309,7 +336,6 @@ const styles = StyleSheet.create({
       bottom: 0,
       left: -50,
       opacity: 0.1,
-      blurRadius: 60,
   },
 
   header: { 

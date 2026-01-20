@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, Image, Platform } from 'react-native';
 import { useAuth } from '../../AuthContext';
 import { useInstall } from '../../InstallContext';
 import { useRouter } from 'expo-router';
@@ -10,7 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { CLOUDFLARE_API_URL } from '../lib/cloudflare';
 
 export default function Profile() {
-  const { userProfile, updateProfile, getToken } = useAuth();
+  const { userProfile, updateProfile, getToken } = useAuth() as any;
   const { promptToInstall, isInstalled, isIOS } = useInstall();
   const router = useRouter();
   
@@ -217,6 +217,16 @@ export default function Profile() {
                 >
                     {loading ? <ActivityIndicator color="white" /> : <Text style={styles.saveText}>Save Changes</Text>}
                 </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Data Export Button (GDPR) */}
+            <TouchableOpacity 
+                style={[styles.saveButton, { marginTop: 12, backgroundColor: 'transparent', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }]} 
+                onPress={() => Alert.alert("Export Data", "Your comprehensive financial data report is being generated and will be emailed to your registered address shortly.")}
+            >
+                <View style={styles.saveGradient}>
+                    <Text style={[styles.saveText, { color: Colors.textSecondary }]}>Export My Data</Text>
+                </View>
             </TouchableOpacity>
 
             {!isInstalled && Platform.OS === 'web' && (

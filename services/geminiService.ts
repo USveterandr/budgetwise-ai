@@ -48,16 +48,24 @@ class GeminiService {
     const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || Constants.expoConfig?.extra?.geminiApiKey;
     
     // Debug logging to help troubleshoot
-    console.log("BudgetWise - Initializing Gemini Service");
-    console.log("BudgetWise - API Key Present:", !!apiKey);
-    if (apiKey) {
-       console.log("BudgetWise - API Key Length:", apiKey.length);
-    } // else { console.log("BudgetWise - Available Keys in Extra:", JSON.stringify(Constants.expoConfig?.extra)); }
+    if (__DEV__) {
+      console.log("BudgetWise - Initializing Gemini Service");
+      console.log("BudgetWise - API Key Present:", !!apiKey);
+      if (apiKey) {
+         console.log("BudgetWise - API Key Length:", apiKey.length);
+         console.log("BudgetWise - First 10 chars of API key:", apiKey.substring(0, 10));
+      } else { 
+        console.log("BudgetWise - Available Keys in Extra:", JSON.stringify(Constants.expoConfig?.extra)); 
+        console.log("BudgetWise - Full Constants.expoConfig.extra:", JSON.stringify(Constants.expoConfig?.extra));
+        console.log("BudgetWise - process.env.EXPO_PUBLIC_GEMINI_API_KEY:", process.env.EXPO_PUBLIC_GEMINI_API_KEY ? "SET" : "NOT SET");
+      }
+    }
 
     if (!apiKey) {
-      console.warn("EXPO_PUBLIC_GEMINI_API_KEY is not set. Gemini features will be disabled.");
+      if (__DEV__) console.warn("EXPO_PUBLIC_GEMINI_API_KEY is not set. Gemini features will be disabled.");
     } else {
       this.genAI = new GoogleGenerativeAI(apiKey);
+      if (__DEV__) console.log("BudgetWise - Gemini API initialized successfully");
     }
   }
 
@@ -151,7 +159,7 @@ class GeminiService {
       }
       
       // For other errors, provide a generic fallback
-      throw new Error("Failed to process receipt image. Please ensure your API key is valid and you have internet connection.");
+      throw new Error("Failed to process receipt image. Please ensure your API key is valid and you have internet connection. Check the console logs for more details.");
     }
   }
 

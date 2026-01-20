@@ -15,7 +15,7 @@ export const tokenCache = {
       // SecureStore is only for native
       return await SecureStore.getItemAsync(key);
     } catch (error) {
-      console.error('SecureStore get item error: ', error);
+      if (__DEV__) console.error('SecureStore get item error: ', error);
       return null;
     }
   },
@@ -30,7 +30,7 @@ export const tokenCache = {
     try {
       await SecureStore.setItemAsync(key, value);
     } catch (error) {
-       console.error("Error storing token", error);
+       if (__DEV__) console.error("Error storing token", error);
     }
   },
 
@@ -44,7 +44,7 @@ export const tokenCache = {
     try {
       await SecureStore.deleteItemAsync(key);
     } catch (error) {
-       console.error("Error deleting token", error);
+       if (__DEV__) console.error("Error deleting token", error);
     }
   }
 };

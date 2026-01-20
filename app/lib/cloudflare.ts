@@ -3,13 +3,18 @@
  * Authentication + Data Access
  */
 
-// Point to production backend for stability during testing
-export const CLOUDFLARE_API_URL = 'https://budgetwise-backend.isaactrinidadllc.workers.dev';
+// Use environment variable for API URL, fallback to production
+export const CLOUDFLARE_API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://budgetwise-backend.isaactrinidadllc.workers.dev';
 const CLOUDFLARE_WORKER_URL = CLOUDFLARE_API_URL;
+
+// Log API URL in development for debugging
+if (__DEV__) {
+  console.log('[Cloudflare] Using API URL:', CLOUDFLARE_API_URL);
+}
 
 export const cloudflare = {
     // Auth - Login
-    async login(email, password) {
+    async login(email: string, password: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -21,7 +26,7 @@ export const cloudflare = {
     },
 
     // Auth - Signup
-    async signup(email, password, name) {
+    async signup(email: string, password: string, name: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -32,7 +37,7 @@ export const cloudflare = {
         return data; // { token, userId }
     },
 
-    async resetPassword(email) {
+    async resetPassword(email: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/auth/reset-password`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -43,7 +48,7 @@ export const cloudflare = {
         return data; 
     },
 
-    async confirmPasswordReset(token, newPassword) {
+    async confirmPasswordReset(token: string, newPassword: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/auth/update-password`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -55,7 +60,7 @@ export const cloudflare = {
     },
 
     // Profiles
-    async getProfile(token) {
+    async getProfile(token: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/profile`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -64,7 +69,7 @@ export const cloudflare = {
         return data;
     },
 
-    async updateProfile(profile, token) {
+    async updateProfile(profile: any, token: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/profile`, {
             method: 'POST',
             headers: {
@@ -76,7 +81,7 @@ export const cloudflare = {
         return res.json();
     },
 
-    async uploadAvatar(imageUri, token) {
+    async uploadAvatar(imageUri: string, token: string) {
         const formData = new FormData();
 
         const filename = imageUri.split('/').pop() || 'avatar.jpg';

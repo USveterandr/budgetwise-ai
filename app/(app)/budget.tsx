@@ -11,7 +11,7 @@ import { tokenCache } from '../../utils/tokenCache';
 const CATEGORIES = ['Food', 'Transport', 'Shopping', 'Housing', 'Utilities', 'Health', 'Entertainment', 'Salary', 'Business', 'Investment', 'Other'];
 
 export default function BudgetScreen() {
-    const { currentUser } = useAuth();
+    const { currentUser } = useAuth() as any;
     const router = useRouter();
     const [budgets, setBudgets] = useState<any[]>([]);
     const [transactions, setTransactions] = useState<any[]>([]);
@@ -40,7 +40,7 @@ export default function BudgetScreen() {
                 setTransactions(txData || []);
             }
         } catch (e) {
-            console.error(e);
+            if (__DEV__) console.error(e);
         } finally {
             setLoading(false);
         }

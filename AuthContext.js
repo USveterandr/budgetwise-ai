@@ -31,30 +31,30 @@ export function AuthProvider({ children }) {
     }, []);
 
     const loadUser = async () => {
-        console.log("[AuthContext] Initializing session...");
+        if (__DEV__) console.log("[AuthContext] Initializing session...");
         try {
             const token = await tokenCache.getToken(TOKEN_KEY);
-            console.log("[AuthContext] Token found:", token ? "YES" : "NO");
+            if (__DEV__) console.log("[AuthContext] Token found:", token ? "YES" : "NO");
 
             if (token) {
                 // Determine user from token or just fetch profile using token
-                console.log("[AuthContext] Fetching profile...");
+                if (__DEV__) console.log("[AuthContext] Fetching profile...");
                 const profile = await cloudflare.getProfile(token);
                 if (profile && !profile.error) {
-                    console.log("[AuthContext] Profile loaded:", profile.email);
+                    if (__DEV__) console.log("[AuthContext] Profile loaded:", profile.email);
                     setUserProfile(profile);
                     setCurrentUser({ uid: profile.user_id, email: profile.email });
                 } else {
-                    console.log("[AuthContext] Invalid profile or token, logging out");
+                    if (__DEV__) console.log("[AuthContext] Invalid profile or token, logging out");
                     await logout();
                 }
             } else {
-                console.log("[AuthContext] No token found, user is guest");
+                if (__DEV__) console.log("[AuthContext] No token found, user is guest");
             }
         } catch (e) {
-            console.error("[AuthContext] Failed to load user session:", e);
+            if (__DEV__) console.error("[AuthContext] Failed to load user session:", e);
         } finally {
-            console.log("[AuthContext] Session initialization complete");
+            if (__DEV__) console.log("[AuthContext] Session initialization complete");
             setLoading(false);
         }
     };
@@ -118,6 +118,25 @@ export function AuthProvider({ children }) {
         }
     }
 
+    const upgradeSubscription = async () => {
+        try {
+            // Mock payment success - In production this would verify a receipt
+             const token = await tokenCache.getToken(TOKEN_KEY);
+             // Update remote profile
+             await cloudflare.updateProfile({ subscription_status: 'active' }, token);
+             
+             // Update local state
+             setUserProfile(prev => ({
+                 ...prev,
+                 subscription_status: 'active'
+             }));
+             return true;
+        } catch (e) {
+            console.error('Subscription upgrade failed:', e);
+            return false;
+        }
+    };
+
     const getToken = async () => {
         return await tokenCache.getToken(TOKEN_KEY);
     }
@@ -158,7 +177,8 @@ export function AuthProvider({ children }) {
         confirmPasswordReset,
         logout,
         refreshProfile,
-        updateProfile
+        updateProfile,
+        upgradeSubscription
     };
 
     return (

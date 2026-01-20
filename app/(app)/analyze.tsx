@@ -12,7 +12,7 @@ import { Svg, Circle, G } from 'react-native-svg';
 const { width } = Dimensions.get('window');
 
 export default function AnalyzeScreen() {
-    const { currentUser } = useAuth();
+    const { currentUser } = useAuth() as any;
     const router = useRouter();
     const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export default function AnalyzeScreen() {
                 setTransactions(data || []);
             }
         } catch (e) {
-            console.error(e);
+            if (__DEV__) console.error(e);
         } finally {
             setLoading(false);
         }
