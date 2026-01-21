@@ -12,6 +12,7 @@ interface FinanceContextType {
   loading: boolean;
   refreshData: () => Promise<void>;
   addTransaction: (transaction: Partial<Transaction>) => Promise<any>;
+  updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<any>;
   deleteTransaction: (id: string) => Promise<any>;
   addBudget: (budget: Partial<Budget> & { month?: string }) => Promise<any>;
   updateBudget: (id: string, spent: number) => Promise<any>;
@@ -98,6 +99,22 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
+    try {
+      const token = await tokenCache.getToken("budgetwise_jwt_token");
+      if (!token) throw new Error("No token");
+
+      const result = await cloudflare.updateTransaction(id, updates, token);
+      
+      // Optimistic update
+      setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+      return result;
+    } catch (error) {
+      console.error('Update transaction error:', error);
+      throw error;
+    }
+  };
+
   const deleteTransaction = async (id: string) => {
     try {
       const token = await tokenCache.getToken("budgetwise_jwt_token");
@@ -174,6 +191,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       loading,
       refreshData: fetchFinanceData,
       addTransaction,
+      updateTransaction,
       deleteTransaction,
       addBudget,
       updateBudget,

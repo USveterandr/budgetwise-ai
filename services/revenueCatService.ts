@@ -1,4 +1,4 @@
-import Imports, { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
+import Purchases, { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
 import { Platform } from 'react-native';
 
 // Configuration
@@ -20,14 +20,14 @@ class RevenueCatService {
     if (this.isConfigured) return;
 
     if (Platform.OS === 'ios') {
-      Imports.configure({ apiKey: API_KEYS.apple, appUserID: userId });
+      Purchases.configure({ apiKey: API_KEYS.apple, appUserID: userId });
     } else if (Platform.OS === 'android') {
-      Imports.configure({ apiKey: API_KEYS.google, appUserID: userId });
+      Purchases.configure({ apiKey: API_KEYS.google, appUserID: userId });
     }
     
     // Enable debug logs for testing
     if (__DEV__) {
-        Imports.setLogLevel(Imports.LOG_LEVEL.DEBUG);
+        Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
     }
 
     this.isConfigured = true;
@@ -36,17 +36,17 @@ class RevenueCatService {
 
   async login(userId: string) {
     if (!this.isConfigured) await this.configure(userId);
-    await Imports.logIn(userId);
+    await Purchases.logIn(userId);
   }
 
   async logout() {
     if (!this.isConfigured) return;
-    await Imports.logOut();
+    await Purchases.logOut();
   }
 
   async getOfferings() {
     try {
-      const offerings = await Imports.getOfferings();
+      const offerings = await Purchases.getOfferings();
       if (offerings.current !== null && offerings.current.availablePackages.length !== 0) {
         return offerings.current.availablePackages;
       }
@@ -59,7 +59,7 @@ class RevenueCatService {
 
   async purchasePackage(pack: PurchasesPackage) {
     try {
-      const { customerInfo } = await Imports.purchasePackage(pack);
+      const { customerInfo } = await Purchases.purchasePackage(pack);
       return this.checkEntitlement(customerInfo);
     } catch (e: any) {
       if (!e.userCancelled) {
@@ -71,7 +71,7 @@ class RevenueCatService {
 
   async restorePurchases() {
     try {
-      const customerInfo = await Imports.restorePurchases();
+      const customerInfo = await Purchases.restorePurchases();
       return this.checkEntitlement(customerInfo);
     } catch (e) {
       console.error("Restore error", e);
@@ -81,7 +81,7 @@ class RevenueCatService {
 
   async getSubscriptionStatus() {
     try {
-      const customerInfo = await Imports.getCustomerInfo();
+      const customerInfo = await Purchases.getCustomerInfo();
       return this.checkEntitlement(customerInfo);
     } catch (e) {
          return false;

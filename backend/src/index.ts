@@ -392,6 +392,30 @@ app.post('/api/transactions', authMiddleware, async (c) => {
   return c.json({ success: true, id })
 })
 
+app.put('/api/transactions/:id', authMiddleware, async (c) => {
+  const currentUser = c.get('user')
+  const id = c.req.param('id')
+  const updates = await c.req.json()
+  
+  const { description, amount, category, type, date } = updates
+  const fields = []
+  const values = []
+  
+  if (description !== undefined) { fields.push('description = ?'); values.push(description); }
+  if (amount !== undefined) { fields.push('amount = ?'); values.push(amount); }
+  if (category !== undefined) { fields.push('category = ?'); values.push(category); }
+  if (type !== undefined) { fields.push('type = ?'); values.push(type); }
+  if (date !== undefined) { fields.push('date = ?'); values.push(date); }
+  
+  if (fields.length === 0) return c.json({ success: true })
+  
+  values.push(id, currentUser.userId)
+  
+  await c.env.DB.prepare(`UPDATE transactions SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`).bind(...values).run()
+  
+  return c.json({ success: true })
+})
+
 app.delete('/api/transactions/:id', authMiddleware, async (c) => {
   const currentUser = c.get('user')
   const id = c.req.param('id')

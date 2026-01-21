@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
@@ -12,6 +12,8 @@ interface ReceiptScannerProps {
 
 export function ReceiptScanner({ onScanComplete }: ReceiptScannerProps) {
   const [scanning, setScanning] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [scannedData, setScannedData] = useState<any>(null);
   const { getToken } = useAuth() as any;
 
   const pickImage = async () => {
@@ -56,13 +58,20 @@ export function ReceiptScanner({ onScanComplete }: ReceiptScannerProps) {
       
       // Use the Cloudflare Worker bridge instead of local Gemini service
       const data = await cloudflare.parseReceiptImage(base64, token);
-      onScanComplete(data);
+      setScannedData(data);
+      setEditModalVisible(true);
     } catch (error: any) {
       console.error('Scan error:', error);
       Alert.alert('Scanning Failed', error.message || 'Could not extract data from receipt.');
     } finally {
       setScanning(false);
     }
+  };
+
+  const handleSave = () => {
+    onScanComplete(scannedData);
+    setEditModalVisible(false);
+    setScannedData(null);
   };
 
   return (
@@ -90,6 +99,57 @@ export function ReceiptScanner({ onScanComplete }: ReceiptScannerProps) {
           <Text style={styles.loadingText}>Extracting data...</Text>
         </View>
       )}
+
+      <Modal
+        visible={editModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Review Receipt</Text>
+            <ScrollView>
+              <Text style={styles.label}>Merchant</Text>
+              <TextInput 
+                style={styles.input} 
+                value={scannedData?.merchant} 
+                onChangeText={(t) => setScannedData({...scannedData, merchant: t})}
+                placeholder="Merchant Name"
+                placeholderTextColor="#64748B"
+              />
+
+              <Text style={styles.label}>Amount</Text>
+              <TextInput 
+                style={styles.input} 
+                value={scannedData?.amount?.toString()} 
+                onChangeText={(t) => setScannedData({...scannedData, amount: t})}
+                keyboardType="decimal-pad"
+                placeholder="0.00"
+                placeholderTextColor="#64748B"
+              />
+
+              <Text style={styles.label}>Date</Text>
+              <TextInput 
+                style={styles.input} 
+                value={scannedData?.date} 
+                onChangeText={(t) => setScannedData({...scannedData, date: t})}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#64748B"
+              />
+            </ScrollView>
+            
+            <View style={styles.modalActions}>
+              <TouchableOpacity onPress={() => setEditModalVisible(false)} style={[styles.modalButton, styles.cancelButton]}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleSave} style={[styles.modalButton, styles.saveButton]}>
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -145,5 +205,70 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#94A3B8',
     fontSize: 14,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center',
+    padding: 20
+  },
+  modalContent: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#334155',
+    maxHeight: '80%'
+  },
+  modalTitle: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center'
+  },
+  label: {
+    color: '#94A3B8',
+    marginBottom: 8,
+    fontSize: 12,
+    textTransform: 'uppercase'
+  },
+  input: {
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 8,
+    padding: 12,
+    color: '#FFF',
+    fontSize: 16,
+    marginBottom: 20
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 10
+  },
+  modalButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  cancelButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#475569'
+  },
+  saveButton: {
+    backgroundColor: Colors.primary
+  },
+  cancelButtonText: {
+    color: '#CBD5E1',
+    fontWeight: '600'
+  },
+  saveButtonText: {
+    color: '#FFF',
+    fontWeight: '600'
   }
 });

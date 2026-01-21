@@ -8,15 +8,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/Colors';
 import * as ImagePicker from 'expo-image-picker';
 import { CLOUDFLARE_API_URL } from '../lib/cloudflare';
-import PaywallModal from '../../components/PaywallModal';
 import CustomerCenterModal from '../../components/CustomerCenterModal';
+import { presentPaywall } from '../../services/paywall';
 
 export default function Profile() {
-  const { userProfile, updateProfile, getToken } = useAuth() as any;
+  const { userProfile, updateProfile, getToken, refreshProfile } = useAuth() as any;
   const { promptToInstall, isInstalled, isIOS } = useInstall();
   const router = useRouter();
   
-  const [showPaywall, setShowPaywall] = useState(false);
   const [showCustomerCenter, setShowCustomerCenter] = useState(false);
   const isPro = userProfile?.subscription_status === 'active';
 
@@ -228,7 +227,24 @@ export default function Profile() {
             {/* Subscription Management */}
             <TouchableOpacity 
                 style={[styles.saveButton, { marginTop: 24, backgroundColor: isPro ? 'rgba(16, 185, 129, 0.1)' : 'rgba(124, 58, 237, 0.1)', borderWidth: 1, borderColor: isPro ? '#10B981' : Colors.primary }]}
-                onPress={() => isPro ? setShowCustomerCenter(true) : setShowPaywall(true)}
+                onPress={async () => {
+                    if (isPro) {
+                        setShowCustomerCenter(true);
+                    } else {
+                        const purchased = await presentPaywall();
+                        if (purchased) {
+                            // Sync status with backend
+                            try {
+                              const token = await getToken();
+                              await cloudflare.updateProfile({ subscription_status: 'active' }, token);
+                              await refreshProfile();
+                              Alert.alert("Success", "Welcome to Pro!");
+                            } catch (e) {
+                              console.error("Failed to sync sub", e);
+                            }
+                        }
+                    }
+                }}
             >
                 <View style={[styles.saveGradient, { backgroundColor: 'transparent', flexDirection: 'row', justifyContent: 'center' }]}>
                    <Ionicons name={isPro ? "star" : "star-outline"} size={20} color={isPro ? "#10B981" : Colors.primary} style={{ marginRight: 8 }} />
@@ -270,7 +286,6 @@ export default function Profile() {
 
       </ScrollView>
 
-      <PaywallModal visible={showPaywall} onClose={() => setShowPaywall(false)} />
       <CustomerCenterModal visible={showCustomerCenter} onClose={() => setShowCustomerCenter(false)} />
     </View>
   );

@@ -1,12 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { DashboardColors } from '../../constants/Colors';
+import { DashboardColors, Colors } from '../../constants/Colors';
 import { Transaction } from '../../types';
 
 interface TransactionItemProps {
   transaction: Transaction;
   onDelete: (id: string) => void;
+  onPress?: (id: string) => void;
+  onLongPress?: (id: string) => void;
+  selected?: boolean;
+  selectionMode?: boolean;
 }
 
 const categoryIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -30,12 +34,23 @@ const categoryIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
   Other: 'wallet',
 };
 
-export function TransactionItem({ transaction, onDelete }: TransactionItemProps) {
+export function TransactionItem({ transaction, onDelete, onPress, onLongPress, selected, selectionMode }: TransactionItemProps) {
   const icon = categoryIcons[transaction.category] || 'wallet';
   const isIncome = transaction.type === 'income';
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity 
+      style={[styles.container, selected && styles.selectedContainer]}
+      onPress={() => onPress && onPress(transaction.id)}
+      onLongPress={() => onLongPress && onLongPress(transaction.id)}
+      activeOpacity={0.7}
+      delayLongPress={300}
+    >
+      {selectionMode && (
+        <View style={styles.selectionIcon}>
+           <Ionicons name={selected ? "checkbox" : "square-outline"} size={24} color={selected ? Colors.primary : "#64748B"} />
+        </View>
+      )}
       <View style={[styles.iconContainer, isIncome ? styles.incomeIcon : styles.expenseIcon]}>
         <Ionicons name={icon} size={20} color={isIncome ? DashboardColors.income : DashboardColors.expense} />
       </View>
@@ -47,11 +62,13 @@ export function TransactionItem({ transaction, onDelete }: TransactionItemProps)
         <Text style={[styles.amount, isIncome ? styles.incomeText : styles.expenseText]}>
           {isIncome ? '+' : '-'}${transaction.amount.toLocaleString()}
         </Text>
-        <TouchableOpacity onPress={() => onDelete(transaction.id)} style={styles.deleteBtn}>
-          <Ionicons name="trash-outline" size={16} color={DashboardColors.textSecondary} />
-        </TouchableOpacity>
+        {!selectionMode && (
+          <TouchableOpacity onPress={() => onDelete(transaction.id)} style={styles.deleteBtn}>
+            <Ionicons name="trash-outline" size={16} color={DashboardColors.textSecondary} />
+          </TouchableOpacity>
+        )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -62,6 +79,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: DashboardColors.border,
+  },
+  selectedContainer: {
+    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+  },
+  selectionIcon: {
+    marginRight: 12,
   },
   iconContainer: {
     width: 44,

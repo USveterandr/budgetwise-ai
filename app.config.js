@@ -32,6 +32,7 @@ try {
 
 // prioritize process.env (loaded by system/EAS), then dotenv, then manual .env
 const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || env.EXPO_PUBLIC_GEMINI_API_KEY;
+const basePlugins = Array.isArray(expo.plugins) ? expo.plugins : [];
 
 module.exports = {
   expo: {
@@ -40,7 +41,7 @@ module.exports = {
       ...expo.extra,
       geminiApiKey: geminiApiKey,
     },
-    plugins: [
-    ]
+    // Preserve any plugins defined in app.json (e.g., purchases, splash screen)
+    plugins: basePlugins
   },
 };

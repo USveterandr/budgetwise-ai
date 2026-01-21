@@ -123,6 +123,18 @@ export const cloudflare = {
         return data;
     },
 
+    async updateTransaction(id: string, updates: any, idToken: string) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/transactions/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify(updates)
+        });
+        return res.json();
+    },
+
     async deleteTransaction(id: string, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/transactions/${id}`, {
             method: 'DELETE',
