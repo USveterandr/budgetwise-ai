@@ -20,6 +20,3 @@ export const PaywallModal = ({ visible, onSubscribe, onRestore, onDismiss }: Pay
 const styles = StyleSheet.create({
     container: { flex: 1 },
 });
-const styles = StyleSheet.create({
-    container: { flex: 1 },
-});
