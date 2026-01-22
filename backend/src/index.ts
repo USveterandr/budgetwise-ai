@@ -34,7 +34,13 @@ app.use('/*', cors({
 }))
 
 // Secret key for JWT (should be in .dev.vars or env)
-const getJwtSecret = (c: any) => c.env.JWT_SECRET || 'dev_secret_budgetwise_123'
+const getJwtSecret = (c: any) => {
+  const secret = c.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is not set');
+  }
+  return secret;
+}
 
 async function sendEmail(apiKey: string, to: string, subject: string, html: string) {
   const res = await fetch('https://api.resend.com/emails', {
@@ -436,12 +442,21 @@ app.get('/api/budgets', authMiddleware, async (c) => {
   const { results } = await c.env.DB.prepare(
     "SELECT * FROM budgets WHERE user_id = ?"
   ).bind(currentUser.userId).all()
-  return c.json(results)
+  
+  // Map budget_limit to limit for frontend compatibility
+  const mappedResults = results.map((b: any) => ({
+    ...b,
+    limit: b.budget_limit
+  }))
+  
+  return c.json(mappedResults)
 })
 
 app.post('/api/budgets', authMiddleware, async (c) => {
   const currentUser = c.get('user')
-  const { category, budget_limit } = await c.req.json()
+  const body = await c.req.json()
+  const category = body.category
+  const limit = body.limit || body.budget_limit
   const id = nanoid()
 
   // Check if budget for category already exists
@@ -452,13 +467,13 @@ app.post('/api/budgets', authMiddleware, async (c) => {
   if (existing) {
        await c.env.DB.prepare(
            "UPDATE budgets SET budget_limit = ? WHERE id = ?"
-       ).bind(budget_limit, existing.id).run()
+       ).bind(limit, existing.id).run()
        return c.json({ success: true, id: existing.id, updated: true })
   }
 
   await c.env.DB.prepare(
     "INSERT INTO budgets (id, user_id, category, budget_limit) VALUES (?, ?, ?, ?)"
-  ).bind(id, currentUser.userId, category, budget_limit).run()
+  ).bind(id, currentUser.userId, category, limit).run()
   
   return c.json({ success: true, id })
 })

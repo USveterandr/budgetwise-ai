@@ -120,7 +120,7 @@ export function AuthProvider({ children }) {
     const updateProfile = async (updates) => {
         try {
             const token = await tokenCache.getToken(TOKEN_KEY);
-            const success = await cloudflare.updateProfile(token, updates);
+            const success = await cloudflare.updateProfile(updates, token);
             if (success) {
                 // Optimistic update or fetch fresh
                 setUserProfile(prev => ({ ...prev, ...updates }));
