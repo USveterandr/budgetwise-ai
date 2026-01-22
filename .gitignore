@@ -28,6 +28,10 @@ expo-env.d.ts
 *.aab
 play_store_assets/budgetwise-ai-play-services-f6c2ac7e34f1.json
 .env
+google-services.json
+*firebase-adminsdk-*.json
+*serviceaccount*.json
+budgetwise-ai-*.json
 
 # Local History
 .history/

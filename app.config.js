@@ -1,4 +1,3 @@
-const { expo } = require('./app.json');
 const path = require('path');
 
 // Load environment variables from .env file using dotenv
@@ -32,16 +31,36 @@ try {
 
 // prioritize process.env (loaded by system/EAS), then dotenv, then manual .env
 const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || env.EXPO_PUBLIC_GEMINI_API_KEY;
-const basePlugins = Array.isArray(expo.plugins) ? expo.plugins : [];
 
-module.exports = {
-  expo: {
-    ...expo,
-    extra: {
-      ...expo.extra,
-      geminiApiKey: geminiApiKey,
+// Read the app.json directly to get plugins
+const appJson = require('./app.json');
+const basePlugins = Array.isArray(appJson.expo.plugins) ? appJson.expo.plugins : [];
+
+module.exports = ({ config }) => {
+  // Conditionally include plugins based on platform
+  let plugins = [...basePlugins];
+  
+  // Exclude react-native-purchases plugin for web builds
+  if (process.env.EAS_BUILD_PLATFORM === 'web' || config.platform === 'web') {
+    plugins = plugins.filter(plugin => {
+      if (typeof plugin === 'string') {
+        return plugin !== 'react-native-purchases';
+      } else if (Array.isArray(plugin) && typeof plugin[0] === 'string') {
+        return plugin[0] !== 'react-native-purchases';
+      }
+      return true;
+    });
+  }
+  
+  return {
+    ...config,
+    expo: {
+      ...appJson.expo,
+      plugins: plugins,
+      extra: {
+        ...appJson.expo.extra,
+        geminiApiKey: geminiApiKey,
+      },
     },
-    // Preserve any plugins defined in app.json (e.g., purchases, splash screen)
-    plugins: basePlugins
-  },
+  };
 };
