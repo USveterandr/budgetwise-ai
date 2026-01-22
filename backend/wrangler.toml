@@ -2,12 +2,28 @@ name = "budgetwise-backend"
 main = "src/index.ts"
 compatibility_date = "2024-04-01"
 
+# ====================================================================
 # D1 Database Binding
+# The binding name 'DB' must match the access name in the Worker code (c.env.DB)
+# ====================================================================
 [[d1_databases]]
 binding = "DB"
 database_name = "budgetwise_db"
 database_id = "e003aed8-6834-4435-9f3e-413bf257c8e8"
 
+# ====================================================================
+# Secrets/Environment Variables
+# These variables are accessed via c.env in the Worker code.
+# They MUST be set using 'wrangler secret put <VARIABLE_NAME>' for security.
+# DO NOT hardcode them here.
+# ====================================================================
+# [vars]
+# JWT_SECRET = "Must be set via wrangler secret put"
+# RESEND_API_KEY = "Must be set via wrangler secret put"
+
+# ====================================================================
 # Cron Trigger for Trial Expiration
+# Runs every hour to check for expired trials
+# ====================================================================
 [triggers]
 crons = ["0 * * * *"] # Runs every hour
