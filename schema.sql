@@ -64,3 +64,18 @@ CREATE TABLE IF NOT EXISTS investments (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+-- Debts table
+CREATE TABLE IF NOT EXISTS debts (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  balance REAL NOT NULL,
+  interest_rate REAL DEFAULT 0, -- APR percentage
+  min_payment REAL DEFAULT 0,
+  due_date TEXT, -- YYYY-MM-DD
+  target_date TEXT, -- Desired payoff date
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);

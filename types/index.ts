@@ -30,6 +30,17 @@ export interface Investment {
   type: 'stock' | 'crypto' | 'bond' | 'etf' | 'real_estate' | 'other';
 }
 
+// Debt types
+export interface Debt {
+  id: string;
+  name: string;
+  balance: number;
+  interest_rate: number; // APR percentage
+  min_payment: number;
+  due_date?: string | null; // YYYY-MM-DD
+  target_date?: string | null;
+}
+
 // Chat Message types
 export interface ChatMessage {
   id: string;
@@ -123,6 +134,7 @@ export interface UserData {
   investments: Investment[];
   subscriptions: Subscription[];
   budgets: Budget[];
+  debts?: Debt[];
   notifications: Notification[];
   goals: Goal[];
   userProfile: UserProfile;

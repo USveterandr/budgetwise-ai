@@ -6,12 +6,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/Colors';
 import { useFinance } from '../../context/FinanceContext';
+import { presentPaywall } from '../../services/paywall';
 
 const CATEGORIES = ['Food', 'Transport', 'Shopping', 'Housing', 'Utilities', 'Health', 'Entertainment', 'Salary', 'Business', 'Investment', 'Other'];
 
 export default function BudgetScreen() {
     const { currentUser } = useAuth() as any;
     const { budgets, transactions, loading, addBudget } = useFinance();
+    const isPro = (currentUser as any)?.subscription_status === 'active' || (currentUser as any)?.isPro;
     const router = useRouter();
     const [modalVisible, setModalVisible] = useState(false);
     
@@ -97,6 +99,18 @@ export default function BudgetScreen() {
                     <Text style={styles.bannerTitle}>Budget smarter, win rewards.</Text>
                     <Text style={styles.bannerSubtitle}>Stay under your limits to build a streak and unlock badges.</Text>
                 </View>
+
+                {!isPro && (
+                    <TouchableOpacity style={styles.upgradeCard} onPress={presentPaywall}>
+                        <View style={styles.upgradeRow}>
+                            <View>
+                                <Text style={styles.upgradeTitle}>Unlock Pro budgeting alerts</Text>
+                                <Text style={styles.upgradeSubtitle}>Get category alerts and auto-recommendations based on your spend.</Text>
+                            </View>
+                            <Ionicons name="arrow-forward" size={18} color={Colors.gold} />
+                        </View>
+                    </TouchableOpacity>
+                )}
 
                 {/* Summary Card */}
                 <View style={styles.summaryCard}>
@@ -281,6 +295,11 @@ const styles = StyleSheet.create({
     badgePillAlt: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, backgroundColor: Colors.gold },
     badgeText: { color: '#E2E8F0', fontWeight: '600', fontSize: 12 },
     badgeTextAlt: { color: '#0F172A', fontWeight: '700', fontSize: 12 },
+
+    upgradeCard: { marginBottom: 16, padding: 16, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.04)' },
+    upgradeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+    upgradeTitle: { color: 'white', fontWeight: '700', fontSize: 15 },
+    upgradeSubtitle: { color: '#94A3B8', marginTop: 6, maxWidth: '90%' },
 
     budgetList: { gap: 16 },
     budgetItem: { marginBottom: 16 },

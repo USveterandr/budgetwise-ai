@@ -2,12 +2,13 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { cloudflare } from '../app/lib/cloudflare';
 import { tokenCache } from '../utils/tokenCache';
 import { useAuth } from '../AuthContext';
-import { Transaction, Budget, Investment, UserProfile, IncomeSource } from '../types';
+import { Transaction, Budget, Investment, UserProfile, IncomeSource, Debt } from '../types';
 
 interface FinanceContextType {
   transactions: Transaction[];
   budgets: Budget[];
   investments: Investment[];
+  debts: Debt[];
   userProfile: UserProfile;
   loading: boolean;
   refreshData: () => Promise<void>;
@@ -17,6 +18,9 @@ interface FinanceContextType {
   addBudget: (budget: Partial<Budget> & { month?: string }) => Promise<any>;
   updateBudget: (id: string, spent: number) => Promise<any>;
   addInvestment: (investment: Partial<Investment>) => Promise<any>;
+  addDebt: (debt: Partial<Debt>) => Promise<any>;
+  updateDebt: (id: string, updates: Partial<Debt>) => Promise<any>;
+  deleteDebt: (id: string) => Promise<any>;
   monthlyIncome: number;
 }
 
@@ -27,6 +31,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [investments, setInvestments] = useState<Investment[]>([]);
+  const [debts, setDebts] = useState<Debt[]>([]);
   const [loading, setLoading] = useState(false);
   
   // Local user profile state that merges auth profile with detailed financial data
@@ -47,15 +52,17 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       if (!token) return;
 
       // Fetch all data in parallel
-      const [txData, budgetData, investData] = await Promise.all([
+      const [txData, budgetData, investData, debtData] = await Promise.all([
         cloudflare.getTransactions(currentUser.uid, token),
         cloudflare.getBudgets(currentUser.uid, 'current', token),
-        cloudflare.getInvestments(currentUser.uid, token)
+        cloudflare.getInvestments(currentUser.uid, token),
+        cloudflare.getDebts(currentUser.uid, token)
       ]);
 
       if (Array.isArray(txData)) setTransactions(txData);
       if (Array.isArray(budgetData)) setBudgets(budgetData);
       if (Array.isArray(investData)) setInvestments(investData);
+      if (Array.isArray(debtData)) setDebts(debtData);
 
       // Sync profile data from AuthContext if available
       if (authUserProfile) {
@@ -182,11 +189,58 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const addDebt = async (debt: Partial<Debt>) => {
+    try {
+      const token = await tokenCache.getToken("budgetwise_jwt_token");
+      if (!token) throw new Error("No token");
+
+      const result = await cloudflare.addDebt({
+        ...debt,
+        userId: currentUser.uid
+      }, token);
+
+      await fetchFinanceData();
+      return result;
+    } catch (error) {
+      console.error('Add debt error:', error);
+      throw error;
+    }
+  };
+
+  const updateDebt = async (id: string, updates: Partial<Debt>) => {
+    try {
+      const token = await tokenCache.getToken("budgetwise_jwt_token");
+      if (!token) throw new Error("No token");
+
+      const result = await cloudflare.updateDebt(id, updates, token);
+      setDebts(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d));
+      return result;
+    } catch (error) {
+      console.error('Update debt error:', error);
+      throw error;
+    }
+  };
+
+  const deleteDebt = async (id: string) => {
+    try {
+      const token = await tokenCache.getToken("budgetwise_jwt_token");
+      if (!token) throw new Error("No token");
+
+      const result = await cloudflare.deleteDebt(id, token);
+      setDebts(prev => prev.filter(d => d.id !== id));
+      return result;
+    } catch (error) {
+      console.error('Delete debt error:', error);
+      throw error;
+    }
+  };
+
   return (
     <FinanceContext.Provider value={{
       transactions,
       budgets,
       investments,
+      debts,
       userProfile: financeProfile,
       loading,
       refreshData: fetchFinanceData,
@@ -196,6 +250,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       addBudget,
       updateBudget,
       addInvestment,
+      addDebt,
+      updateDebt,
+      deleteDebt,
       monthlyIncome: financeProfile.monthlyIncome
     }}>
       {children}

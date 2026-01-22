@@ -215,6 +215,48 @@ export const cloudflare = {
         return res.json();
     },
 
+    // Debts
+    async getDebts(userId: string, idToken: string) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/debts?userId=${userId}`, {
+            headers: { 'Authorization': `Bearer ${idToken}` }
+        });
+        return res.json();
+    },
+
+    async addDebt(debt: any, idToken: string) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/debts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify(debt)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to add debt');
+        return data;
+    },
+
+    async updateDebt(id: string, updates: any, idToken: string) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/debts/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify(updates)
+        });
+        return res.json();
+    },
+
+    async deleteDebt(id: string, idToken: string) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/debts/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${idToken}` }
+        });
+        return res.json();
+    },
+
     // Notifications
     async getNotifications(userId: string, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/notifications?userId=${userId}`, {

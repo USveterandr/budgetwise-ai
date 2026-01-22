@@ -9,12 +9,16 @@ import { ReceiptScanner } from '../../components/ReceiptScanner';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
+import { useAuth } from '../../AuthContext';
+import { presentPaywall } from '../../services/paywall';
 
 const CATEGORIES = ['Food', 'Transport', 'Shopping', 'Housing', 'Utilities', 'Health', 'Entertainment', 'Salary', 'Business', 'Investment', 'Other'];
 
 export default function TransactionsData() {
   const router = useRouter();
   const { transactions, deleteTransaction, refreshData, addTransaction, updateTransaction } = useFinance();
+  const { userProfile } = useAuth() as any;
+  const isPro = userProfile?.subscription_status === 'active';
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [refreshing, setRefreshing] = useState(false);
@@ -119,16 +123,27 @@ export default function TransactionsData() {
     }
   };
 
+  const ensurePro = async () => {
+    if (isPro) return true;
+    const upgraded = await presentPaywall();
+    return upgraded;
+  };
+
+  const openCategoryModal = async () => {
+    if (!(await ensurePro())) return;
+    setShowCategoryModal(true);
+  };
+
   const handleBulkCategorize = async (category: string) => {
     try {
-      const promises = Array.from(selectedIds).map(id => 
-        updateTransaction(id, { category })
-      );
-      await Promise.all(promises);
-      Alert.alert('Success', `Updated ${selectedIds.size} transactions`);
-      setSelectionMode(false);
-      setSelectedIds(new Set());
-      setShowCategoryModal(false);
+        const promises = Array.from(selectedIds).map(id => 
+          updateTransaction(id, { category })
+        );
+        await Promise.all(promises);
+        Alert.alert('Success', `Updated ${selectedIds.size} transactions`);
+        setSelectionMode(false);
+        setSelectedIds(new Set());
+        setShowCategoryModal(false);
     } catch (e) {
       Alert.alert('Error', 'Failed to update transactions');
     }
@@ -143,7 +158,8 @@ export default function TransactionsData() {
     }
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
+    if (!(await ensurePro())) return;
     Alert.alert(
       "Delete Transactions",
       `Are you sure you want to delete ${selectedIds.size} transactions?`,
@@ -174,6 +190,7 @@ export default function TransactionsData() {
   };
 
   const handleExportCSV = async () => {
+    if (!(await ensurePro())) return;
     try {
       const csvHeader = 'Date,Description,Category,Type,Amount\n';
       const csvRows = filteredTransactions.map(t => 
@@ -190,6 +207,7 @@ export default function TransactionsData() {
   };
 
   const handleExportPDF = async () => {
+    if (!(await ensurePro())) return;
     try {
       const html = `
         <html>
@@ -424,7 +442,7 @@ export default function TransactionsData() {
           <View style={styles.bulkActionBar}>
             <TouchableOpacity 
               style={styles.bulkBtn} 
-              onPress={() => setShowCategoryModal(true)}
+              onPress={openCategoryModal}
             >
               <Ionicons name="pricetag-outline" size={20} color="#020617" />
               <Text style={styles.bulkBtnText}>Categorize</Text>

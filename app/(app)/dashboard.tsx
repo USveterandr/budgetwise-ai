@@ -247,6 +247,13 @@ export default function Dashboard() {
                     <Text style={styles.actionLabel}>Budget</Text>
                 </TouchableOpacity>
 
+                <TouchableOpacity style={styles.actionContainer} onPress={() => router.push('/debts')}>
+                    <View style={[styles.actionCircle, { borderColor: Colors.gold }]}> 
+                        <Ionicons name="card-outline" size={24} color={Colors.gold} />
+                    </View>
+                    <Text style={styles.actionLabel}>Debts</Text>
+                </TouchableOpacity>
+
                  <TouchableOpacity style={styles.actionContainer} onPress={() => router.push('/analyze')}>
                      <View style={[styles.actionCircle, { borderColor: Colors.platinum }]}>
                         <Ionicons name="analytics-outline" size={24} color={Colors.platinum} />

@@ -464,6 +464,74 @@ app.post('/api/budgets', authMiddleware, async (c) => {
 })
 
 // =====================
+// Debts
+// =====================
+
+app.get('/api/debts', authMiddleware, async (c) => {
+  const currentUser = c.get('user')
+  const { results } = await c.env.DB.prepare(
+    "SELECT * FROM debts WHERE user_id = ? ORDER BY due_date IS NULL, due_date ASC"
+  ).bind(currentUser.userId).all()
+  return c.json(results)
+})
+
+app.post('/api/debts', authMiddleware, async (c) => {
+  const currentUser = c.get('user')
+  const { name, balance, interest_rate, min_payment, due_date, target_date } = await c.req.json()
+
+  if (!name || balance === undefined) {
+    return c.json({ error: 'Name and balance are required' }, 400)
+  }
+
+  const id = nanoid()
+
+  await c.env.DB.prepare(
+    `INSERT INTO debts (id, user_id, name, balance, interest_rate, min_payment, due_date, target_date) 
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, currentUser.userId, name, balance, interest_rate || 0, min_payment || 0, due_date || null, target_date || null).run()
+
+  return c.json({ success: true, id })
+})
+
+app.put('/api/debts/:id', authMiddleware, async (c) => {
+  const currentUser = c.get('user')
+  const id = c.req.param('id')
+  const { name, balance, interest_rate, min_payment, due_date, target_date } = await c.req.json()
+
+  const fields = []
+  const values: any[] = []
+
+  if (name !== undefined) { fields.push('name = ?'); values.push(name) }
+  if (balance !== undefined) { fields.push('balance = ?'); values.push(balance) }
+  if (interest_rate !== undefined) { fields.push('interest_rate = ?'); values.push(interest_rate) }
+  if (min_payment !== undefined) { fields.push('min_payment = ?'); values.push(min_payment) }
+  if (due_date !== undefined) { fields.push('due_date = ?'); values.push(due_date) }
+  if (target_date !== undefined) { fields.push('target_date = ?'); values.push(target_date) }
+
+  if (fields.length === 0) return c.json({ success: true })
+
+  fields.push('updated_at = CURRENT_TIMESTAMP')
+  values.push(id, currentUser.userId)
+
+  await c.env.DB.prepare(
+    `UPDATE debts SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`
+  ).bind(...values).run()
+
+  return c.json({ success: true })
+})
+
+app.delete('/api/debts/:id', authMiddleware, async (c) => {
+  const currentUser = c.get('user')
+  const id = c.req.param('id')
+
+  await c.env.DB.prepare(
+    "DELETE FROM debts WHERE id = ? AND user_id = ?"
+  ).bind(id, currentUser.userId).run()
+
+  return c.json({ success: true })
+})
+
+// =====================
 // Subscription & Trial
 // =====================
 
