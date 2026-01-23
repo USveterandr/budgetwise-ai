@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import RevenueCatUI from 'react-native-purchases-ui';
+import { View, StyleSheet, Platform } from 'react-native';
+// import RevenueCatUI from 'react-native-purchases-ui'; // Moved to dynamic require for web safety
 import { useAuth } from '../AuthContext';
 import { revenueCat } from '../services/revenueCatService';
 import { cloudflare } from '../app/lib/cloudflare';
@@ -12,6 +12,12 @@ interface RevenueCatPaywallProps {
 
 export const RevenueCatPaywall = ({ onDismiss }: RevenueCatPaywallProps) => {
   const { updateProfile, getToken, userProfile } = useAuth() as any;
+
+  if (Platform.OS === 'web') {
+    return null; // Should not be rendered on web
+  }
+
+  const RevenueCatUI = require('react-native-purchases-ui').default;
 
   const handlePurchaseCompleted = async (customerInfo: any) => {
     // Check if user is now entitled

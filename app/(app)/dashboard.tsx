@@ -106,20 +106,25 @@ export default function Dashboard() {
              }
         }}
         onRestore={async () => {
-             if (isSubscribing) return;
-             setIsSubscribing(true);
-             try {
-                 const success = await restoreSubscription();
-                 if (success) {
-                     alert('Purchases restored successfully!');
-                 } else {
-                     alert('No active subscriptions found to restore.');
-                 }
-             } finally {
-                 setIsSubscribing(false);
-             }
-        }}
-      />
+	             if (isSubscribing) return;
+	             setIsSubscribing(true);
+	             try {
+	                 const success = await restoreSubscription();
+	                 if (success) {
+	                     alert('Purchases restored successfully!');
+	                 } else {
+	                     alert('No active subscriptions found to restore.');
+	                 }
+	             } finally {
+	                 setIsSubscribing(false);
+	             }
+	        }}
+	        onDismiss={() => {
+	            // If trial is expired, we might want to force them to stay on paywall
+	            // but for UX we'll allow closing if they just want to see the dashboard
+	            // (though features will be locked)
+	        }}
+	      />
 
       {/* Background Ambience - Luxury Dark */}
       <LinearGradient
