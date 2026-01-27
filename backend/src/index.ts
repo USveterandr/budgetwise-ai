@@ -94,7 +94,7 @@ app.post('/api/auth/signup', async (c) => {
 
     // Transaction: Insert user + Insert initial profile with Trial Info
     const batch = await c.env.DB.batch([
-      c.env.DB.prepare("INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)").bind(userId, email, hashedPassword),
+      c.env.DB.prepare("INSERT INTO users (id, email, name, password_hash, subscription_status, trial_start_date) VALUES (?, ?, ?, ?, 'trial', ?)").bind(userId, email, name || 'New User', hashedPassword, trialStartDate),
       c.env.DB.prepare("INSERT INTO profiles (user_id, email, name, subscription_status, trial_start_date) VALUES (?, ?, ?, 'trial', ?)").bind(userId, email, name || 'New User', trialStartDate)
     ])
 
