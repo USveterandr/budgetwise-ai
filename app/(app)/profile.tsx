@@ -42,6 +42,7 @@ export default function Profile() {
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('Profile useEffect triggered, userProfile:', userProfile);
     if (userProfile) {
         setFormData({
             name: userProfile.name || '',
@@ -238,9 +239,17 @@ export default function Profile() {
             <TouchableOpacity 
                 style={[styles.saveButton, { marginTop: 24, backgroundColor: isPro || inTrial || trialExpired ? 'rgba(16, 185, 129, 0.1)' : 'rgba(124, 58, 237, 0.1)', borderWidth: 1, borderColor: isPro || inTrial || trialExpired ? '#10B981' : Colors.primary }]}
                 onPress={async () => {
+                    console.log('Start Free Trial button pressed');
+                    console.log('isPro:', isPro);
+                    console.log('inTrial:', inTrial);
+                    console.log('trialExpired:', trialExpired);
+                    console.log('userProfile:', userProfile);
+                    
                     if (isPro || inTrial || trialExpired) {
+                        console.log('Showing Customer Center');
                         setShowCustomerCenter(true);
                     } else {
+                        console.log('Showing Paywall');
                         setShowPaywall(true);
                     }
                 }}

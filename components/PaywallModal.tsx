@@ -24,12 +24,19 @@ export const PaywallModal = ({
     onDismiss, 
     useCustomPaywall = true // Default to custom paywall
 }: PaywallProps) => {
-  if (!visible) return null;
+  console.log('PaywallModal rendered with visible:', visible);
+  
+  if (!visible) {
+    console.log('PaywallModal returning null because visible is false');
+    return null;
+  }
 
   const handleDismiss = onDismiss || (() => {});
+  console.log('PaywallModal proceeding to render content');
 
   // For web platform, always use WebPaywall regardless of useCustomPaywall setting
   if (Platform.OS === 'web') {
+    console.log('Rendering WebPaywall');
     return (
       <Modal 
         visible={visible} 
@@ -42,6 +49,7 @@ export const PaywallModal = ({
     );
   }
 
+  console.log('Rendering native paywall');
   return (
     <Modal 
       visible={visible} 

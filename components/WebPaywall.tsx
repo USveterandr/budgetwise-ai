@@ -13,6 +13,8 @@ interface WebPaywallProps {
 }
 
 export const WebPaywall: React.FC<WebPaywallProps> = ({ onDismiss, onSuccess }) => {
+  console.log('WebPaywall component rendered');
+  
   const { updateProfile, getToken } = useAuth() as any;
   const [selectedPlan, setSelectedPlan] = useState('yearly');
   const [loading, setLoading] = useState(false);
