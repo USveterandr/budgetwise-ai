@@ -28,6 +28,32 @@ export default function Profile() {
   const showTrialReminder = shouldShowTrialReminder(trialEndDate);
   const trialTimeRemaining = trialEndDate ? formatTrialTimeRemaining(trialEndDate) : '';
   const trialMessage = getTrialEncouragementMessage(trialEndDate);
+  
+  // Add loading state for user profile
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  useEffect(() => {
+    console.log('Profile useEffect triggered, userProfile:', userProfile);
+    if (userProfile) {
+        setFormData({
+            name: userProfile.name || '',
+            business_industry: userProfile.business_industry || '',
+            monthly_income: userProfile.monthly_income?.toString() || '',
+            savings_rate: userProfile.savings_rate?.toString() || '',
+            bio: userProfile.bio || ''
+        });
+        
+        // Construct full avatar URL if it's a relative path starting with /api
+        if (userProfile.avatar_url) {
+            if (userProfile.avatar_url.startsWith('/api')) {
+                setAvatarUri(`${CLOUDFLARE_API_URL}${userProfile.avatar_url}`);
+            } else {
+                setAvatarUri(userProfile.avatar_url);
+            }
+        }
+        setProfileLoading(false);
+    }
+  }, [userProfile]);
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -244,6 +270,12 @@ export default function Profile() {
                     console.log('inTrial:', inTrial);
                     console.log('trialExpired:', trialExpired);
                     console.log('userProfile:', userProfile);
+                    console.log('profileLoading:', profileLoading);
+                    
+                    if (profileLoading) {
+                        console.log('Profile still loading, cannot show paywall yet');
+                        return;
+                    }
                     
                     if (isPro || inTrial || trialExpired) {
                         console.log('Showing Customer Center');
@@ -253,11 +285,12 @@ export default function Profile() {
                         setShowPaywall(true);
                     }
                 }}
+                disabled={profileLoading}
             >
                 <View style={[styles.saveGradient, { backgroundColor: 'transparent', flexDirection: 'row', justifyContent: 'center' }]}>
                    <Ionicons name={isPro || inTrial || trialExpired ? "star" : "star-outline"} size={20} color={isPro || inTrial || trialExpired ? "#10B981" : Colors.primary} style={{ marginRight: 8 }} />
                    <Text style={[styles.saveText, { color: isPro || inTrial || trialExpired ? "#10B981" : Colors.primary }]}>
-                       {isPro ? "Manage Subscription" : inTrial ? `Trial Active (${trialTimeRemaining})` : trialExpired ? "Trial Expired - Subscribe Now" : "Start Free Trial"}
+                       {profileLoading ? "Loading..." : isPro ? "Manage Subscription" : inTrial ? `Trial Active (${trialTimeRemaining})` : trialExpired ? "Trial Expired - Subscribe Now" : "Start Free Trial"}
                    </Text>
                 </View>
             </TouchableOpacity>
