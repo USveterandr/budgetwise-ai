@@ -78,7 +78,7 @@ export interface Notification {
 }
 
 // Subscription Tier types
-export type SubscriptionTier = 'individual' | 'family' | 'business' | 'enterprise';
+export type SubscriptionTier = 'individual' | 'family' | 'business' | 'enterprise' | 'premium';
 
 // User types
 export interface User {
@@ -170,10 +170,16 @@ export interface BudgetCategory {
 
 // Subscription plan types
 export interface SubscriptionPlan {
-  name: 'Starter' | 'Professional' | 'Business' | 'Enterprise';
-  price: number;
+  id: SubscriptionTier;
+  name: 'Free' | 'Starter' | 'Professional' | 'Business' | 'Enterprise';
+  price: {
+    monthly: number;
+    yearly: number;
+  };
   period: 'month' | 'year';
   features: string[];
+  popular?: boolean;
+  highlight?: boolean;
   limits: {
     accounts: number;
     receiptsPerMonth: number;
@@ -182,5 +188,8 @@ export interface SubscriptionPlan {
     prioritySupport: boolean;
     familySharing: boolean;
     maxDevices: number;
+    humanConsultationHours?: number;
+    taxOptimization?: boolean;
+    wealthManagement?: boolean;
   };
 }

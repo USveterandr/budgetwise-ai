@@ -1,6 +1,7 @@
 name = "budgetwise-backend"
 main = "src/index.ts"
-compatibility_date = "2024-04-01"
+compatibility_date = "2024-10-01"
+compatibility_flags = ["nodejs_compat"]
 
 # ====================================================================
 # D1 Database Binding

@@ -7,9 +7,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/Colors';
 import * as ImagePicker from 'expo-image-picker';
-import { CLOUDFLARE_API_URL } from '../lib/cloudflare';
-import CustomerCenterModal from '../../components/CustomerCenterModal';
+import { CLOUDFLARE_API_URL, cloudflare } from '../lib/cloudflare';
+import { CustomerCenterModal } from '../../components/CustomerCenterModal';
 import { presentPaywall } from '../../services/paywall';
+import { PaywallModal } from '../../components/PaywallModal';
+import { isInTrial, getTrialEndDate, formatTrialTimeRemaining } from '../../services/subscriptionPlans';
 
 export default function Profile() {
   const { userProfile, updateProfile, getToken, refreshProfile } = useAuth() as any;
@@ -17,7 +19,11 @@ export default function Profile() {
   const router = useRouter();
   
   const [showCustomerCenter, setShowCustomerCenter] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const isPro = userProfile?.subscription_status === 'active';
+  const trialEndDate = userProfile?.trial_end_date;
+  const inTrial = isInTrial(trialEndDate);
+  const trialTimeRemaining = trialEndDate ? formatTrialTimeRemaining(trialEndDate) : '';
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -226,30 +232,19 @@ export default function Profile() {
 
             {/* Subscription Management */}
             <TouchableOpacity 
-                style={[styles.saveButton, { marginTop: 24, backgroundColor: isPro ? 'rgba(16, 185, 129, 0.1)' : 'rgba(124, 58, 237, 0.1)', borderWidth: 1, borderColor: isPro ? '#10B981' : Colors.primary }]}
+                style={[styles.saveButton, { marginTop: 24, backgroundColor: isPro || inTrial ? 'rgba(16, 185, 129, 0.1)' : 'rgba(124, 58, 237, 0.1)', borderWidth: 1, borderColor: isPro || inTrial ? '#10B981' : Colors.primary }]}
                 onPress={async () => {
-                    if (isPro) {
+                    if (isPro || inTrial) {
                         setShowCustomerCenter(true);
                     } else {
-                        const purchased = await presentPaywall();
-                        if (purchased) {
-                            // Sync status with backend
-                            try {
-                              const token = await getToken();
-                              await cloudflare.updateProfile({ subscription_status: 'active' }, token);
-                              await refreshProfile();
-                              Alert.alert("Success", "Welcome to Pro!");
-                            } catch (e) {
-                              console.error("Failed to sync sub", e);
-                            }
-                        }
+                        setShowPaywall(true);
                     }
                 }}
             >
                 <View style={[styles.saveGradient, { backgroundColor: 'transparent', flexDirection: 'row', justifyContent: 'center' }]}>
-                   <Ionicons name={isPro ? "star" : "star-outline"} size={20} color={isPro ? "#10B981" : Colors.primary} style={{ marginRight: 8 }} />
-                   <Text style={[styles.saveText, { color: isPro ? "#10B981" : Colors.primary }]}>
-                       {isPro ? "Manage Subscription" : "Upgrade to Pro"}
+                   <Ionicons name={isPro || inTrial ? "star" : "star-outline"} size={20} color={isPro || inTrial ? "#10B981" : Colors.primary} style={{ marginRight: 8 }} />
+                   <Text style={[styles.saveText, { color: isPro || inTrial ? "#10B981" : Colors.primary }]}>
+                       {isPro ? "Manage Subscription" : inTrial ? `Trial Active (${trialTimeRemaining})` : "Start Free Trial"}
                    </Text>
                 </View>
             </TouchableOpacity>
@@ -286,7 +281,32 @@ export default function Profile() {
 
       </ScrollView>
 
-      <CustomerCenterModal visible={showCustomerCenter} onClose={() => setShowCustomerCenter(false)} />
+      <CustomerCenterModal visible={showCustomerCenter} onDismiss={() => setShowCustomerCenter(false)} />
+      
+      <PaywallModal 
+        visible={showPaywall}
+        onDismiss={() => setShowPaywall(false)}
+        onSubscribe={async (selectedPlanId) => {
+          // Sync status with backend
+          try {
+            const token = await getToken();
+            const updateData: any = { subscription_status: 'active' };
+            
+            // If it's the Basic plan, set trial end date
+            if (selectedPlanId === 'individual') {
+              updateData.trial_end_date = getTrialEndDate();
+              updateData.subscription_status = 'trial';
+            }
+            
+            await cloudflare.updateProfile(updateData, token);
+            await refreshProfile();
+            Alert.alert("Success", selectedPlanId === 'individual' ? "Your 7-day free trial has started!" : "Welcome to Pro!");
+          } catch (e) {
+            console.error("Failed to sync sub", e);
+          }
+        }}
+        useCustomPaywall={true}
+      />
     </View>
   );
 }
