@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Modal } from 'react-native';
-import RevenueCatUI from 'react-native-purchases-ui';
+import { Platform } from 'react-native';
+// import RevenueCatUI from 'react-native-purchases-ui';
 
 interface CustomerCenterProps {
   visible: boolean;
@@ -8,6 +9,12 @@ interface CustomerCenterProps {
 }
 
 export const CustomerCenterModal = ({ visible, onDismiss }: CustomerCenterProps) => {
+  if (Platform.OS === 'web') {
+    return null; // Customer Center is not supported on web yet
+  }
+
+  const RevenueCatUI = require('react-native-purchases-ui').default;
+
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <View style={styles.container}>
