@@ -163,7 +163,7 @@ export const CustomPaywall = ({ onDismiss, onPurchaseSuccess }: CustomPaywallPro
         <View style={styles.offerBanner}>
           <Ionicons name="timer" size={20} color="#FBBF24" />
           <Text style={styles.offerText}>
-            7-Day Free Trial Available! <Text style={styles.timer}>{formatTime(timeLeft)}</Text> remaining
+            7-Day Free Trial on ALL Plans! <Text style={styles.timer}>{formatTime(timeLeft)}</Text> remaining
           </Text>
         </View>
       )}
@@ -223,11 +223,9 @@ export const CustomPaywall = ({ onDismiss, onPurchaseSuccess }: CustomPaywallPro
                   <Text style={styles.savingsText}>Save ${getSavings(plan).toFixed(2)}/yr</Text>
                 )}
               </View>
-              {plan.id === 'individual' && (
-                <View style={styles.trialBadge}>
-                  <Text style={styles.trialText}>7-DAY FREE TRIAL</Text>
-                </View>
-              )}
+              <View style={styles.trialBadge}>
+                <Text style={styles.trialText}>7-DAY FREE TRIAL</Text>
+              </View>
             </View>
 
             <View style={styles.featuresContainer}>
@@ -239,14 +237,12 @@ export const CustomPaywall = ({ onDismiss, onPurchaseSuccess }: CustomPaywallPro
               ))}
             </View>
             
-            {plan.id === 'individual' && (
-              <View style={styles.trialInfo}>
-                <Ionicons name="information-circle" size={16} color="#93C5FD" />
-                <Text style={styles.trialInfoText}>
-                  Start your 7-day free trial today. No credit card required for trial.
-                </Text>
-              </View>
-            )}
+            <View style={styles.trialInfo}>
+              <Ionicons name="information-circle" size={16} color="#93C5FD" />
+              <Text style={styles.trialInfoText}>
+                Start your 7-day free trial today. No credit card required. Try all features risk-free!
+              </Text>
+            </View>
 
             {selectedPlan?.id === plan.id && (
               <View style={styles.selectedIndicator} />
@@ -285,7 +281,7 @@ export const CustomPaywall = ({ onDismiss, onPurchaseSuccess }: CustomPaywallPro
         </TouchableOpacity>
 
         <Text style={styles.footerText}>
-          Subscriptions renew automatically. Cancel anytime in settings. 7-day free trial available for Basic plan.
+          Subscriptions renew automatically. Cancel anytime in settings. 7-day free trial available on all plans.
         </Text>
       </View>
     </View>

@@ -1,6 +1,6 @@
 import { SubscriptionPlan, SubscriptionTier } from '../types';
 
-// Comprehensive 4-tier subscription plans with 7-day trial
+// Comprehensive 4-tier subscription plans with 7-day trial for all plans
 export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
   individual: {
     id: 'individual',
@@ -12,7 +12,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
     period: 'month',
     popular: true,
     features: [
-      '7-day free trial',
+      '7-day free trial on all plans',
       'Basic budgeting tools',
       'Track up to 10 accounts',
       'Manual transaction entry',
@@ -40,6 +40,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
     },
     period: 'month',
     features: [
+      '7-day free trial on all plans',
       'All Basic features',
       'Unlimited accounts',
       'Receipt scanning (100/month)',
@@ -68,6 +69,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
     },
     period: 'month',
     features: [
+      '7-day free trial on all plans',
       'All Starter features',
       'Family sharing (up to 5 members)',
       'Joint account management',
@@ -99,6 +101,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
     },
     period: 'month',
     features: [
+      '7-day free trial on all plans',
       'All Professional features',
       'Business expense tracking',
       'Multi-currency support',
@@ -123,7 +126,6 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
     }
   },
   
-  // Premium tier
   premium: {
     id: 'premium',
     name: 'Enterprise',
@@ -134,6 +136,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
     period: 'month',
     highlight: true,
     features: [
+      '7-day free trial on all plans',
       'All Business features',
       'Unlimited everything',
       'Human financial consultation (2 hours/month)',
@@ -189,6 +192,12 @@ export const isInTrial = (trialEndDate?: number): boolean => {
   return Date.now() < trialEndDate;
 };
 
+// Check if trial has expired
+export const isTrialExpired = (trialEndDate?: number): boolean => {
+  if (!trialEndDate) return false;
+  return Date.now() >= trialEndDate;
+};
+
 // Get trial end date (7 days from now)
 export const getTrialEndDate = (): number => {
   const now = Date.now();
@@ -214,11 +223,61 @@ export const formatTrialTimeRemaining = (trialEndDate: number): string => {
   }
 };
 
+// Get days since trial expiration
+export const getDaysSinceExpiration = (trialEndDate?: number): number => {
+  if (!trialEndDate || Date.now() < trialEndDate) return 0;
+  const diff = Date.now() - trialEndDate;
+  return Math.floor(diff / (24 * 60 * 60 * 1000));
+};
+
+// Check if user should see trial expiration reminder
+export const shouldShowTrialReminder = (trialEndDate?: number): boolean => {
+  if (!trialEndDate) return false;
+  
+  const now = Date.now();
+  const daysSinceExpiration = getDaysSinceExpiration(trialEndDate);
+  
+  // Show reminder if trial expired within last 7 days
+  return now >= trialEndDate && daysSinceExpiration <= 7;
+};
+
 // Get upgrade path suggestions
 export const getUpgradeSuggestions = (currentTier: SubscriptionTier): SubscriptionPlan[] => {
   const tiers: SubscriptionTier[] = ['individual', 'family', 'business', 'enterprise', 'premium'];
   const currentIndex = tiers.indexOf(currentTier);
   return tiers.slice(currentIndex + 1).map(tier => SUBSCRIPTION_PLANS[tier]);
+};
+
+// Get trial expiration message based on days since expiration
+export const getTrialExpirationMessage = (trialEndDate?: number): string => {
+  if (!trialEndDate) return '';
+  
+  const daysSinceExpiration = getDaysSinceExpiration(trialEndDate);
+  
+  if (daysSinceExpiration <= 0) return '';
+  
+  if (daysSinceExpiration === 1) {
+    return 'Your free trial ended yesterday. Continue enjoying premium features by subscribing today!';
+  } else if (daysSinceExpiration <= 3) {
+    return `Your free trial ended ${daysSinceExpiration} days ago. Don't lose access to your premium features!`; 
+  } else {
+    return `Your free trial ended ${daysSinceExpiration} days ago. Subscribe now to continue using all features.`;
+  }
+};
+
+// Get trial encouragement message
+export const getTrialEncouragementMessage = (trialEndDate?: number): string => {
+  if (!trialEndDate) return '';
+  
+  const daysRemaining = Math.ceil((trialEndDate - Date.now()) / (24 * 60 * 60 * 1000));
+  
+  if (daysRemaining > 3) {
+    return `Enjoy your free trial! ${daysRemaining} days remaining to explore all features.`;
+  } else if (daysRemaining > 0) {
+    return `Trial ending soon! Only ${daysRemaining} day${daysRemaining > 1 ? 's' : ''} left to experience the full benefits.`;
+  } else {
+    return getTrialExpirationMessage(trialEndDate);
+  }
 };
 
 // Format price for display

@@ -11,7 +11,7 @@ import { CLOUDFLARE_API_URL, cloudflare } from '../lib/cloudflare';
 import { CustomerCenterModal } from '../../components/CustomerCenterModal';
 import { presentPaywall } from '../../services/paywall';
 import { PaywallModal } from '../../components/PaywallModal';
-import { isInTrial, getTrialEndDate, formatTrialTimeRemaining } from '../../services/subscriptionPlans';
+import { isInTrial, getTrialEndDate, formatTrialTimeRemaining, isTrialExpired, getDaysSinceExpiration, shouldShowTrialReminder, getTrialExpirationMessage, getTrialEncouragementMessage } from '../../services/subscriptionPlans';
 
 export default function Profile() {
   const { userProfile, updateProfile, getToken, refreshProfile } = useAuth() as any;
@@ -23,7 +23,11 @@ export default function Profile() {
   const isPro = userProfile?.subscription_status === 'active';
   const trialEndDate = userProfile?.trial_end_date;
   const inTrial = isInTrial(trialEndDate);
+  const trialExpired = isTrialExpired(trialEndDate);
+  const daysSinceExpiration = getDaysSinceExpiration(trialEndDate);
+  const showTrialReminder = shouldShowTrialReminder(trialEndDate);
   const trialTimeRemaining = trialEndDate ? formatTrialTimeRemaining(trialEndDate) : '';
+  const trialMessage = getTrialEncouragementMessage(trialEndDate);
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -232,9 +236,9 @@ export default function Profile() {
 
             {/* Subscription Management */}
             <TouchableOpacity 
-                style={[styles.saveButton, { marginTop: 24, backgroundColor: isPro || inTrial ? 'rgba(16, 185, 129, 0.1)' : 'rgba(124, 58, 237, 0.1)', borderWidth: 1, borderColor: isPro || inTrial ? '#10B981' : Colors.primary }]}
+                style={[styles.saveButton, { marginTop: 24, backgroundColor: isPro || inTrial || trialExpired ? 'rgba(16, 185, 129, 0.1)' : 'rgba(124, 58, 237, 0.1)', borderWidth: 1, borderColor: isPro || inTrial || trialExpired ? '#10B981' : Colors.primary }]}
                 onPress={async () => {
-                    if (isPro || inTrial) {
+                    if (isPro || inTrial || trialExpired) {
                         setShowCustomerCenter(true);
                     } else {
                         setShowPaywall(true);
@@ -242,9 +246,9 @@ export default function Profile() {
                 }}
             >
                 <View style={[styles.saveGradient, { backgroundColor: 'transparent', flexDirection: 'row', justifyContent: 'center' }]}>
-                   <Ionicons name={isPro || inTrial ? "star" : "star-outline"} size={20} color={isPro || inTrial ? "#10B981" : Colors.primary} style={{ marginRight: 8 }} />
-                   <Text style={[styles.saveText, { color: isPro || inTrial ? "#10B981" : Colors.primary }]}>
-                       {isPro ? "Manage Subscription" : inTrial ? `Trial Active (${trialTimeRemaining})` : "Start Free Trial"}
+                   <Ionicons name={isPro || inTrial || trialExpired ? "star" : "star-outline"} size={20} color={isPro || inTrial || trialExpired ? "#10B981" : Colors.primary} style={{ marginRight: 8 }} />
+                   <Text style={[styles.saveText, { color: isPro || inTrial || trialExpired ? "#10B981" : Colors.primary }]}>
+                       {isPro ? "Manage Subscription" : inTrial ? `Trial Active (${trialTimeRemaining})` : trialExpired ? "Trial Expired - Subscribe Now" : "Start Free Trial"}
                    </Text>
                 </View>
             </TouchableOpacity>
