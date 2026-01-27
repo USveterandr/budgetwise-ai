@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,7 +26,8 @@ const GOLD = '#D4AF37';
 const OBSIDIAN = '#020617';
 
 export default function LandingPage() {
-  const { currentUser } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
+  const [localProcessingState, setLocalProcessingState] = useState(false);
 
   // Hypnotic Animation Values
   const glowOpacity = useSharedValue(0.3);
@@ -63,7 +64,9 @@ export default function LandingPage() {
     transform: [{ scale: orbScale.value }, { rotate: `${orbRotate.value}deg` }] 
   }));
 
-  if (currentUser) {
+  // Only redirect if not loading auth and not processing a purchase
+  const isProcessingPurchase = typeof window !== 'undefined' ? (window as any).isProcessingPurchase : false;
+  if (currentUser && !authLoading && !isProcessingPurchase) {
     return <Redirect href="/dashboard" />;
   }
 

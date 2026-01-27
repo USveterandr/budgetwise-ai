@@ -282,6 +282,18 @@ export default function Profile() {
                         setShowCustomerCenter(true);
                     } else {
                         console.log('Showing Paywall');
+                        // Set processing state to prevent landing page redirect
+                        try {
+                            // @ts-ignore
+                            window.isProcessingPurchase = true;
+                            // Reset after a delay to ensure purchase flow completes
+                            setTimeout(() => {
+                                // @ts-ignore
+                                window.isProcessingPurchase = false;
+                            }, 5000);
+                        } catch (e) {
+                            console.log('Could not set processing state');
+                        }
                         setShowPaywall(true);
                     }
                 }}
