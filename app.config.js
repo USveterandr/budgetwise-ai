@@ -37,20 +37,8 @@ const appJson = require('./app.json');
 const basePlugins = Array.isArray(appJson.expo.plugins) ? appJson.expo.plugins : [];
 
 module.exports = ({ config }) => {
-  // Conditionally include plugins based on platform
-  let plugins = [...basePlugins];
-  
-  // Exclude react-native-purchases plugin for web builds
-  if (process.env.EAS_BUILD_PLATFORM === 'web' || config.platform === 'web') {
-    plugins = plugins.filter(plugin => {
-      if (typeof plugin === 'string') {
-        return plugin !== 'react-native-purchases';
-      } else if (Array.isArray(plugin) && typeof plugin[0] === 'string') {
-        return plugin[0] !== 'react-native-purchases';
-      }
-      return true;
-    });
-  }
+  // Use plugins from app.json directly
+  const plugins = [...basePlugins];
   
   return {
     ...config,
