@@ -289,9 +289,13 @@ function FullScreenLoader() {
 
 // --- Page: Dashboard ---
 function Dashboard() {
+  const { userData } = useUserData();
   const { data: transactions } = useCollection('transactions');
   const { data: assets } = useCollection('portfolio');
   const { data: debts } = useCollection('debts');
+  const { db, userId } = useFirebase();
+  const { showToast } = useToast();
+  const [activePage, setActivePage] = useState(null);
 
   const netWorth = useMemo(() => {
     const assetVal = assets.reduce((sum, a) => sum + (parseFloat(a.value) || 0), 0);
@@ -308,62 +312,262 @@ function Dashboard() {
     return Object.entries(categories).map(([name, value]) => ({ name, value }));
   }, [transactions]);
 
+  // Get recent transactions (last 5)
+  const recentTransactions = useMemo(() => {
+    return [...transactions]
+      .sort((a, b) => {
+        const dateA = a.date?.toDate?.() || new Date(a.date) || 0;
+        const dateB = b.date?.toDate?.() || new Date(b.date) || 0;
+        return dateB - dateA;
+      })
+      .slice(0, 5);
+  }, [transactions]);
+
   const PIE_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe', '#00c49f'];
+  
+  // Get user's subscription info
+  const subscriptionTier = userData?.subscriptionTier || 'starter';
+  const trialEndsAt = userData?.trialEndsAt?.toDate?.();
+  const isTrialActive = trialEndsAt && trialEndsAt > new Date();
+  const daysLeft = isTrialActive ? Math.ceil((trialEndsAt - new Date()) / (1000 * 60 * 60 * 24)) : 0;
 
   return (
     <div className="animate-fadeIn">
-      <h1 className="text-3xl font-bold text-white mb-8">Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <MetricCard title="Total Net Worth" value={netWorth} format="currency" icon={<TrendingUp />} />
-        <MetricCard title="Total Assets" value={assets.reduce((s, a) => s + (parseFloat(a.value) || 0), 0)} format="currency" icon={<Wallet />} />
-        <MetricCard title="Total Debts" value={debts.reduce((s, d) => s + (parseFloat(d.balance) || 0), 0)} format="currency" icon={<Banknote />} trend="down" />
+      {/* Welcome Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-white mb-2">
+          Welcome back{userData?.email ? `, ${userData.email.split('@')[0]}` : ''}!
+        </h1>
+        <p className="text-gray-400">
+          Here's your financial overview for today.
+        </p>
       </div>
 
-      {transactions.length === 0 && assets.length === 0 ? (
-        <div className="p-12 text-center bg-gray-800 rounded-2xl border border-gray-700">
-          <Sprout className="w-16 h-16 text-indigo-400 mx-auto mb-6 opacity-50" />
-          <h2 className="text-xl font-bold mb-2">Welcome to BudgetWise!</h2>
-          <p className="text-gray-400 mb-6">Start by adding your first transaction or investment asset.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-            <h3 className="text-xl font-bold text-white mb-6">Spending Analysis</h3>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                {expenseChartData.length > 0 ? (
-                  <PieChart>
-                    <Pie data={expenseChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
-                      {expenseChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip formatter={(v) => formatCurrency(v)} />
-                    <Legend />
-                  </PieChart>
-                ) : (
-                  <div className="h-full flex items-center justify-center text-gray-500">No spending data yet</div>
-                )}
-              </ResponsiveContainer>
+      {/* Trial Banner for new users */}
+      {isTrialActive && (
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-4 mb-8 flex items-center justify-between">
+          <div className="flex items-center">
+            <Sparkles className="w-5 h-5 text-yellow-300 mr-3" />
+            <div>
+              <p className="text-white font-bold">Your {subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1)} trial is active</p>
+              <p className="text-indigo-200 text-sm">{daysLeft} days remaining</p>
             </div>
           </div>
-          <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-            <h3 className="text-xl font-bold text-white mb-6">Asset vs Debt</h3>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={[{ name: 'Summary', Assets: assets.reduce((s, a) => s + (parseFloat(a.value) || 0), 0), Debts: debts.reduce((s, d) => s + (parseFloat(d.balance) || 0), 0) }]}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                  <XAxis dataKey="name" stroke="#999" />
-                  <YAxis stroke="#999" tickFormatter={(v) => formatCurrency(v)} />
-                  <Tooltip formatter={(v) => formatCurrency(v)} />
-                  <Legend />
-                  <Bar dataKey="Assets" fill="#82ca9d" />
-                  <Bar dataKey="Debts" fill="#f87171" />
-                </BarChart>
-              </ResponsiveContainer>
+          <button className="bg-white text-indigo-600 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition-colors">
+            Upgrade Now
+          </button>
+        </div>
+      )}
+
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <MetricCard 
+          title="Total Net Worth" 
+          value={netWorth} 
+          format="currency" 
+          icon={<TrendingUp />}
+          trend={netWorth >= 0 ? 'up' : 'down'}
+        />
+        <MetricCard 
+          title="Total Assets" 
+          value={assets.reduce((s, a) => s + (parseFloat(a.value) || 0), 0)} 
+          format="currency" 
+          icon={<Wallet />}
+          trend="up"
+        />
+        <MetricCard 
+          title="Total Debts" 
+          value={debts.reduce((s, d) => s + (parseFloat(d.balance) || 0), 0)} 
+          format="currency" 
+          icon={<Banknote />} 
+          trend="down" 
+        />
+      </div>
+
+      {/* Empty State or Dashboard Content */}
+      {transactions.length === 0 && assets.length === 0 && debts.length === 0 ? (
+        <div className="p-12 text-center bg-gray-800 rounded-2xl border border-gray-700">
+          <Sprout className="w-16 h-16 text-indigo-400 mx-auto mb-6 opacity-50" />
+          <h2 className="text-2xl font-bold mb-3 text-white">Welcome to Your Dashboard!</h2>
+          <p className="text-gray-400 mb-8 max-w-md mx-auto">
+            This is your personal financial command center. Start tracking your money to see insights here.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <QuickActionButton 
+              icon={<Plus className="w-5 h-5" />}
+              label="Add Transaction"
+              onClick={() => {}}
+            />
+            <QuickActionButton 
+              icon={<Wallet className="w-5 h-5" />}
+              label="Add Asset"
+              onClick={() => {}}
+            />
+            <QuickActionButton 
+              icon={<Banknote className="w-5 h-5" />}
+              label="Add Debt"
+              onClick={() => {}}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Charts Area */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Spending Analysis */}
+            <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center">
+                <PieIcon className="w-5 h-5 mr-2 text-indigo-400" />
+                Spending Analysis
+              </h3>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  {expenseChartData.length > 0 ? (
+                    <PieChart>
+                      <Pie 
+                        data={expenseChartData} 
+                        dataKey="value" 
+                        nameKey="name" 
+                        cx="50%" 
+                        cy="50%" 
+                        outerRadius={100} 
+                        fill="#8884d8" 
+                        label
+                      >
+                        {expenseChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(v) => formatCurrency(v)} />
+                      <Legend />
+                    </PieChart>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-gray-500">
+                      <Receipt className="w-12 h-12 mb-3 opacity-30" />
+                      <p>No spending data yet</p>
+                      <p className="text-sm mt-1">Add transactions to see analysis</p>
+                    </div>
+                  )}
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Asset vs Debt Chart */}
+            <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center">
+                <BarChart2 className="w-5 h-5 mr-2 text-indigo-400" />
+                Asset vs Debt Overview
+              </h3>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[{ 
+                    name: 'Financial Summary', 
+                    Assets: assets.reduce((s, a) => s + (parseFloat(a.value) || 0), 0), 
+                    Debts: debts.reduce((s, d) => s + (parseFloat(d.balance) || 0), 0) 
+                  }]}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis dataKey="name" stroke="#999" />
+                    <YAxis stroke="#999" tickFormatter={(v) => formatCurrency(v)} />
+                    <Tooltip formatter={(v) => formatCurrency(v)} />
+                    <Legend />
+                    <Bar dataKey="Assets" fill="#82ca9d" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Debts" fill="#f87171" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Quick Stats */}
+            <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
+              <h3 className="text-lg font-bold text-white mb-4">Quick Stats</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Total Transactions</span>
+                  <span className="text-white font-bold">{transactions.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Assets Tracked</span>
+                  <span className="text-white font-bold">{assets.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Debts Tracked</span>
+                  <span className="text-white font-bold">{debts.length}</span>
+                </div>
+                <div className="border-t border-gray-700 pt-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Plan</span>
+                    <span className="text-indigo-400 font-bold capitalize">{subscriptionTier}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Transactions */}
+            <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center justify-between">
+                <span className="flex items-center">
+                  <Clock className="w-4 h-4 mr-2 text-indigo-400" />
+                  Recent Activity
+                </span>
+                <span className="text-xs text-gray-500">Last 5</span>
+              </h3>
+              {recentTransactions.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-4">No transactions yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {recentTransactions.map(t => {
+                    const displayDate = t.date?.toDate?.() 
+                      ? t.date.toDate().toLocaleDateString() 
+                      : new Date(t.date).toLocaleDateString();
+                    return (
+                      <div key={t.id} className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg">
+                        <div>
+                          <p className="text-white font-medium text-sm">{t.description}</p>
+                          <p className="text-gray-500 text-xs">{displayDate}</p>
+                        </div>
+                        <span className={`font-bold ${t.type === 'income' ? 'text-green-400' : 'text-red-400'}`}>
+                          {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
+              <h3 className="text-lg font-bold text-white mb-4">Quick Actions</h3>
+              <div className="space-y-3">
+                <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Transaction
+                </button>
+                <button className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
+                  <ScanLine className="w-4 h-4 mr-2" />
+                  Scan Receipt
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+function QuickActionButton({ icon, label, onClick }) {
+  return (
+    <button 
+      onClick={onClick}
+      className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white py-3 px-6 rounded-xl transition-colors"
+    >
+      {icon}
+      <span className="font-medium">{label}</span>
+    </button>
   );
 }
 
