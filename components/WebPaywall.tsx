@@ -27,7 +27,7 @@ export const WebPaywall: React.FC<WebPaywallProps> = ({ onDismiss, onSuccess }) 
   console.log('WebPaywall component rendered');
   
   const { updateProfile, getToken } = useAuth() as any;
-  const [selectedPlan, setSelectedPlan] = useState('yearly');
+  const [selectedPlan, setSelectedPlan] = useState('individual');
   const [loading, setLoading] = useState(false);
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
 
@@ -43,29 +43,34 @@ export const WebPaywall: React.FC<WebPaywallProps> = ({ onDismiss, onSuccess }) 
         // Update user subscription in the backend
         const token = await getToken();
         if (token) {
-          // Get the current user ID from the token or context
-          const user = await cloudflare.getProfile(token);
-          
-          // Determine if this should be a trial based on the selected plan
-          // Only the 'individual' plan starts as a trial, other plans are active immediately
-          const isTrial = selectedPlan === 'individual';
-          
-          await cloudflare.updateSubscription(
-            user.user_id || user.userId,
-            { 
-              tier: selectedPlan, // Use the selected plan
-              billingCycle: 'monthly', // Default to monthly for web
-              isTrial: isTrial,
-              status: isTrial ? 'trial' : 'active',
-              email: user.email,
-              name: user.name
-            },
-            token
-          );
-          updateProfile({ 
-            subscription_status: isTrial ? 'trial' : 'active', 
-            subscription_plan: selectedPlan 
-          });
+          try {
+            // Get the current user ID from the token or context
+            const user = await cloudflare.getProfile(token);
+            
+            // Determine if this should be a trial based on the selected plan
+            // Only the 'individual' plan starts as a trial, other plans are active immediately
+            const isTrial = selectedPlan === 'individual';
+            
+            await cloudflare.updateSubscription(
+              user.user_id || user.userId,
+              { 
+                tier: selectedPlan, // Use the selected plan
+                billingCycle: 'monthly', // Default to monthly for web
+                isTrial: isTrial,
+                status: isTrial ? 'trial' : 'active',
+                email: user.email,
+                name: user.name
+              },
+              token
+            );
+            updateProfile({ 
+              subscription_status: isTrial ? 'trial' : 'active', 
+              subscription_plan: selectedPlan 
+            });
+          } catch (error) {
+            console.error('Error updating subscription:', error);
+            Alert.alert('Error', 'Subscription was successful but profile update failed. Please refresh your profile.');
+          }
         }
 
         Alert.alert(
