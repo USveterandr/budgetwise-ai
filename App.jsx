@@ -1068,11 +1068,32 @@ function MainLayout() {
 
 // --- Auth & Landing Components ---
 function LandingPage() {
-  const [authModal, setAuthModal] = useState({ show: false, view: 'login' });
-  const openAuth = (view) => setAuthModal({ show: true, view });
+  const [workflow, setWorkflow] = useState({ step: 'landing', selectedPlan: null, view: 'login' });
+  
+  const startTrial = () => setWorkflow({ step: 'pricing', selectedPlan: null, view: 'signup' });
+  const openAuth = (view) => setWorkflow({ step: 'auth', selectedPlan: null, view });
+  const selectPlan = (plan) => setWorkflow({ step: 'auth', selectedPlan: plan, view: 'signup' });
+  const closeModal = () => setWorkflow({ step: 'landing', selectedPlan: null, view: 'login' });
+  
   return (
     <div className="bg-gray-900 min-h-screen text-white">
-      {authModal.show && <AuthScreenModal initialView={authModal.view} onClose={() => setAuthModal({show:false, view:'login'})} />}
+      {/* Pricing Modal for Trial Flow */}
+      {workflow.step === 'pricing' && (
+        <TrialPricingModal 
+          onClose={closeModal} 
+          onSelectPlan={selectPlan}
+        />
+      )}
+      
+      {/* Auth Modal */}
+      {workflow.step === 'auth' && (
+        <AuthScreenModal 
+          initialView={workflow.view} 
+          selectedPlan={workflow.selectedPlan}
+          onClose={closeModal}
+        />
+      )}
+      
       <nav className="p-6 flex justify-between items-center border-b border-gray-800">
         <div className="flex items-center font-bold text-xl"><Sprout className="mr-2 text-indigo-400" /> BudgetWise</div>
         <div className="space-x-4">
@@ -1083,14 +1104,148 @@ function LandingPage() {
       <div className="container mx-auto px-6 py-24 text-center">
         <h1 className="text-6xl font-black mb-8">Control Your Money. <span className="text-indigo-400">Build Wealth.</span></h1>
         <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-12">The AI-powered financial command center for smart savers. Track debts, scan receipts, and watch your net worth grow.</p>
-        <button onClick={() => openAuth('signup')} className="bg-indigo-600 px-10 py-4 rounded-2xl font-bold text-lg hover:scale-105 transition-transform">Start 7-Day Free Trial</button>
+        <button onClick={startTrial} className="bg-indigo-600 px-10 py-4 rounded-2xl font-bold text-lg hover:scale-105 transition-transform">Start 7-Day Free Trial</button>
         <p className="mt-4 text-gray-500">No credit card required.</p>
       </div>
     </div>
   );
 }
 
-function AuthScreenModal({ initialView, onClose }) {
+function TrialPricingModal({ onClose, onSelectPlan }) {
+  const [cycle, setCycle] = useState('monthly');
+  
+  const plans = {
+    starter: { 
+      name: "Starter", 
+      monthly: 7.99, 
+      annual: 47.94, 
+      features: ["Expense Tracking", "Budget Management", "Debt Tracker", "Net Worth Calculation"],
+      description: "Perfect for getting started"
+    },
+    premium: { 
+      name: "Premium", 
+      monthly: 14.99, 
+      annual: 89.94, 
+      features: ["All Starter Features", "AI Budget Advisor", "Magic Receipt Scanning", "Investment Tracking"], 
+      popular: true,
+      description: "Best for serious savers"
+    },
+    pro: { 
+      name: "Pro", 
+      monthly: 29.99, 
+      annual: 179.94, 
+      features: ["All Premium Features", "Shared Family Access", "Priority Advisor Support", "Advanced Reporting"],
+      description: "Complete financial control"
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[200] p-4 animate-fadeIn">
+      <div className="bg-gray-900 border border-gray-700 rounded-3xl w-full max-w-5xl overflow-y-auto max-h-[90vh]">
+        {/* Header */}
+        <div className="p-6 md:p-8 flex justify-between items-center border-b border-gray-800 bg-gradient-to-r from-indigo-900/20 to-purple-900/20">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold text-white">Choose Your Free Trial</h2>
+            <p className="text-gray-400 mt-1">Start your 7-day free trial. No credit card required.</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-white p-2 hover:bg-gray-800 rounded-full transition-colors">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        
+        {/* Billing Toggle */}
+        <div className="p-6 md:p-8 text-center">
+          <div className="inline-flex p-1 bg-gray-800 rounded-xl">
+            <button 
+              onClick={() => setCycle('monthly')} 
+              className={`px-6 py-2 rounded-lg font-medium transition-all ${cycle === 'monthly' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+              Monthly
+            </button>
+            <button 
+              onClick={() => setCycle('annual')} 
+              className={`px-6 py-2 rounded-lg font-medium transition-all ${cycle === 'annual' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+              Annual <span className="text-xs text-green-400 ml-1">(Save 50%)</span>
+            </button>
+          </div>
+        </div>
+        
+        {/* Plans Grid */}
+        <div className="px-6 md:px-8 pb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {Object.entries(plans).map(([key, plan]) => (
+              <div 
+                key={key} 
+                className={`p-6 rounded-2xl relative transition-all hover:scale-[1.02] cursor-pointer ${
+                  plan.popular 
+                    ? 'bg-gradient-to-b from-indigo-600 to-indigo-700 shadow-xl shadow-indigo-500/20 border-2 border-indigo-400' 
+                    : 'bg-gray-800 border border-gray-700 hover:border-gray-600'
+                }`}
+                onClick={() => onSelectPlan(key)}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-black text-xs font-bold px-4 py-1 rounded-full shadow-lg">
+                    MOST POPULAR
+                  </div>
+                )}
+                
+                <h3 className={`text-xl font-bold mb-1 ${plan.popular ? 'text-white' : 'text-gray-200'}`}>
+                  {plan.name}
+                </h3>
+                <p className={`text-sm mb-4 ${plan.popular ? 'text-indigo-200' : 'text-gray-400'}`}>
+                  {plan.description}
+                </p>
+                
+                <div className="mb-6">
+                  <span className={`text-4xl font-black ${plan.popular ? 'text-white' : 'text-white'}`}>
+                    {formatCurrency(cycle === 'monthly' ? plan.monthly : plan.annual / 12)}
+                  </span>
+                  <span className={`text-sm ${plan.popular ? 'text-indigo-200' : 'text-gray-400'}`}>/mo</span>
+                  {cycle === 'annual' && (
+                    <p className={`text-xs mt-1 ${plan.popular ? 'text-indigo-200' : 'text-gray-500'}`}>
+                      Billed annually ({formatCurrency(plan.annual)}/year)
+                    </p>
+                  )}
+                </div>
+                
+                <button 
+                  className={`w-full font-bold py-3 rounded-xl mb-6 transition-all ${
+                    plan.popular 
+                      ? 'bg-white text-indigo-600 hover:bg-gray-100' 
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectPlan(key);
+                  }}
+                >
+                  Start Free Trial
+                </button>
+                
+                <ul className="space-y-3">
+                  {plan.features.map((feature, i) => (
+                    <li key={i} className={`flex items-center text-sm ${plan.popular ? 'text-indigo-100' : 'text-gray-300'}`}>
+                      <CheckCircle className={`w-4 h-4 mr-2 flex-shrink-0 ${plan.popular ? 'text-indigo-300' : 'text-indigo-400'}`} />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          
+          <p className="text-center text-gray-500 text-sm mt-6">
+            <ShieldCheck className="w-4 h-4 inline mr-1" />
+            7-day free trial • Cancel anytime • No credit card required
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthScreenModal({ initialView, selectedPlan, onClose }) {
   const [view, setView] = useState(initialView);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -1104,11 +1259,14 @@ function AuthScreenModal({ initialView, onClose }) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
+        // Use selected plan from trial flow, default to 'starter' if not set
+        const plan = selectedPlan || 'starter';
         await setDoc(doc(db, `artifacts/${appId}/users/${cred.user.uid}`), {
-          subscriptionTier: 'pro',
+          subscriptionTier: plan,
           trialEndsAt: Timestamp.fromDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
           createdAt: Timestamp.now()
         });
+        showToast(`Welcome! Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} trial has started.`, "success");
       }
       onClose();
     } catch (e) {
