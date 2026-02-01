@@ -31,6 +31,8 @@ try {
 
 // prioritize process.env (loaded by system/EAS), then dotenv, then manual .env
 const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || env.EXPO_PUBLIC_GEMINI_API_KEY;
+const revenueCatAppleKey = process.env.EXPO_PUBLIC_REVENUECAT_APPLE_KEY || env.EXPO_PUBLIC_REVENUECAT_APPLE_KEY;
+const revenueCatGoogleKey = process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_KEY || env.EXPO_PUBLIC_REVENUECAT_GOOGLE_KEY;
 
 // Read the app.json directly to get plugins
 const appJson = require('./app.json');
@@ -48,6 +50,8 @@ module.exports = ({ config }) => {
       extra: {
         ...appJson.expo.extra,
         geminiApiKey: geminiApiKey,
+        revenueCatAppleKey: revenueCatAppleKey,
+        revenueCatGoogleKey: revenueCatGoogleKey,
       },
     },
   };

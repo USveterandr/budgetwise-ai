@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Stack } from "expo-router";
 import { AuthProvider } from "../AuthContext";
 import { StatusBar } from "expo-status-bar";
@@ -8,8 +8,15 @@ import { InstallProvider } from "../InstallContext";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 
 import { FinanceProvider } from "../context/FinanceContext";
+import { initializeRevenueCat } from "../services/revenueCat";
+import { initDatabase } from "../services/database";
 
 export default function RootLayout() {
+  useEffect(() => {
+    initDatabase();
+    initializeRevenueCat();
+  }, []);
+
   return (
     <ErrorBoundary>
       <AuthProvider>

@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { revenueCat } from './revenueCatService';
+import { ENTITLEMENT_ID } from './revenueCat';
 
 /**
  * Subscription Plans Configuration
@@ -66,14 +66,47 @@ export async function presentPaywall(): Promise<boolean> {
     const RevenueCatUI = require('react-native-purchases-ui').default;
     const { PAYWALL_RESULT } = require('react-native-purchases-ui');
 
-    const paywallResult = await RevenueCatUI.presentPaywall({
-      displayCloseButton: true,
+    const paywallResult = await RevenueCatUI.presentPaywall();
+
+    switch (paywallResult) {
+      case PAYWALL_RESULT.PURCHASED:
+      case PAYWALL_RESULT.RESTORED:
+        return true;
+      case PAYWALL_RESULT.NOT_PRESENTED:
+      case PAYWALL_RESULT.ERROR:
+      case PAYWALL_RESULT.CANCELLED:
+      default:
+        return false;
+    }
+  } catch (e) {
+    console.error("Paywall presentation error:", e);
+    return false;
+  }
+}
+
+export async function presentPaywallIfNeeded(): Promise<boolean> {
+  if (Platform.OS === 'web') {
+    return true;
+  }
+
+  try {
+    const RevenueCatUI = require('react-native-purchases-ui').default;
+    const { PAYWALL_RESULT } = require('react-native-purchases-ui');
+
+    const paywallResult = await RevenueCatUI.presentPaywallIfNeeded({
+      requiredEntitlementIdentifier: ENTITLEMENT_ID,
     });
 
-    return (
-      paywallResult === PAYWALL_RESULT.PURCHASED ||
-      paywallResult === PAYWALL_RESULT.RESTORED
-    );
+    switch (paywallResult) {
+      case PAYWALL_RESULT.PURCHASED:
+      case PAYWALL_RESULT.RESTORED:
+        return true;
+      case PAYWALL_RESULT.NOT_PRESENTED:
+      case PAYWALL_RESULT.ERROR:
+      case PAYWALL_RESULT.CANCELLED:
+      default:
+        return false;
+    }
   } catch (e) {
     console.error("Paywall presentation error:", e);
     return false;

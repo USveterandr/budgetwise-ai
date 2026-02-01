@@ -467,3 +467,49 @@ const styles = StyleSheet.create({
   },
   placeholderText: { color: Colors.textMuted, fontSize: 13, fontWeight: '300' }
 });
+import { useRouter } from 'expo-router';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../../constants/Colors'; // Adjust path if needed
+
+// Inside your Dashboard component:
+export default function Dashboard() {
+  const router = useRouter();
+
+  // ... existing code ...
+
+  return (
+    // ... inside your view hierarchy, e.g., in a "Quick Actions" section ...
+    <TouchableOpacity 
+      style={styles.storeButton} 
+      onPress={() => router.push('/store')}
+    >
+      <Ionicons name="cart-outline" size={24} color="white" />
+      <Text style={styles.storeButtonText}>Store</Text>
+    </TouchableOpacity>
+    // ...
+  );
+}
+
+// Add to your StyleSheet:
+const styles = StyleSheet.create({
+  // ... existing styles ...
+  storeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E293B', // Or Colors.card
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    marginTop: 10,
+    justifyContent: 'center',
+  },
+  storeButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    marginLeft: 8,
+    fontSize: 16,
+  },
+});
+

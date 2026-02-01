@@ -39,9 +39,11 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
-        "NOTIFICATIONS"
+        "NOTIFICATIONS",
+        "com.android.vending.BILLING"
       ],
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "launchMode": "singleTop"
     },
     "web": {
       "bundler": "metro",
@@ -82,7 +84,8 @@
         }
       ],
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      "react-native-purchases"
     ],
     "experiments": {
       "typedRoutes": true
