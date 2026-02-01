@@ -29,14 +29,25 @@ export const WebPaywall: React.FC<WebPaywallProps> = ({ onDismiss, onSuccess }) 
       const success = await purchasePlanWeb(planId);
 
       if (success) {
-        // Update user profile in the backend
+        // Update user subscription in the backend
         const token = await getToken();
         if (token) {
-          await cloudflare.updateProfile(
-            { subscription_status: 'active', subscription_plan: planId },
+          // Get the current user ID from the token or context
+          const user = await cloudflare.getProfile(token);
+          // For web, when starting a free trial, we treat it as a trial subscription
+          await cloudflare.updateSubscription(
+            user.user_id || user.userId,
+            { 
+              tier: 'basic', // Use basic tier for web trial
+              billingCycle: 'monthly',
+              isTrial: true, // Always treat web purchase as trial initially
+              status: 'trial',
+              email: user.email,
+              name: user.name
+            },
             token
           );
-          updateProfile({ subscription_status: 'active', subscription_plan: planId });
+          updateProfile({ subscription_status: 'trial', subscription_plan: 'web_trial' });
         }
 
         Alert.alert(

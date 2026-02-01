@@ -350,15 +350,15 @@ export default function Profile() {
             const token = await getToken();
             const updateData: any = { subscription_status: 'active' };
             
-            // If it's the Basic plan, set trial end date
-            if (selectedPlanId === 'individual') {
+            // If it's the Basic plan or web trial, set trial status
+            if (selectedPlanId === 'individual' || selectedPlanId === 'web_subscribed') {
               updateData.trial_end_date = getTrialEndDate();
               updateData.subscription_status = 'trial';
             }
             
             await cloudflare.updateProfile(updateData, token);
             await refreshProfile();
-            Alert.alert("Success", selectedPlanId === 'individual' ? "Your 7-day free trial has started!" : "Welcome to Pro!");
+            Alert.alert("Success", selectedPlanId === 'individual' || selectedPlanId === 'web_subscribed' ? "Your 7-day free trial has started!" : "Welcome to Pro!");
           } catch (e) {
             console.error("Failed to sync sub", e);
           }

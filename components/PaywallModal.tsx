@@ -44,7 +44,20 @@ export const PaywallModal = ({
         presentationStyle="fullScreen"
         transparent={true}
       >
-        <WebPaywall onDismiss={handleDismiss} />
+        <WebPaywall 
+          onDismiss={handleDismiss} 
+          onSuccess={() => {
+            // Clear the processing state to allow redirects again
+            try {
+              // @ts-ignore
+              window.isProcessingPurchase = false;
+            } catch (e) {
+              console.log('Could not clear processing state');
+            }
+            // Call the original subscribe callback if provided
+            onSubscribe?.('web_subscribed');
+          }}
+        />
       </Modal>
     );
   }

@@ -81,6 +81,20 @@ export const cloudflare = {
         return res.json();
     },
 
+    async updateSubscription(userId: string, subscriptionData: any, token: string) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/subscribe`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ userId, ...subscriptionData })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Subscription update failed');
+        return data;
+    },
+
     async uploadAvatar(imageUri: string, token: string) {
         const formData = new FormData();
 
