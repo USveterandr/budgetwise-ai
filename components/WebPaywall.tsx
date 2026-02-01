@@ -2,7 +2,18 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
-import { SUBSCRIPTION_PLANS, purchasePlanWeb } from '../services/paywall';
+import { getAllPlans } from '../services/subscriptionPlans';
+import { purchasePlanWeb } from '../services/paywall';
+
+// Map the subscription plans to the format expected by WebPaywall
+const SUBSCRIPTION_PLANS = getAllPlans().map(plan => ({
+  id: plan.id,
+  name: plan.name,
+  price: `$${plan.price.monthly.toFixed(2)}`,
+  period: 'month',
+  features: plan.features,
+  popular: plan.popular || false
+}));
 import { useAuth } from '../AuthContext';
 import { cloudflare } from '../app/lib/cloudflare';
 import { tokenCache } from '../utils/tokenCache';
@@ -34,20 +45,27 @@ export const WebPaywall: React.FC<WebPaywallProps> = ({ onDismiss, onSuccess }) 
         if (token) {
           // Get the current user ID from the token or context
           const user = await cloudflare.getProfile(token);
-          // For web, when starting a free trial, we treat it as a trial subscription
+          
+          // Determine if this should be a trial based on the selected plan
+          // Only the 'individual' plan starts as a trial, other plans are active immediately
+          const isTrial = selectedPlan === 'individual';
+          
           await cloudflare.updateSubscription(
             user.user_id || user.userId,
             { 
-              tier: 'basic', // Use basic tier for web trial
-              billingCycle: 'monthly',
-              isTrial: true, // Always treat web purchase as trial initially
-              status: 'trial',
+              tier: selectedPlan, // Use the selected plan
+              billingCycle: 'monthly', // Default to monthly for web
+              isTrial: isTrial,
+              status: isTrial ? 'trial' : 'active',
               email: user.email,
               name: user.name
             },
             token
           );
-          updateProfile({ subscription_status: 'trial', subscription_plan: 'web_trial' });
+          updateProfile({ 
+            subscription_status: isTrial ? 'trial' : 'active', 
+            subscription_plan: selectedPlan 
+          });
         }
 
         Alert.alert(
@@ -165,7 +183,9 @@ export const WebPaywall: React.FC<WebPaywallProps> = ({ onDismiss, onSuccess }) 
               <Text style={styles.ctaButtonText}>Processing...</Text>
             </>
           ) : (
-            <Text style={styles.ctaButtonText}>Start Free Trial</Text>
+            <Text style={styles.ctaButtonText}>
+              {selectedPlan === 'individual' ? 'Start Free Trial' : 'Subscribe Now'}
+            </Text>
           )}
         </TouchableOpacity>
 
