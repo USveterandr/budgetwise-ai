@@ -145,6 +145,12 @@ This document outlines all the critical bugs fixed and improvements made to prep
 **Fix:** Added comprehensive guide for Expo development builds and configuration
 **Impact:** Clearer path for developers to set up payments in Expo
 
+### 19. Fix Dependency Conflict ✅
+**Issue:** Build failed due to `react-native-purchases` version mismatch
+**File:** `.npmrc`
+**Fix:** Added `.npmrc` with `legacy-peer-deps=true`
+**Impact:** Resolves npm ERESOLVE error during deployment
+
 ---
 
 ## 🎯 New Features Added
@@ -226,14 +232,7 @@ This document outlines all the critical bugs fixed and improvements made to prep
 ## 📊 Remaining Known Issues
 
 ### High Priority (Should Fix Before Launch)
-3. **No Offline Support**
-3. **No Offline Support** (✅ Partially Fixed - DB Layer Added)
-   - Impact: App fails without internet
-   - Estimated Effort: 8-16 hours (requires local database)
-
-### Medium Priority (Can Fix Post-Launch)
-3. **No Offline Support**
-   - Impact: App fails without internet
+3. **No Offline Support**thout internet
    - Estimated Effort: 8-16 hours (requires local database)
 
 ### Medium Priority (Can Fix Post-Launch)
