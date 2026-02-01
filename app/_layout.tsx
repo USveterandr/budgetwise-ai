@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Stack } from "expo-router";
+import { Platform } from "react-native";
 import { AuthProvider } from "../AuthContext";
 import { StatusBar } from "expo-status-bar";
 import { InstallPrompt } from "../components/InstallPrompt";
@@ -10,6 +11,11 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import { FinanceProvider } from "../context/FinanceContext";
 import { initializeRevenueCat } from "../services/revenueCat";
 import { initDatabase } from "../services/database";
+
+// Import global CSS for web builds
+if (Platform.OS === 'web') {
+  require('../public/global.css');
+}
 
 export default function RootLayout() {
   useEffect(() => {
