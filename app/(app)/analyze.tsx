@@ -17,13 +17,7 @@ export default function AnalyzeScreen() {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchData();
-        }, [])
-    );
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             const token = await tokenCache.getToken("budgetwise_jwt_token");
             if (token && currentUser?.uid) {
@@ -35,7 +29,13 @@ export default function AnalyzeScreen() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentUser]);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchData();
+        }, [fetchData])
+    );
 
     const getAnalysis = () => {
         const expenses = transactions.filter(t => t.type === 'expense');

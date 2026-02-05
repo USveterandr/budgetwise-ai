@@ -34,7 +34,7 @@ export default function LandingPage() {
   const orbScale = useSharedValue(1);
   const orbRotate = useSharedValue(0);
 
-  useEffect(() => {
+    useEffect(() => {
     glowOpacity.value = withRepeat(
         withSequence(
             withTiming(0.6, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
@@ -57,7 +57,7 @@ export default function LandingPage() {
         withTiming(360, { duration: 20000, easing: Easing.linear }),
         -1
     );
-  }, []);
+    }, [glowOpacity, orbScale, orbRotate]);
 
   const animatedGlowStyle = useAnimatedStyle(() => ({
     opacity: glowOpacity.value,

@@ -13,7 +13,7 @@ import { initializeRevenueCat } from "../services/revenueCat";
 
 // Import global CSS for web builds
 if (Platform.OS === 'web') {
-  require('../public/global.css');
+  void import('../public/global.css');
 }
 
 export default function RootLayout() {

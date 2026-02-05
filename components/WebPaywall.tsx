@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { getAllPlans } from '../services/subscriptionPlans';
 import { purchasePlanWeb } from '../services/paywall';
+import { useAuth } from '../AuthContext';
+import { cloudflare } from '../app/lib/cloudflare';
 
 // Map the subscription plans to the format expected by WebPaywall
 const SUBSCRIPTION_PLANS = getAllPlans().map(plan => ({
@@ -14,9 +16,6 @@ const SUBSCRIPTION_PLANS = getAllPlans().map(plan => ({
   features: plan.features,
   popular: plan.popular || false
 }));
-import { useAuth } from '../AuthContext';
-import { cloudflare } from '../app/lib/cloudflare';
-import { tokenCache } from '../utils/tokenCache';
 
 interface WebPaywallProps {
   onDismiss: () => void;

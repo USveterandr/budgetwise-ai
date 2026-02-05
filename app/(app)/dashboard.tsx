@@ -30,21 +30,12 @@ export default function Dashboard() {
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch transactions when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-        if (currentUser?.uid) {
-            fetchTransactions();
-        }
-    }, [currentUser])
-  );
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async (options?: { skipLoading?: boolean }) => {
+      const shouldShowSpinner = !(options?.skipLoading);
       try {
           const token = await tokenCache.getToken("budgetwise_jwt_token");
           if (token && currentUser?.uid) {
-             // Only show loading spinner if not refreshing
-             if (!refreshing) setLoadingTransactions(true);
+             if (shouldShowSpinner) setLoadingTransactions(true);
              const data = await cloudflare.getTransactions(currentUser.uid, token);
              if (Array.isArray(data)) {
                  setTransactions(data);
@@ -53,15 +44,24 @@ export default function Dashboard() {
       } catch (e) {
           if (__DEV__) console.error("Failed to fetch transactions", e);
       } finally {
-          setLoadingTransactions(false);
-          setRefreshing(false);
+          if (shouldShowSpinner) {
+              setLoadingTransactions(false);
+          }
       }
-  };
+  }, [currentUser]);
+
+  useFocusEffect(
+    useCallback(() => {
+        if (currentUser?.uid) {
+            fetchTransactions();
+        }
+    }, [currentUser, fetchTransactions])
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchTransactions();
-  }, [currentUser]);
+    fetchTransactions({ skipLoading: true }).finally(() => setRefreshing(false));
+  }, [fetchTransactions]);
 
   const handleLogout = async () => {
       setMenuVisible(false);

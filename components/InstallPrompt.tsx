@@ -24,7 +24,7 @@ export function InstallPrompt() {
         useNativeDriver: true,
       }).start();
     }
-  }, [showBanner]);
+  }, [showBanner, slideAnim]);
 
   if (Platform.OS !== 'web' || isInstalled || !showBanner) {
     return null;

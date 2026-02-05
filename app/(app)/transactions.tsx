@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, StatusBar, TextInput, Alert, RefreshControl, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, StatusBar, TextInput, Alert, RefreshControl, Modal, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors, DashboardColors } from '../../constants/Colors';
@@ -11,8 +11,10 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { useAuth } from '../../AuthContext';
 import { presentPaywall } from '../../services/paywall';
+import { triggerWebDownload, getWritableDirectory } from '../../utils/exportUtils';
 
 const CATEGORIES = ['Food', 'Transport', 'Shopping', 'Housing', 'Utilities', 'Health', 'Entertainment', 'Salary', 'Business', 'Investment', 'Other'];
+
 
 export default function TransactionsData() {
   const router = useRouter();
@@ -198,9 +200,26 @@ export default function TransactionsData() {
       ).join('\n');
       const csvString = csvHeader + csvRows;
 
-      const fileUri = FileSystem.documentDirectory + 'transactions.csv';
-      await FileSystem.writeAsStringAsync(fileUri, csvString);
-      await Sharing.shareAsync(fileUri);
+      if (Platform.OS === 'web') {
+        const dataUrl = `data:text/csv;charset=utf-8,${encodeURIComponent(csvString)}`;
+        triggerWebDownload(dataUrl, 'transactions.csv');
+        return;
+      }
+
+      const directory = getWritableDirectory();
+      if (!directory) {
+        throw new Error('No writable directory available');
+      }
+
+      const fileUri = directory + 'transactions.csv';
+      await FileSystem.writeAsStringAsync(fileUri, csvString, { encoding: 'utf8' });
+
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(fileUri);
+      } else {
+        Alert.alert('Export Complete', `Transactions saved to ${fileUri}`);
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to export CSV');
     }
@@ -240,9 +259,25 @@ export default function TransactionsData() {
           </body>
         </html>
       `;
-      
-      const { uri } = await Print.printToFileAsync({ html });
-      await Sharing.shareAsync(uri);
+      const printOptions: Print.PrintToFileOptions = { html };
+      if (Platform.OS === 'web') {
+        printOptions.base64 = true;
+      }
+      const result = await Print.printToFileAsync(printOptions);
+      const canShare = await Sharing.isAvailableAsync();
+
+      if (canShare) {
+        await Sharing.shareAsync(result.uri);
+        return;
+      }
+
+      if (Platform.OS === 'web' && (result as any).base64) {
+        const dataUrl = `data:application/pdf;base64,${(result as any).base64}`;
+        triggerWebDownload(dataUrl, 'transactions.pdf');
+        return;
+      }
+
+      Alert.alert('Export Complete', `PDF ready at ${result.uri}`);
     } catch (error) {
       Alert.alert('Error', 'Failed to export PDF');
     }

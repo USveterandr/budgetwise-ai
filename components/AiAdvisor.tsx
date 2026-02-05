@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, ActivityIndicator, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
@@ -21,17 +21,14 @@ export function AiAdvisor() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const initialGreetingSent = useRef(false);
   
   // Real Financial Data State
   const [transactions, setTransactions] = useState<any[]>([]);
   const [netWorth, setNetWorth] = useState(0);
   const [expenses, setExpenses] = useState(0);
 
-  useEffect(() => {
-    loadFinancialData();
-  }, [currentUser]);
-
-  const loadFinancialData = async () => {
+    const loadFinancialData = useCallback(async () => {
        if (!(currentUser as any)?.uid) return;
        try {
            const token = await tokenCache.getToken("budgetwise_jwt_token");
@@ -45,21 +42,33 @@ export function AiAdvisor() {
                    setExpenses(totalExp);
                    setNetWorth(totalInc - totalExp); // Simplified math
 
-                   // Initial Message after loading data
-                   if (messages.length === 0) {
-                        setMessages([{
-                            id: 'welcome',
-                            role: 'model',
-                            text: `Hello ${(userProfile as any)?.name?.split(' ')[0] || ''}! I've analyzed your ${txs.length} transactions. Your current flow shows $${totalExp.toLocaleString()} in recent expenses. How can I help you optimize your wealth today?`,
-                            timestamp: new Date()
-                        }]);
-                   }
+             if (!initialGreetingSent.current) {
+              const greetingMessage: Message = {
+                id: 'welcome',
+                role: 'model',
+                text: `Hello ${(userProfile as any)?.name?.split(' ')[0] || ''}! I've analyzed your ${txs.length} transactions. Your current flow shows $${totalExp.toLocaleString()} in recent expenses. How can I help you optimize your wealth today?`,
+                timestamp: new Date()
+              };
+
+              setMessages(prev => {
+                if (prev.length > 0) {
+                  initialGreetingSent.current = true;
+                  return prev;
+                }
+                initialGreetingSent.current = true;
+                return [greetingMessage];
+              });
+             }
                }
            }
        } catch (e) {
            console.error("Failed to load generic data for AI", e);
        }
-  };
+    }, [currentUser, userProfile]);
+
+    useEffect(() => {
+    loadFinancialData();
+    }, [loadFinancialData]);
 
   const scrollToBottom = () => {
     setTimeout(() => {

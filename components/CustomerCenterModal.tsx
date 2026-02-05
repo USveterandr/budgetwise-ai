@@ -1,6 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, Modal } from 'react-native';
-import { Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, Modal, Platform } from 'react-native';
 // import RevenueCatUI from 'react-native-purchases-ui';
 
 interface CustomerCenterProps {
@@ -9,11 +8,31 @@ interface CustomerCenterProps {
 }
 
 export const CustomerCenterModal = ({ visible, onDismiss }: CustomerCenterProps) => {
-  if (Platform.OS === 'web') {
+  const [RevenueCatUI, setRevenueCatUI] = useState<any>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (Platform.OS !== 'web') {
+      import('react-native-purchases-ui')
+        .then(mod => {
+          if (isMounted) {
+            setRevenueCatUI(mod.default);
+          }
+        })
+        .catch(error => {
+          if (__DEV__) {
+            console.warn('Failed to load RevenueCat UI', error);
+          }
+        });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (Platform.OS === 'web' || !RevenueCatUI) {
     return null; // Customer Center is not supported on web yet
   }
-
-  const RevenueCatUI = require('react-native-purchases-ui').default;
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
