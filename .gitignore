@@ -39,3 +39,4 @@ budgetwise-ai-*.json
 # Wrangler
 .wrangler/
 backend/.wrangler/
+node_modules
