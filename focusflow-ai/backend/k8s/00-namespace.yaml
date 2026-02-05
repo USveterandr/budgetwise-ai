@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: focusflow
+  labels:
+    name: focusflow
+    environment: production
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: global-config
+  namespace: focusflow
+data:
+  NODE_ENV: "production"
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "focusflow"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  MONGODB_URI: "mongodb://mongo-service:27017/focusflow"
+  ELASTICSEARCH_HOST: "elasticsearch-service"
+  ELASTICSEARCH_PORT: "9200"
+  LOG_LEVEL: "info"
+  API_VERSION: "v1"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: global-secrets
+  namespace: focusflow
+type: Opaque
+data:
+  # Base64 encoded secrets
+  # To encode: echo -n 'your-secret' | base64
+  POSTGRES_USER: Zm9jdXNmbG93  # focusflow
+  POSTGRES_PASSWORD: c2VjdXJlLXBhc3N3b3JkLTEyMw==  # secure-password-123
+  REDIS_PASSWORD: cmVkaXMtc2VjdXJlLTEyMw==  # redis-secure-123
+  JWT_SECRET: c3VwZXItc2VjcmV0LWp3dC1rZXktMjU2Yml0cw==  # super-secret-jwt-key-256bits
+  JWT_REFRESH_SECRET: cmVmcmVzaC1zZWNyZXQta2V5LTI1NmJpdHM=  # refresh-secret-key-256bits
+  OPENAI_API_KEY: c2stb3BlbmFpLWFwaS1rZXktMTIzNA==  # sk-openai-api-key-1234
+  STRIPE_SECRET_KEY: c2tfdGVzdF9zdHJpcGVfa2V5XzEyMzQ=  # sk_test_stripe_key_1234
+  FCM_SERVER_KEY: ZmNtLXNlcnZlci1rZXktMTIzNA==  # fcm-server-key-1234

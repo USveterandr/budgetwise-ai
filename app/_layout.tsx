@@ -10,7 +10,6 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 
 import { FinanceProvider } from "../context/FinanceContext";
 import { initializeRevenueCat } from "../services/revenueCat";
-import { initDatabase } from "../services/database";
 
 // Import global CSS for web builds
 if (Platform.OS === 'web') {
@@ -19,7 +18,6 @@ if (Platform.OS === 'web') {
 
 export default function RootLayout() {
   useEffect(() => {
-    initDatabase();
     initializeRevenueCat();
   }, []);
 
