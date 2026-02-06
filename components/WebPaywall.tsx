@@ -6,6 +6,7 @@ import { getAllPlans } from '../services/subscriptionPlans';
 import { purchasePlanWeb } from '../services/paywall';
 import { useAuth } from '../AuthContext';
 import { cloudflare } from '../app/lib/cloudflare';
+import { useRouter } from 'expo-router';
 
 // Map the subscription plans to the format expected by WebPaywall
 const SUBSCRIPTION_PLANS = getAllPlans().map(plan => ({
@@ -26,6 +27,7 @@ export const WebPaywall: React.FC<WebPaywallProps> = ({ onDismiss, onSuccess }) 
   console.log('WebPaywall component rendered');
   
   const { updateProfile, getToken } = useAuth() as any;
+  const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState('individual');
   const [loading, setLoading] = useState(false);
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
@@ -72,19 +74,20 @@ export const WebPaywall: React.FC<WebPaywallProps> = ({ onDismiss, onSuccess }) 
           }
         }
 
-        Alert.alert(
-          'Success!',
-          `You've successfully upgraded to the ${SUBSCRIPTION_PLANS.find(p => p.id === planId)?.name} plan!`,
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                onSuccess?.();
-                onDismiss();
-              }
-            }
-          ]
-        );
+        // Call success callbacks and navigate to dashboard
+        onSuccess?.();
+        onDismiss();
+        
+        // Navigate to dashboard to show updated subscription status
+        router.push('/dashboard');
+        
+        // Show success message after navigation
+        setTimeout(() => {
+          Alert.alert(
+            'Success!',
+            `You've successfully upgraded to the ${SUBSCRIPTION_PLANS.find(p => p.id === planId)?.name} plan!`
+          );
+        }, 500);
       } else {
         Alert.alert('Payment Failed', 'Unable to process your payment. Please try again.');
       }
