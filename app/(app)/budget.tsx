@@ -55,6 +55,12 @@ export default function BudgetScreen() {
     const getTotalSpent = () => transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
     const getOnTrackCount = () => budgets.filter(b => getSpentForCategory(b.category) <= b.limit * 0.9).length;
 
+    const totalBudget = getTotalBudget();
+    const totalSpent = getTotalSpent();
+    const progressPct = Math.min((totalSpent / (totalBudget || 1)) * 100, 100);
+    const onTrack = getOnTrackCount();
+    const streakLabel = onTrack === budgets.length && budgets.length > 0 ? 'On-track streak!' : 'Keep pushing';
+
     const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
     const today = new Date().getDate();
     const daysLeft = Math.max(daysInMonth - today, 1);
@@ -73,12 +79,6 @@ export default function BudgetScreen() {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map(([cat, spent]) => ({ cat, suggested: Math.ceil(spent * 1.2) }));
-
-    const totalBudget = getTotalBudget();
-    const totalSpent = getTotalSpent();
-    const progressPct = Math.min((totalSpent / (totalBudget || 1)) * 100, 100);
-    const onTrack = getOnTrackCount();
-    const streakLabel = onTrack === budgets.length && budgets.length > 0 ? 'On-track streak!' : 'Keep pushing';
 
     return (
         <View style={styles.container}>

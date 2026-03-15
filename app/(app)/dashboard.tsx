@@ -283,13 +283,15 @@ export default function Dashboard() {
                 </View>
             ) : transactions.length > 0 ? (
                 <View style={{ paddingHorizontal: 24, paddingBottom: 24 }}>
-                    {transactions.slice(0, 5).map((tx, index) => (
+                    {transactions.slice(0, 5).map((tx, index) => {
+                        const visibleTransactions = transactions.slice(0, 5);
+                        return (
                         <View key={tx.id || index} style={{ 
                             flexDirection: 'row', 
                             justifyContent: 'space-between', 
                             alignItems: 'center', 
                             paddingVertical: 12,
-                            borderBottomWidth: index !== transactions.length - 1 ? 1 : 0,
+                            borderBottomWidth: index !== visibleTransactions.length - 1 ? 1 : 0,
                             borderBottomColor: 'rgba(255,255,255,0.05)'
                         }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -314,10 +316,11 @@ export default function Dashboard() {
                                 fontWeight: '600',
                                 fontSize: 15
                             }}>
-                                {tx.type === 'income' ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
+                                {tx.type === 'income' ? '+' : '-'}{userProfile?.currency || '$'}{Math.abs(tx.amount).toFixed(2)}
                             </Text>
                         </View>
-                    ))}
+                        );
+                    })}
                 </View>
             ) : (
                 <View style={styles.emptyState}>

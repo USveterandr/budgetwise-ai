@@ -1,0 +1,7 @@
+Create a realistic monthly budget based on past spending.
+Do NOT use idealized numbers.
+Optimize for sustainability and cash flow stability.
+Return:
+- category
+- recommended limit
+- reasoning

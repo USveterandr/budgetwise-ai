@@ -66,3 +66,12 @@ CREATE TABLE IF NOT EXISTS investments (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+-- ADVISOR BOOKINGS
+CREATE TABLE advisor_requests (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  status TEXT DEFAULT 'requested',
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);

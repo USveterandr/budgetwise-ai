@@ -7,7 +7,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/Colors';
 import { cloudflare } from '../lib/cloudflare';
 import { tokenCache } from '../../utils/tokenCache';
-import { Svg, Circle, G } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
 

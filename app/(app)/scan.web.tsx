@@ -5,11 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { cloudflare } from '../lib/cloudflare';
 import { tokenCache } from '../../utils/tokenCache';
+import { useAuth } from '../../AuthContext';
+import { syncTransactionToSupabase } from '../../services/supabaseDatabase';
 import { geminiService } from '../../services/geminiService';
 import * as ImagePicker from 'expo-image-picker';
 
 export default function ScanScreenWeb() {
     const router = useRouter();
+    const { currentUser } = useAuth() as any;
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState(''); // 'scanning' | 'processing' | 'saving'
     
@@ -74,13 +77,25 @@ export default function ScanScreenWeb() {
             const token = await tokenCache.getToken("budgetwise_jwt_token");
             if (!token) throw new Error("Authentication error");
 
-            await cloudflare.addTransaction({
+            const txData = {
                 amount: parseFloat(scannedData.amount),
                 description: scannedData.description,
                 category: scannedData.category,
                 type: 'expense', // Receipts are expenses
                 date: scannedData.date
-            }, token);
+            };
+
+            const result = await cloudflare.addTransaction(txData, token);
+
+            // Sync to Supabase directly
+            try {
+              if (currentUser?.uid) {
+                const generatedId = result?.id || Math.random().toString(36).substring(7);
+                await syncTransactionToSupabase({ ...txData, id: generatedId }, currentUser.uid);
+              }
+            } catch (sbError) {
+              console.warn('Failed to sync to Supabase', sbError);
+            }
 
             setEditModalVisible(false);
             alert("Receipt saved successfully!");

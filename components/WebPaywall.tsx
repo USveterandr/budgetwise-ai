@@ -64,30 +64,24 @@ export const WebPaywall: React.FC<WebPaywallProps> = ({ onDismiss, onSuccess }) 
               },
               token
             );
-            updateProfile({ 
+            console.log('[WebPaywall] Updating local profile status...');
+            await updateProfile({ 
               subscription_status: isTrial ? 'trial' : 'active', 
               subscription_plan: selectedPlan 
             });
+            console.log('[WebPaywall] Profile updated successfully');
           } catch (error) {
-            console.error('Error updating subscription:', error);
+            console.error('[WebPaywall] Error updating subscription:', error);
             Alert.alert('Error', 'Subscription was successful but profile update failed. Please refresh your profile.');
           }
         }
 
-        // Call success callbacks and navigate to dashboard
+        // Call success callbacks
         onSuccess?.();
         onDismiss();
         
-        // Navigate to dashboard to show updated subscription status
+        // Navigate to dashboard immediately
         router.push('/dashboard');
-        
-        // Show success message after navigation
-        setTimeout(() => {
-          Alert.alert(
-            'Success!',
-            `You've successfully upgraded to the ${SUBSCRIPTION_PLANS.find(p => p.id === planId)?.name} plan!`
-          );
-        }, 500);
       } else {
         Alert.alert('Payment Failed', 'Unable to process your payment. Please try again.');
       }

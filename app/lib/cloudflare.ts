@@ -324,6 +324,18 @@ export const cloudflare = {
         return data.text;
     },
 
+    async bookAdvisor(token: string) {
+        const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/advisor/book`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to book advisor');
+        return data; // { bookingUrl }
+    },
+
     async parseReceiptImage(base64Image: string, idToken: string) {
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/api/ai/ocr`, {
             method: 'POST',

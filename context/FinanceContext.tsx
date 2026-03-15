@@ -3,6 +3,7 @@ import { cloudflare } from '../app/lib/cloudflare';
 import { tokenCache } from '../utils/tokenCache';
 import { useAuth } from '../AuthContext';
 import { Transaction, Budget, Investment, UserProfile, IncomeSource, Debt } from '../types';
+import { syncTransactionToSupabase, getSupabaseTransactions, deleteSupabaseTransaction } from '../services/supabaseDatabase';
 
 interface FinanceContextType {
   transactions: Transaction[];
@@ -52,14 +53,20 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       if (!token) return;
 
       // Fetch all data in parallel
-      const [txData, budgetData, investData, debtData] = await Promise.all([
+      const [txData, budgetData, investData, debtData, supabaseTxData] = await Promise.all([
         cloudflare.getTransactions(currentUser.uid, token),
         cloudflare.getBudgets(currentUser.uid, 'current', token),
         cloudflare.getInvestments(currentUser.uid, token),
-        cloudflare.getDebts(currentUser.uid, token)
+        cloudflare.getDebts(currentUser.uid, token),
+        getSupabaseTransactions(currentUser.uid)
       ]);
 
-      if (Array.isArray(txData)) setTransactions(txData);
+      // Use Supabase data for transactions if available, otherwise fallback to Cloudflare
+      if (supabaseTxData && supabaseTxData.length > 0) {
+        setTransactions(supabaseTxData as Transaction[]);
+      } else if (Array.isArray(txData)) {
+        setTransactions(txData);
+      }
       if (Array.isArray(budgetData)) setBudgets(budgetData);
       if (Array.isArray(investData)) setInvestments(investData);
       if (Array.isArray(debtData)) setDebts(debtData);
@@ -96,6 +103,21 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
           ...transaction,
           userId: currentUser.uid
       }, token);
+
+      // Extract generated ID from result or generate a simple one
+      const generatedId = result?.id || Math.random().toString(36).substring(7);
+      const fullTransaction = {
+        ...transaction,
+        id: generatedId,
+        date: transaction.date || new Date().toISOString()
+      };
+      
+      // Sync to Supabase directly
+      try {
+        await syncTransactionToSupabase(fullTransaction, currentUser.uid);
+      } catch (sbError) {
+        console.warn('Failed to sync to Supabase, but Cloudflare succeeded', sbError);
+      }
       
       // Optimistic update or refresh
       await fetchFinanceData();
@@ -128,6 +150,13 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       if (!token) throw new Error("No token");
 
       const result = await cloudflare.deleteTransaction(id, token);
+      
+      // Delete from Supabase
+      try {
+        await deleteSupabaseTransaction(id);
+      } catch (sbError) {
+        console.warn('Failed to delete from Supabase', sbError);
+      }
       
       // Optimistic update
       setTransactions(prev => prev.filter(t => t.id !== id));

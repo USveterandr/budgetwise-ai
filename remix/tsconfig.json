@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "strict": true,
+    "jsx": "react-jsx",
+    "baseUrl": "..",
+    "paths": {
+      "~/*": ["remix/app/*"]
+    },
+    "types": ["@cloudflare/workers-types", "vite/client"]
+  },
+  "include": [
+    "../remix.env.d.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "../functions/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}

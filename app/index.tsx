@@ -27,47 +27,10 @@ const OBSIDIAN = '#020617';
 
 export default function LandingPage() {
   const { currentUser, loading: authLoading } = useAuth();
-  const [localProcessingState, setLocalProcessingState] = useState(false);
 
-  // Hypnotic Animation Values
-  const glowOpacity = useSharedValue(0.3);
-  const orbScale = useSharedValue(1);
-  const orbRotate = useSharedValue(0);
-
-    useEffect(() => {
-    glowOpacity.value = withRepeat(
-        withSequence(
-            withTiming(0.6, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-            withTiming(0.3, { duration: 2000, easing: Easing.inOut(Easing.ease) })
-        ),
-        -1,
-        true
-    );
-    
-    orbScale.value = withRepeat(
-        withSequence(
-            withTiming(1.2, { duration: 4000, easing: Easing.inOut(Easing.quad) }),
-            withTiming(1, { duration: 4000, easing: Easing.inOut(Easing.quad) })
-        ),
-        -1,
-        true
-    );
-
-    orbRotate.value = withRepeat(
-        withTiming(360, { duration: 20000, easing: Easing.linear }),
-        -1
-    );
-    }, [glowOpacity, orbScale, orbRotate]);
-
-  const animatedGlowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-    transform: [{ scale: orbScale.value }, { rotate: `${orbRotate.value}deg` }] 
-  }));
-
-  // Only redirect if not loading auth and not processing a purchase
-  const isProcessingPurchase = typeof window !== 'undefined' ? (window as any).isProcessingPurchase : false;
-  if (currentUser && !authLoading && !isProcessingPurchase) {
-    return <Redirect href="/dashboard" />;
+  // Only redirect if not loading auth
+  if (currentUser && !authLoading) {
+    return <Redirect href="/(app)/dashboard" />;
   }
 
   return (
@@ -76,41 +39,45 @@ export default function LandingPage() {
       <LinearGradient colors={['#000000', '#0f172a', '#020617']} style={StyleSheet.absoluteFill} />
       
       {/* Animated Orbs */}
-      <Animated.View style={[styles.orb, styles.orb1, animatedGlowStyle]} />
-      <Animated.View style={[styles.orb, styles.orb2, { transform: [{ scale: orbScale.value }] }]} />
+      <Animated.View entering={FadeInUp.duration(1000)} style={[styles.orb, styles.orb1]} />
+      <Animated.View entering={FadeInUp.delay(500).duration(1000)} style={[styles.orb, styles.orb2]} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {/* Luxury Header */}
-        <Animated.View entering={FadeInUp.duration(600)} style={styles.header}>
+        {/* Navigation / Header */}
+        <View style={styles.header}>
             <LinearGradient
                 colors={['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']}
                 style={styles.navBar}
             >
                 <View style={styles.logoRow}>
-                    <Ionicons name="diamond-outline" size={24} color={GOLD} />
+                    <Ionicons name="wallet" size={24} color={GOLD} />
                     <Text style={styles.logoText}>BUDGETWISE</Text>
                 </View>
-                <TouchableOpacity onPress={() => router.push('/login')}>
-                    <Text style={styles.loginText}>SIGN IN</Text>
-                </TouchableOpacity>
+                <View style={styles.navLinks}>
+                    <TouchableOpacity onPress={() => router.push('/login')}>
+                        <Text style={styles.loginText}>SIGN IN</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.navBtn} onPress={() => router.push('/signup')}>
+                        <Text style={styles.navBtnText}>GET STARTED</Text>
+                    </TouchableOpacity>
+                </View>
             </LinearGradient>
-        </Animated.View>
+        </View>
 
         {/* Hero Section */}
-        <Animated.View entering={FadeInUp.delay(200).duration(800)} style={styles.heroSection}>
+        <View style={styles.heroSection}>
             <View style={styles.exclusiveBadge}>
-                <Ionicons name="star" size={12} color={GOLD} />
-                <Text style={styles.exclusiveText}>PRIVATE WEALTH MANAGEMENT AI</Text>
+                <Ionicons name="sparkles" size={12} color={GOLD} />
+                <Text style={styles.exclusiveText}>AI-POWERED FINANCIAL INTELLIGENCE</Text>
             </View>
 
             <Text style={styles.headline}>
-                Master Your <Text style={{ color: GOLD }}>Fortune</Text>
+                Your Personal <Text style={{ color: GOLD }}>AI Financial Advisor</Text>
             </Text>
             <Text style={styles.subheadline}>
-                The AI-powered financial concierge for those who demand excellence. Experience the future of wealth today.
+                Budgetwise analyzes your spending patterns, predicts future trends, and creates personalized budgets using advanced machine learning.
             </Text>
 
-            {/* CTA Buttons */}
             <View style={styles.ctaContainer}>
                 <TouchableOpacity style={styles.primaryBtn} onPress={() => router.push('/signup')}>
                     <LinearGradient
@@ -122,64 +89,51 @@ export default function LandingPage() {
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
-
-             <Text style={styles.guaranteeText}>
-                <Ionicons name="shield-checkmark-outline" size={14} color="#94A3B8" /> 7-Day Complimentary Access. Cancel Anytime.
-            </Text>
-        </Animated.View>
-
-        {/* Hypnotic App Preview */}
-        <Animated.View entering={FadeInUp.delay(400).duration(800)} style={styles.phoneContainer}>
-            <View style={styles.glowBehindPhone} />
-            <Image 
-                source={{ uri: DEMO_PHONE_IMAGE }} 
-                style={styles.phoneImage} 
-                contentFit="contain"
-            />
-             {/* Floating Features */}
-            <BlurView intensity={20} tint="dark" style={[styles.floatCard, styles.floatCardLeft]}>
-                 <Ionicons name="scan-outline" size={24} color={GOLD} />
-                 <Text style={styles.floatTitle}>AI Scanning</Text>
-                 <Text style={styles.floatDesc}>Receipts to Data</Text>
-            </BlurView>
-
-            <BlurView intensity={20} tint="dark" style={[styles.floatCard, styles.floatCardRight]}>
-                 <Ionicons name="trending-up" size={24} color="#10B981" />
-                 <Text style={styles.floatTitle}>+42% Growth</Text>
-                 <Text style={styles.floatDesc}>Portfolio Insight</Text>
-            </BlurView>
-        </Animated.View>
-
-        {/* Luxury Features Grid */}
-        <View style={styles.featuresGrid}>
-            <FeatureTile 
-                icon="analytics-outline" 
-                title="Executive Insights" 
-                desc="Deep learning algorithms analyze your spending patterns to reveal hidden capital."
-            />
-            <FeatureTile 
-                icon="lock-closed-outline" 
-                title="Bank-Grade Security" 
-                desc="Your financial data is encrypted with military-grade protocols purely for your eyes." 
-            />
-            <FeatureTile 
-                icon="sync-outline" 
-                title="Real-Time Sync" 
-                desc="Connect your accounts seamlessly. Your net worth, updated to the second." 
-            />
         </View>
 
-        {/* Final CTA */}
-        <View style={styles.finalCta}>
-             <Text style={styles.finalTitle}>Join the Elite.</Text>
-             <Text style={styles.finalDesc}>Your journey to financial sovereignty begins now.</Text>
-             <TouchableOpacity style={styles.finalBtn} onPress={() => router.push('/signup')}>
-                <Text style={styles.finalBtnText}>Claim Access</Text>
-             </TouchableOpacity>
+        {/* Features / Benefits Grid */}
+        <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Why Choose Budgetwise?</Text>
+            <View style={styles.featuresGrid}>
+                <FeatureTile 
+                    icon="brain-outline" 
+                    title="AI-Powered Insights" 
+                    desc="Machine learning algorithms provide personalized recommendations and predict future expenses."
+                />
+                <FeatureTile 
+                    icon="shield-checkmark-outline" 
+                    title="Bank-Level Security" 
+                    desc="256-bit encryption and read-only access ensure your financial data stays secure." 
+                />
+                <FeatureTile 
+                    icon="sync-outline" 
+                    title="Real-Time Sync" 
+                    desc="Connect unlimited bank accounts for instant transaction tracking across all institutions." 
+                />
+            </View>
         </View>
 
+        {/* Pricing Preview */}
+        <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Simple Pricing</Text>
+            <View style={styles.pricingCard}>
+                <Text style={styles.pricingLevel}>Professional</Text>
+                <Text style={styles.pricingPrice}>$12<Text style={styles.pricingPeriod}>/mo</Text></Text>
+                <View style={styles.pricingFeatures}>
+                    <Text style={styles.pricingFeature}>• Unlimited Bank Connections</Text>
+                    <Text style={styles.pricingFeature}>• Advanced AI Analytics</Text>
+                    <Text style={styles.pricingFeature}>• Investment Portfolio Tracking</Text>
+                    <Text style={styles.pricingFeature}>• Priority AI Support</Text>
+                </View>
+                <TouchableOpacity style={styles.pricingBtn} onPress={() => router.push('/signup')}>
+                    <Text style={styles.pricingBtnText}>Start 14-Day Free Trial</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+
+        {/* Footer */}
         <View style={styles.footer}>
-             <Text style={styles.footerText}>© 2026 BudgetWise AI. New York • London • Tokyo</Text>
+             <Text style={styles.footerText}>© 2026 BudgetWise AI. All Rights Reserved.</Text>
         </View>
 
       </ScrollView>
@@ -258,5 +212,21 @@ const styles = StyleSheet.create({
   finalBtnText: { color: GOLD, fontWeight: 'bold', letterSpacing: 1 },
 
   footer: { alignItems: 'center', paddingBottom: 40 },
-  footerText: { color: '#475569', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }
+  footerText: { color: '#475569', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' },
+
+  // New Styles
+  sectionContainer: { paddingHorizontal: 20, marginVertical: 40 },
+  sectionTitle: { color: 'white', fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 24 },
+  navLinks: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  navBtn: { backgroundColor: GOLD, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  navBtnText: { color: OBSIDIAN, fontSize: 10, fontWeight: 'bold' },
+  
+  pricingCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 24, padding: 32, borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)', alignItems: 'center' },
+  pricingLevel: { color: GOLD, fontSize: 14, fontWeight: 'bold', marginBottom: 8, letterSpacing: 1 },
+  pricingPrice: { color: 'white', fontSize: 48, fontWeight: 'bold', marginBottom: 24 },
+  pricingPeriod: { fontSize: 16, color: '#94A3B8' },
+  pricingFeatures: { gap: 12, marginBottom: 32 },
+  pricingFeature: { color: '#94A3B8', fontSize: 14 },
+  pricingBtn: { backgroundColor: GOLD, paddingHorizontal: 32, paddingVertical: 16, borderRadius: 24 },
+  pricingBtnText: { color: OBSIDIAN, fontWeight: 'bold', fontSize: 16 }
 });

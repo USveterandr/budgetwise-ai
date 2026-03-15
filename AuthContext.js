@@ -45,7 +45,7 @@ export function AuthProvider({ children }) {
                     if (__DEV__) console.log("[AuthContext] Profile loaded:", profile.email);
                     setUserProfile(profile);
                     setCurrentUser({ uid: profile.user_id, email: profile.email });
-                    
+
                     // Initialize RevenueCat
                     await revenueCat.configure(profile.user_id);
                     // Check if they have an active subscription from the app store that our DB missed
@@ -77,7 +77,7 @@ export function AuthProvider({ children }) {
 
         setCurrentUser({ uid: data.userId, email: email });
         setUserProfile(data.profile);
-        
+
         await revenueCat.configure(data.userId); // Configure purchases on login
     };
 
@@ -135,22 +135,22 @@ export function AuthProvider({ children }) {
 
     const upgradeSubscription = async (packageToPurchase) => {
         try {
-             // Real Purchase Flow
-             const success = await revenueCat.purchasePackage(packageToPurchase);
-             
-             if (success) {
+            // Real Purchase Flow
+            const success = await revenueCat.purchasePackage(packageToPurchase);
+
+            if (success) {
                 const token = await tokenCache.getToken(TOKEN_KEY);
                 // Update remote profile
                 await cloudflare.updateProfile({ subscription_status: 'active' }, token);
-                
+
                 // Update local state
                 setUserProfile(prev => ({
                     ...prev,
                     subscription_status: 'active'
                 }));
                 return true;
-             }
-             return false;
+            }
+            return false;
         } catch (e) {
             console.error('Subscription upgrade failed:', e);
             return false;
@@ -175,8 +175,17 @@ export function AuthProvider({ children }) {
     const getTrialStatus = () => {
         if (!userProfile) return { daysLeft: 7, isExpired: false, isPaid: false };
 
-        if (userProfile.subscription_status === 'active') {
-            return { daysLeft: 999, isExpired: false, isPaid: true };
+        // If explicitly active or in trial status from backend, they are not expired
+        if (userProfile.subscription_status === 'active' || userProfile.subscription_status === 'trial') {
+            return { daysLeft: 999, isExpired: false, isPaid: userProfile.subscription_status === 'active' };
+        }
+
+        // Check based on end date if provided, otherwise fallback to start date + 7 days
+        if (userProfile.trial_end_date) {
+            const endDate = new Date(userProfile.trial_end_date);
+            const isExpired = Date.now() > endDate.getTime();
+            const daysLeft = Math.max(0, Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+            return { daysLeft, isExpired, isPaid: false };
         }
 
         const start = new Date(userProfile.trial_start_date || userProfile.created_at);
@@ -187,7 +196,7 @@ export function AuthProvider({ children }) {
 
         return {
             daysLeft,
-            isExpired: diffDays > 7, // Strict > 7 check
+            isExpired: diffDays > 7,
             isPaid: false
         };
     };

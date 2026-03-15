@@ -170,8 +170,8 @@ export const getPlanByTier = (tier: SubscriptionTier): SubscriptionPlan => {
 };
 
 // Get current user's plan
-export const getCurrentPlan = (userTier: SubscriptionTier = 'free'): SubscriptionPlan => {
-  return SUBSCRIPTION_PLANS[userTier] || SUBSCRIPTION_PLANS.free;
+export const getCurrentPlan = (userTier: SubscriptionTier = 'individual'): SubscriptionPlan => {
+  return SUBSCRIPTION_PLANS[userTier] || SUBSCRIPTION_PLANS.individual;
 };
 
 // Calculate annual savings

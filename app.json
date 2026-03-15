@@ -2,7 +2,7 @@
   "expo": {
     "name": "Budgetwise AI",
     "slug": "budget-finance-ai-1",
-    "version": "1.0.0",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "budget-finance-ai-1",
@@ -29,7 +29,7 @@
       ]
     },
     "android": {
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0F172A"

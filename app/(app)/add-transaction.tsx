@@ -5,11 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { cloudflare } from '../../app/lib/cloudflare';
 import { tokenCache } from '../../utils/tokenCache';
+import { useAuth } from '../../AuthContext';
+import { syncTransactionToSupabase } from '../../services/supabaseDatabase';
 
 const CATEGORIES = ['Food', 'Transport', 'Shopping', 'Housing', 'Utilities', 'Health', 'Entertainment', 'Salary', 'Business', 'Investment', 'Other'];
 
 export default function AddTransaction() {
   const router = useRouter();
+  const { currentUser } = useAuth() as any;
   const [loading, setLoading] = useState(false);
   
   const [amount, setAmount] = useState('');
@@ -50,15 +53,27 @@ export default function AddTransaction() {
         amount: numAmount, description, category, type
       });
 
-      const result = await cloudflare.addTransaction({
+      const txData = {
         amount: numAmount,
         description,
         category,
         type,
         date: new Date().toISOString()
-      }, token);
+      };
+
+      const result = await cloudflare.addTransaction(txData, token);
 
       if (__DEV__) console.log('[AddTransaction] Success:', result);
+
+      // Sync to Supabase directly
+      try {
+        if (currentUser?.uid) {
+          const generatedId = result?.id || Math.random().toString(36).substring(7);
+          await syncTransactionToSupabase({ ...txData, id: generatedId }, currentUser.uid);
+        }
+      } catch (sbError) {
+        console.warn('Failed to sync to Supabase', sbError);
+      }
 
       if (Platform.OS === 'web') {
         // Use a short timeout to let the UI update or just standard alert then move

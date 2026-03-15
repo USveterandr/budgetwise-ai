@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budgetwise - AI Financial Advisor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        },
+                        accent: {
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #312e81 100%);
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        #root {
+            display: none; /* Hide React app by default if we are showing the landing page */
+        }
+        body.app-active #root {
+            display: block;
+        }
+        body.app-active #landing-page {
+            display: none;
+        }
+    </style>
+</head>
+<body class="font-sans text-slate-800 antialiased bg-white">
+    <div id="landing-page">
+        <!-- Navigation -->
+        <nav class="fixed w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-20">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-10 h-10 bg-gradient-to-br from-primary-600 to-accent-600 rounded-xl flex items-center justify-center">
+                            <i data-lucide="wallet" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <span class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">Budgetwise</span>
+                    </div>
+                    
+                    <div class="hidden md:flex items-center space-x-8">
+                        <a href="#benefits" class="text-slate-600 hover:text-primary-600 font-medium transition">Benefits</a>
+                        <a href="#pricing" class="text-slate-600 hover:text-primary-600 font-medium transition">Pricing</a>
+                        <a href="#testimonials" class="text-slate-600 hover:text-primary-600 font-medium transition">Reviews</a>
+                        <a href="#faq" class="text-slate-600 hover:text-primary-600 font-medium transition">FAQ</a>
+                        <button class="bg-primary-600 text-white px-6 py-2.5 rounded-full font-medium hover:bg-primary-700 transition shadow-lg shadow-primary-500/30" onclick="window.location.href='/signup'">
+                            Get Started
+                        </button>
+                    </div>
+
+                    <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-600">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-200">
+                <div class="px-4 pt-2 pb-6 space-y-1">
+                    <a href="#benefits" class="block px-3 py-2 text-slate-600 hover:text-primary-600 font-medium">Benefits</a>
+                    <a href="#pricing" class="block px-3 py-2 text-slate-600 hover:text-primary-600 font-medium">Pricing</a>
+                    <a href="#testimonials" class="block px-3 py-2 text-slate-600 hover:text-primary-600 font-medium">Reviews</a>
+                    <a href="#faq" class="block px-3 py-2 text-slate-600 hover:text-primary-600 font-medium">FAQ</a>
+                    <button class="w-full mt-4 bg-primary-600 text-white px-6 py-3 rounded-full font-medium" onclick="window.location.href='/signup'">
+                        Get Started
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
+            <div class="absolute inset-0 hero-gradient opacity-5"></div>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+                <div class="grid lg:grid-cols-2 gap-12 items-center">
+                    <div class="space-y-8 animate-fade-in text-center lg:text-left">
+                        <div class="inline-flex items-center space-x-2 bg-primary-50 border border-primary-200 rounded-full px-4 py-1.5">
+                            <span class="flex h-2 w-2 bg-green-500 rounded-full animate-pulse"></span>
+                            <span class="text-sm font-medium text-primary-700">AI-Powered Financial Intelligence</span>
+                        </div>
+                        <h1 class="text-5xl lg:text-7xl font-bold leading-tight">
+                            Your Personal <span class="gradient-text">AI Financial Advisor</span>
+                        </h1>
+                        <p class="text-xl text-slate-600 leading-relaxed max-w-lg mx-auto lg:mx-0">
+                            Budgetwise analyzes your spending patterns, predicts future trends, and creates personalized budgets using advanced machine learning algorithms.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                            <button class="bg-primary-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-700 transition shadow-xl shadow-primary-500/30 flex items-center justify-center space-x-2" onclick="window.location.href='/signup'">
+                                <span>Start Free Trial</span>
+                                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                            </button>
+                            <button onclick="playDemo()" class="bg-white text-slate-700 border-2 border-slate-200 px-8 py-4 rounded-full font-semibold text-lg hover:border-primary-300 hover:text-primary-600 transition flex items-center justify-center space-x-2 group">
+                                <i data-lucide="play-circle" class="w-5 h-5 group-hover:scale-110 transition"></i>
+                                <span>Watch Demo</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div class="relative z-10 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-float">
+                            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center space-x-2">
+                                <div class="flex space-x-2">
+                                    <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                                    <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                                    <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                                </div>
+                                <span class="text-sm text-slate-500 ml-4">budgetwise.isaac-trinidad.com</span>
+                            </div>
+                            <div class="p-8">
+                                <img src="images/dashboard-preview.png" alt="Budgetwise Dashboard" class="w-full rounded-lg shadow-inner mb-4">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- More sections would go here as in landing.html -->
+        <footer class="bg-slate-950 text-slate-400 py-12 border-t border-slate-900 text-center">
+            <p>&copy; 2024 Budgetwise. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- React App Mount Point -->
+    <div id="root"></div>
+
+    <script>
+        // Check if we should show the app or the landing page
+        const path = window.location.pathname;
+        if (path !== '/' && path !== '/index.html') {
+            document.body.classList.add('app-active');
+        }
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+    </script>
+</body>
+</html>

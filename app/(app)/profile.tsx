@@ -33,7 +33,6 @@ export default function Profile() {
   const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
-    console.log('Profile useEffect triggered, userProfile:', userProfile);
     if (userProfile) {
         setFormData({
             name: userProfile.name || '',
@@ -66,28 +65,6 @@ export default function Profile() {
   });
 
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
-
-  useEffect(() => {
-    console.log('Profile useEffect triggered, userProfile:', userProfile);
-    if (userProfile) {
-        setFormData({
-            name: userProfile.name || '',
-            business_industry: userProfile.business_industry || '',
-            monthly_income: userProfile.monthly_income?.toString() || '',
-            savings_rate: userProfile.savings_rate?.toString() || '',
-            bio: userProfile.bio || ''
-        });
-        
-        // Construct full avatar URL if it's a relative path starting with /api
-        if (userProfile.avatar_url) {
-            if (userProfile.avatar_url.startsWith('/api')) {
-                setAvatarUri(`${CLOUDFLARE_API_URL}${userProfile.avatar_url}`);
-            } else {
-                setAvatarUri(userProfile.avatar_url);
-            }
-        }
-    }
-  }, [userProfile]);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -265,23 +242,13 @@ export default function Profile() {
             <TouchableOpacity 
                 style={[styles.saveButton, { marginTop: 24, backgroundColor: isPro || inTrial || trialExpired ? 'rgba(16, 185, 129, 0.1)' : 'rgba(124, 58, 237, 0.1)', borderWidth: 1, borderColor: isPro || inTrial || trialExpired ? '#10B981' : Colors.primary }]}
                 onPress={async () => {
-                    console.log('Start Free Trial button pressed');
-                    console.log('isPro:', isPro);
-                    console.log('inTrial:', inTrial);
-                    console.log('trialExpired:', trialExpired);
-                    console.log('userProfile:', userProfile);
-                    console.log('profileLoading:', profileLoading);
-                    
                     if (profileLoading) {
-                        console.log('Profile still loading, cannot show paywall yet');
                         return;
                     }
                     
                     if (isPro || inTrial || trialExpired) {
-                        console.log('Showing Customer Center');
                         setShowCustomerCenter(true);
                     } else {
-                        console.log('Showing Paywall');
                         // Set processing state to prevent landing page redirect
                         try {
                             // @ts-ignore
@@ -292,7 +259,7 @@ export default function Profile() {
                                 window.isProcessingPurchase = false;
                             }, 5000);
                         } catch (e) {
-                            console.log('Could not set processing state');
+                            // Not on web, ignore
                         }
                         setShowPaywall(true);
                     }

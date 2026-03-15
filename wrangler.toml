@@ -1,3 +1,25 @@
-name = "budgetwise-ai"
-pages_build_output_dir = "dist"
-compatibility_date = "2024-04-01"
+name = "budgetwise-api"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "build/client"
+pages_functions_dir = "functions"
+
+[build]
+command = "npm run pages:build"
+
+[[d1_databases]]
+binding = "users"
+database_name = "budgetwise_db"
+database_id = "budgetwise_db"
+
+[[r2_buckets]]
+binding = "budgetwise_storage"
+bucket_name = "budgetwise-assets"
+
+[ai]
+binding = "AI"
+
+[vars]
+JWT_ISSUER = "budgetwise.ai"
+JWT_AUDIENCE = "budgetwise-users"
+JWT_SECRET = "tcfMnf7BBxR8nu4qCME76rB5YHM/RnYShU5OR9qaAY="
+HUBSPOT_TOKEN=""

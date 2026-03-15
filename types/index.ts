@@ -171,7 +171,7 @@ export interface BudgetCategory {
 // Subscription plan types
 export interface SubscriptionPlan {
   id: SubscriptionTier;
-  name: 'Free' | 'Starter' | 'Professional' | 'Business' | 'Enterprise';
+  name: 'Free' | 'Basic' | 'Starter' | 'Professional' | 'Business' | 'Enterprise';
   price: {
     monthly: number;
     yearly: number;

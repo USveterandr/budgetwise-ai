@@ -8,6 +8,7 @@ import { getAllPlans, getBillingOptions, formatPrice, calculateAnnualSavings } f
 import { revenueCat } from '../services/revenueCatService';
 import { useAuth } from '../AuthContext';
 import { cloudflare } from '../app/lib/cloudflare';
+import { useRouter } from 'expo-router';
 
 interface CustomPaywallProps {
   onDismiss: () => void;
@@ -16,6 +17,7 @@ interface CustomPaywallProps {
 
 export const CustomPaywall = ({ onDismiss, onPurchaseSuccess }: CustomPaywallProps) => {
   const { updateProfile, getToken, userProfile } = useAuth() as any;
+  const router = useRouter();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
@@ -91,9 +93,15 @@ export const CustomPaywall = ({ onDismiss, onPurchaseSuccess }: CustomPaywallPro
             console.error("Failed to sync subscription to backend", e);
           }
           
-          Alert.alert("Success", selectedPlan?.id === 'individual' ? "Your 7-day free trial has started!" : "Welcome to BudgetWise Pro!");
+          
           onPurchaseSuccess?.(selectedPlan?.id || '');
           onDismiss();
+
+          // Navigate to dashboard
+          // Navigate to dashboard
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 100);
         }
       } else {
         Alert.alert("Error", "Subscription package not found");

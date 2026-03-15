@@ -1,0 +1,6 @@
+Identify if a transaction is a recurring subscription.
+Consider:
+- frequency
+- merchant
+- amount consistency
+Return JSON { is_subscription, confidence, recommendation }

@@ -115,15 +115,15 @@ export async function presentPaywallIfNeeded(): Promise<boolean> {
 
 /**
  * Handles the purchase of a specific plan on the web.
- * In a real production app, this would redirect to Stripe or another web payment provider.
+ * TODO: Integrate a real web payment provider (e.g. Stripe Checkout) before production.
+ * Currently simulates a successful purchase for UI development purposes only.
  */
 export async function purchasePlanWeb(planId: string): Promise<boolean> {
-  console.log(`[Web] Initiating purchase for plan: ${planId}`);
+  if (__DEV__) console.log(`[Web] Initiating purchase for plan: ${planId}`);
   
-  // Simulate a payment process
+  // Simulate a payment process — replace with real Stripe/payment integration
   return new Promise((resolve) => {
     setTimeout(() => {
-      // In a real implementation, you'd handle the Stripe checkout here
       resolve(true);
     }, 2000);
   });
@@ -133,7 +133,6 @@ export async function purchasePlanWeb(planId: string): Promise<boolean> {
 export async function presentCustomPaywall(): Promise<boolean> {
     // This function would typically trigger a state change to show the CustomPaywall component
     // For now, we'll return true to indicate the paywall should be shown
-    console.log("Custom paywall requested");
     return true;
 }
 

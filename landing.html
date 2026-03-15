@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budgetwise - AI Financial Advisor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        },
+                        accent: {
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #312e81 100%);
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-content.active {
+            max-height: 500px;
+        }
+        .pricing-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .pricing-card:hover {
+            transform: translateY(-5px);
+        }
+        .integration-logo {
+            filter: grayscale(100%);
+            opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+        .integration-logo:hover {
+            filter: grayscale(0%);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="font-sans text-slate-800 antialiased bg-white">
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center space-x-2">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary-600 to-accent-600 rounded-xl flex items-center justify-center">
+                        <i data-lucide="wallet" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <span class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">Budgetwise</span>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#benefits" class="text-slate-600 hover:text-primary-600 font-medium transition">Benefits</a>
+                    <a href="#pricing" class="text-slate-600 hover:text-primary-600 font-medium transition">Pricing</a>
+                    <a href="#testimonials" class="text-slate-600 hover:text-primary-600 font-medium transition">Reviews</a>
+                    <a href="#faq" class="text-slate-600 hover:text-primary-600 font-medium transition">FAQ</a>
+                    <button class="bg-primary-600 text-white px-6 py-2.5 rounded-full font-medium hover:bg-primary-700 transition shadow-lg shadow-primary-500/30" onclick="window.location.href='/signup'">
+                        Get Started
+                    </button>
+                </div>
+
+                <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-600">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-200">
+            <div class="px-4 pt-2 pb-6 space-y-1">
+                <a href="#benefits" class="block px-3 py-2 text-slate-600 hover:text-primary-600 font-medium">Benefits</a>
+                <a href="#pricing" class="block px-3 py-2 text-slate-600 hover:text-primary-600 font-medium">Pricing</a>
+                <a href="#testimonials" class="block px-3 py-2 text-slate-600 hover:text-primary-600 font-medium">Reviews</a>
+                <a href="#faq" class="block px-3 py-2 text-slate-600 hover:text-primary-600 font-medium">FAQ</a>
+                <button class="w-full mt-4 bg-primary-600 text-white px-6 py-3 rounded-full font-medium" onclick="window.location.href='/signup'">
+                    Get Started
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
+        <div class="absolute inset-0 hero-gradient opacity-5"></div>
+        <div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary-100/50 to-transparent"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="space-y-8 animate-fade-in">
+                    <div class="inline-flex items-center space-x-2 bg-primary-50 border border-primary-200 rounded-full px-4 py-1.5">
+                        <span class="flex h-2 w-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span class="text-sm font-medium text-primary-700">AI-Powered Financial Intelligence</span>
+                    </div>
+                    
+                    <h1 class="text-5xl lg:text-7xl font-bold leading-tight">
+                        Your Personal <span class="gradient-text">AI Financial Advisor</span>
+                    </h1>
+                    
+                    <p class="text-xl text-slate-600 leading-relaxed max-w-lg">
+                        Budgetwise analyzes your spending patterns, predicts future trends, and creates personalized budgets using advanced machine learning algorithms.
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button class="bg-primary-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-700 transition shadow-xl shadow-primary-500/30 flex items-center justify-center space-x-2" onclick="window.location.href='/signup'">
+                            <span>Start Free Trial</span>
+                            <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        </button>
+                        <button onclick="playDemo()" class="bg-white text-slate-700 border-2 border-slate-200 px-8 py-4 rounded-full font-semibold text-lg hover:border-primary-300 hover:text-primary-600 transition flex items-center justify-center space-x-2 group">
+                            <i data-lucide="play-circle" class="w-5 h-5 group-hover:scale-110 transition"></i>
+                            <span>Watch Demo</span>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center space-x-6 text-sm text-slate-500 pt-4">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="check-circle" class="w-5 h-5 text-green-500"></i>
+                            <span>No credit card required</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="shield" class="w-5 h-5 text-green-500"></i>
+                            <span>Bank-level security</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <div class="relative z-10 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-float">
+                        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center space-x-2">
+                            <div class="flex space-x-2">
+                                <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                            </div>
+                            <span class="text-sm text-slate-500 ml-4">budgetwise.isaac-trinidad.com</span>
+                        </div>
+                        <div class="p-8">
+                            <img src="public/images/dashboard-preview.png" alt="Budgetwise Dashboard" class="w-full rounded-lg shadow-inner mb-4">
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-green-50 rounded-xl border border-green-100">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                            <i data-lucide="trending-up" class="w-5 h-5 text-green-600"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-slate-800">Budget Optimization</p>
+                                            <p class="text-sm text-slate-500">AI suggests 15% savings increase</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-green-600 font-bold">+$420/mo</span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div class="p-4 bg-slate-50 rounded-xl text-center">
+                                        <p class="text-2xl font-bold text-primary-600">$12.4k</p>
+                                        <p class="text-xs text-slate-500">Saved this year</p>
+                                    </div>
+                                    <div class="p-4 bg-slate-50 rounded-xl text-center">
+                                        <p class="text-2xl font-bold text-accent-600">94%</p>
+                                        <p class="text-xs text-slate-500">Budget accuracy</p>
+                                    </div>
+                                    <div class="p-4 bg-slate-50 rounded-xl text-center">
+                                        <p class="text-2xl font-bold text-emerald-600">8</p>
+                                        <p class="text-xs text-slate-500">Goals achieved</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Decorative elements -->
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-accent-500/20 rounded-full blur-2xl"></div>
+                    <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-primary-500/20 rounded-full blur-2xl"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section id="benefits" class="py-20 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Why Choose Budgetwise?</h2>
+                <p class="text-lg text-slate-600">Experience the future of personal finance management with our cutting-edge AI technology.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Benefit 1 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition duration-300 group">
+                    <div class="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
+                        <i data-lucide="brain" class="w-7 h-7 text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">AI-Powered Insights</h3>
+                    <p class="text-slate-600 leading-relaxed">Machine learning algorithms analyze your spending patterns to provide personalized recommendations and predict future expenses.</p>
+                </div>
+
+                <!-- Benefit 2 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition duration-300 group">
+                    <div class="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
+                        <i data-lucide="target" class="w-7 h-7 text-purple-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">Smart Goal Tracking</h3>
+                    <p class="text-slate-600 leading-relaxed">Set financial goals and let our AI create optimized saving strategies with automatic adjustments based on your cash flow.</p>
+                </div>
+
+                <!-- Benefit 3 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition duration-300 group">
+                    <div class="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
+                        <i data-lucide="shield-check" class="w-7 h-7 text-emerald-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">Bank-Level Security</h3>
+                    <p class="text-slate-600 leading-relaxed">256-bit encryption and read-only access ensure your financial data stays secure. We never store your bank credentials.</p>
+                </div>
+
+                <!-- Benefit 4 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition duration-300 group">
+                    <div class="w-14 h-14 bg-amber-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
+                        <i data-lucide="zap" class="w-7 h-7 text-amber-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">Real-Time Sync</h3>
+                    <p class="text-slate-600 leading-relaxed">Connect unlimited bank accounts and credit cards for instant transaction tracking across all your financial institutions.</p>
+                </div>
+
+                <!-- Benefit 5 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition duration-300 group">
+                    <div class="w-14 h-14 bg-rose-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
+                        <i data-lucide="pie-chart" class="w-7 h-7 text-rose-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">Visual Analytics</h3>
+                    <p class="text-slate-600 leading-relaxed">Beautiful charts and graphs help you understand your financial health at a glance with customizable dashboards.</p>
+                </div>
+
+                <!-- Benefit 6 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition duration-300 group">
+                    <div class="w-14 h-14 bg-cyan-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
+                        <i data-lucide="smartphone" class="w-7 h-7 text-cyan-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">Mobile First</h3>
+                    <p class="text-slate-600 leading-relaxed">Native iOS and Android apps with offline mode, biometric authentication, and instant spending notifications.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Simple, Transparent Pricing</h2>
+                <p class="text-lg text-slate-600">Choose the plan that fits your financial journey. Upgrade or downgrade anytime.</p>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <!-- Basic Plan -->
+                <div class="pricing-card bg-white rounded-2xl border border-slate-200 p-8">
+                    <div class="mb-6">
+                        <h3 class="text-xl font-bold text-slate-900 mb-2">Starter</h3>
+                        <p class="text-slate-500">Perfect for individuals getting started</p>
+                    </div>
+                    <div class="mb-6">
+                        <span class="text-4xl font-bold text-slate-900">$0</span>
+                        <span class="text-slate-500">/month</span>
+                    </div>
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-center space-x-3 text-slate-600">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500"></i>
+                            <span>2 Bank Accounts</span>
+                        </li>
+                        <li class="flex items-center space-x-3 text-slate-600">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500"></i>
+                            <span>Basic Budgeting Tools</span>
+                        </li>
+                        <li class="flex items-center space-x-3 text-slate-600">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500"></i>
+                            <span>Monthly Reports</span>
+                        </li>
+                        <li class="flex items-center space-x-3 text-slate-400">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                            <span>AI Predictions</span>
+                        </li>
+                        <li class="flex items-center space-x-3 text-slate-400">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                            <span>Investment Tracking</span>
+                        </li>
+                    </ul>
+                    <button class="w-full py-3 border-2 border-slate-200 text-slate-700 rounded-full font-semibold hover:border-primary-600 hover:text-primary-600 transition" onclick="window.location.href='/signup'">
+                        Get Started Free
+                    </button>
+                </div>
+
+                <!-- Pro Plan - Recommended -->
+                <div class="pricing-card bg-white rounded-2xl border-2 border-primary-500 p-8 relative shadow-xl shadow-primary-500/10">
+                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                        <span class="bg-primary-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
+                            Most Popular
+                        </span>
+                    </div>
+                    <div class="mb-6">
+                        <h3 class="text-xl font-bold text-slate-900 mb-2">Professional</h3>
+                        <p class="text-slate-500">For serious wealth builders</p>
+                    </div>
+                    <div class="mb-6">
+                        <span class="text-4xl font-bold text-primary-600">$12</span>
+                        <span class="text-slate-500">/month</span>
+                    </div>
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-center space-x-3 text-slate-600">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500"></i>
+                            <span>Unlimited Accounts</span>
+                        </li>
+                        <li class="flex items-center space-x-3 text-slate-600">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500"></i>
+                            <span>Advanced AI Insights</span>
+                        </li>
+                        <li class="flex items-center space-x-3 text-slate-600">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500"></i>
+                            <span>Investment Portfolio</span>
+                        </li>
+                        <li class="flex items-center space-x-3 text-slate-600">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500"></i>
+                            <span>Tax Optimization</span>
+                        </li>
+                        <li class="flex items-center space-x-3 text-slate-600">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500"></i>
+                            <span>Priority Support</span>
+                        </li>
+                    </ul>
+                    <button class="w-full py-3 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition shadow-lg shadow-primary-500/30" onclick="window.location.href='/signup'">
+                        Start 14-Day Trial
+                    </button>
+                </div>
+
+                <!-- Enterprise Plan -->
+                <div class="pricing-card bg-white rounded-2xl border border-slate-200 p-8">
+                    <div class="mb-6">
+                        <h3 class="text-xl font-bold text-slate-900 mb-2">Family</h3>
+                        <p class="text-slate-500">Share with up to 5 family members</p>
+                    </div>
+                    <div class="mb-6">
+                        <span class="text-4xl font-bold text-slate-900">$29</span>
+                        <span class="text-slate-500">/month</span>
+                    </div>
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-center space-x-3 text-slate-600">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500"></i>
+                            <span>Everything in Pro</span>
+                        </li>
+                        <li class="flex items-center space-x-3 text-slate-600">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500"></i>
+                            <span>5 User Accounts</span>
+                        </li>
+                        <li class="flex items-center space-x-3 text-slate-600">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500"></i>
+                            <span>Shared Goals</span>
+                        </li>
+                        <li class="flex items-center space-x-3 text-slate-600">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500"></i>
+                            <span>Family Budgeting</span>
+                        </li>
+                        <li class="flex items-center space-x-3 text-slate-600">
+                            <i data-lucide="check" class="w-5 h-5 text-green-500"></i>
+                            <span>Dedicated Advisor</span>
+                        </li>
+                    </ul>
+                    <button class="w-full py-3 border-2 border-slate-200 text-slate-700 rounded-full font-semibold hover:border-primary-600 hover:text-primary-600 transition" onclick="window.location.href='/signup'">
+                        Contact Sales
+                    </button>
+                </div>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="mt-16 max-w-4xl mx-auto overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-200">
+                            <th class="py-4 px-6 text-slate-900 font-semibold">Features</th>
+                            <th class="py-4 px-6 text-center text-slate-600">Starter</th>
+                            <th class="py-4 px-6 text-center text-primary-600 font-semibold bg-primary-50">Professional</th>
+                            <th class="py-4 px-6 text-center text-slate-600">Family</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm">
+                        <tr class="border-b border-slate-100">
+                            <td class="py-4 px-6 text-slate-700">Bank Connections</td>
+                            <td class="py-4 px-6 text-center text-slate-600">2</td>
+                            <td class="py-4 px-6 text-center text-slate-900 font-medium bg-primary-50">Unlimited</td>
+                            <td class="py-4 px-6 text-center text-slate-600">Unlimited</td>
+                        </tr>
+                        <tr class="border-b border-slate-100">
+                            <td class="py-4 px-6 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-300 mx-auto"></i></td>
+                            <td class="py-4 px-6 text-center bg-primary-50"><i data-lucide="check" class="w-4 h-4 text-green-500 mx-auto"></i></td>
+                            <td class="py-4 px-6 text-center"><i data-lucide="check" class="w-4 h-4 text-green-500 mx-auto"></i></td>
+                        </tr>
+                        <tr class="border-b border-slate-100">
+                            <td class="py-4 px-6 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-300 mx-auto"></i></td>
+                            <td class="py-4 px-6 text-center bg-primary-50"><i data-lucide="check" class="w-4 h-4 text-green-500 mx-auto"></i></td>
+                            <td class="py-4 px-6 text-center"><i data-lucide="check" class="w-4 h-4 text-green-500 mx-auto"></i></td>
+                        </tr>
+                        <tr class="border-b border-slate-100">
+                            <td class="py-4 px-6 text-slate-700">Tax Reports</td>
+                            <td class="py-4 px-6 text-center text-slate-600">Basic</td>
+                            <td class="py-4 px-6 text-center text-slate-900 font-medium bg-primary-50">Advanced</td>
+                            <td class="py-4 px-6 text-center text-slate-600">Advanced</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="py-20 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Trusted by Thousands</h2>
+                <p class="text-lg text-slate-600">See how Budgetwise is helping people achieve financial freedom.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Testimonial 1 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex items-center space-x-1 mb-4">
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                    </div>
+                    <p class="text-slate-600 mb-6 italic">"Budgetwise helped me save $15,000 in just 8 months. The AI predictions are incredibly accurate and helped me identify spending leaks I never noticed."</p>
+                    <div class="flex items-center space-x-4">
+                        <img src="public/images/sarah.png" alt="Sarah Chen" class="w-12 h-12 rounded-full object-cover">
+                        <div>
+                            <p class="font-semibold text-slate-900">Sarah Chen</p>
+                            <p class="text-sm text-slate-500">Product Manager at TechCorp</p>
+                        </div>
+                        <div class="ml-auto opacity-50 flex items-center space-x-1">
+                            <i data-lucide="building" class="w-4 h-4"></i>
+                            <span class="text-xs font-bold">TechCorp</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Testimonial 2 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex items-center space-x-1 mb-4">
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                    </div>
+                    <p class="text-slate-600 mb-6 italic">"As a freelancer, managing irregular income was stressful. Budgetwise's AI smoothing feature helps me budget effectively even with variable cash flow."</p>
+                    <div class="flex items-center space-x-4">
+                        <img src="public/images/marcus.png" alt="Marcus Johnson" class="w-12 h-12 rounded-full object-cover">
+                        <div>
+                            <p class="font-semibold text-slate-900">Marcus Johnson</p>
+                            <p class="text-sm text-slate-500">Independent Consultant</p>
+                        </div>
+                        <div class="ml-auto opacity-50 flex items-center space-x-1">
+                            <i data-lucide="briefcase" class="w-4 h-4"></i>
+                            <span class="text-xs font-bold">Consulting</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Testimonial 3 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex items-center space-x-1 mb-4">
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                        <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400"></i>
+                    </div>
+                    <p class="text-slate-600 mb-6 italic">"The family plan is a game-changer. My wife and I can finally see our complete financial picture and work together on our retirement goals."</p>
+                    <div class="flex items-center space-x-4">
+                        <img src="public/images/emily.png" alt="Emily Rodriguez" class="w-12 h-12 rounded-full object-cover">
+                        <div>
+                            <p class="font-semibold text-slate-900">Emily Rodriguez</p>
+                            <p class="text-sm text-slate-500">Healthcare Administrator</p>
+                        </div>
+                        <div class="ml-auto opacity-50 flex items-center space-x-1">
+                            <i data-lucide="hospital" class="w-4 h-4"></i>
+                            <span class="text-xs font-bold">HealthCare</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logos -->
+            <div class="mt-16 pt-16 border-t border-slate-200">
+                <p class="text-center text-sm text-slate-500 mb-8 uppercase tracking-wider font-semibold">Featured In</p>
+                <div class="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60">
+                    <div class="flex items-center space-x-2 text-slate-400">
+                        <i data-lucide="newspaper" class="w-8 h-8"></i>
+                        <span class="font-bold text-xl">Forbes</span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-slate-400">
+                        <i data-lucide="radio" class="w-8 h-8"></i>
+                        <span class="font-bold text-xl">TechCrunch</span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-slate-400">
+                        <i data-lucide="tv" class="w-8 h-8"></i>
+                        <span class="font-bold text-xl">Bloomberg</span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-slate-400">
+                        <i data-lucide="file-text" class="w-8 h-8"></i>
+                        <span class="font-bold text-xl">WSJ</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integrations Section -->
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Connect Everything</h2>
+                <p class="text-lg text-slate-600">Seamlessly integrate with your favorite financial institutions and tools.</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center justify-items-center opacity-70">
+                <div class="integration-logo flex flex-col items-center space-y-2 p-4">
+                    <i data-lucide="landmark" class="w-12 h-12 text-slate-700"></i>
+                    <span class="text-sm font-medium text-slate-600">Chase</span>
+                </div>
+                <div class="integration-logo flex flex-col items-center space-y-2 p-4">
+                    <i data-lucide="credit-card" class="w-12 h-12 text-slate-700"></i>
+                    <span class="text-sm font-medium text-slate-600">Amex</span>
+                </div>
+                <div class="integration-logo flex flex-col items-center space-y-2 p-4">
+                    <i data-lucide="banknote" class="w-12 h-12 text-slate-700"></i>
+                    <span class="text-sm font-medium text-slate-600">Wells Fargo</span>
+                </div>
+                <div class="integration-logo flex flex-col items-center space-y-2 p-4">
+                    <i data-lucide="wallet" class="w-12 h-12 text-slate-700"></i>
+                    <span class="text-sm font-medium text-slate-600">PayPal</span>
+                </div>
+                <div class="integration-logo flex flex-col items-center space-y-2 p-4">
+                    <i data-lucide="bitcoin" class="w-12 h-12 text-slate-700"></i>
+                    <span class="text-sm font-medium text-slate-600">Coinbase</span>
+                </div>
+                <div class="integration-logo flex flex-col items-center space-y-2 p-4">
+                    <i data-lucide="trending-up" class="w-12 h-12 text-slate-700"></i>
+                    <span class="text-sm font-medium text-slate-600">Robinhood</span>
+                </div>
+                <div class="integration-logo flex flex-col items-center space-y-2 p-4">
+                    <i data-lucide="building-2" class="w-12 h-12 text-slate-700"></i>
+                    <span class="text-sm font-medium text-slate-600">Fidelity</span>
+                </div>
+                <div class="integration-logo flex flex-col items-center space-y-2 p-4">
+                    <i data-lucide="shield" class="w-12 h-12 text-slate-700"></i>
+                    <span class="text-sm font-medium text-slate-600">Plaid</span>
+                </div>
+                <div class="integration-logo flex flex-col items-center space-y-2 p-4">
+                    <i data-lucide="receipt" class="w-12 h-12 text-slate-700"></i>
+                    <span class="text-sm font-medium text-slate-600">QuickBooks</span>
+                </div>
+                <div class="integration-logo flex flex-col items-center space-y-2 p-4">
+                    <i data-lucide="calculator" class="w-12 h-12 text-slate-700"></i>
+                    <span class="text-sm font-medium text-slate-600">TurboTax</span>
+                </div>
+                <div class="integration-logo flex flex-col items-center space-y-2 p-4">
+                    <i data-lucide="store" class="w-12 h-12 text-slate-700"></i>
+                    <span class="text-sm font-medium text-slate-600">Venmo</span>
+                </div>
+                <div class="integration-logo flex flex-col items-center space-y-2 p-4">
+                    <i data-lucide="more-horizontal" class="w-12 h-12 text-slate-700"></i>
+                    <span class="text-sm font-medium text-slate-600">+200 more</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-20 bg-slate-50">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Frequently Asked Questions</h2>
+                <p class="text-lg text-slate-600">Everything you need to know about Budgetwise.</p>
+            </div>
+
+            <div class="space-y-4">
+                <!-- FAQ Item 1 -->
+                <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <button class="accordion-btn w-full px-6 py-4 text-left flex justify-between items-center hover:bg-slate-50 transition" onclick="toggleAccordion(this)">
+                        <span class="font-semibold text-slate-900">How does the AI financial advisor work?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 accordion-icon transition-transform"></i>
+                    </button>
+                    <div class="accordion-content px-6">
+                        <p class="pb-4 text-slate-600">Our AI analyzes your transaction history, spending patterns, and financial goals using machine learning algorithms. It identifies trends, predicts future expenses, and provides personalized recommendations to optimize your budget and savings strategy.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 2 -->
+                <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <button class="accordion-btn w-full px-6 py-4 text-left flex justify-between items-center hover:bg-slate-50 transition" onclick="toggleAccordion(this)">
+                        <span class="font-semibold text-slate-900">Is my financial data secure?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 accordion-icon transition-transform"></i>
+                    </button>
+                    <div class="accordion-content px-6">
+                        <p class="pb-4 text-slate-600">Absolutely. We use bank-level 256-bit encryption and read-only access through Plaid. We never store your bank login credentials, and your data is protected by multi-factor authentication and biometric security features.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 3 -->
+                <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <button class="accordion-btn w-full px-6 py-4 text-left flex justify-between items-center hover:bg-slate-50 transition" onclick="toggleAccordion(this)">
+                        <span class="font-semibold text-slate-900">Can I cancel my subscription anytime?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 accordion-icon transition-transform"></i>
+                    </button>
+                    <div class="accordion-content px-6">
+                        <p class="pb-4 text-slate-600">Yes, you can cancel your subscription at any time with no cancellation fees. If you cancel, you'll continue to have access to your paid features until the end of your current billing period.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 4 -->
+                <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <button class="accordion-btn w-full px-6 py-4 text-left flex justify-between items-center hover:bg-slate-50 transition" onclick="toggleAccordion(this)">
+                        <span class="font-semibold text-slate-900">What banks and institutions are supported?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 accordion-icon transition-transform"></i>
+                    </button>
+                    <div class="accordion-content px-6">
+                        <p class="pb-4 text-slate-600">Budgetwise connects with over 12,000 financial institutions including all major banks (Chase, Bank of America, Wells Fargo), credit unions, investment platforms (Fidelity, Robinhood, Coinbase), and credit cards through our secure Plaid integration.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 5 -->
+                <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <button class="accordion-btn w-full px-6 py-4 text-left flex justify-between items-center hover:bg-slate-50 transition" onclick="toggleAccordion(this)">
+                        <span class="font-semibold text-slate-900">Is there a mobile app available?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 accordion-icon transition-transform"></i>
+                    </button>
+                    <div class="accordion-content px-6">
+                        <p class="pb-4 text-slate-600">Yes! Budgetwise is available on iOS and Android with full feature parity. Our mobile apps include biometric login, instant spending notifications, offline mode, and the ability to photograph receipts for automatic categorization.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Footer Section -->
+    <section class="py-20 bg-gradient-to-br from-primary-900 to-slate-900 text-white">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-4xl md:text-5xl font-bold mb-6">Ready to Transform Your Finances?</h2>
+            <p class="text-xl text-primary-100 mb-10 max-w-2xl mx-auto">Join over 50,000 users who are already saving smarter with AI-powered financial planning.</p>
+            
+            <form class="max-w-md mx-auto mb-8" onsubmit="handleSubscribe(event)">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <input type="email" placeholder="Enter your email" required 
+                        class="flex-1 px-6 py-4 rounded-full text-slate-900 focus:outline-none focus:ring-4 focus:ring-primary-500/30 border-0 text-lg">
+                    <button type="submit" 
+                        class="px-8 py-4 bg-accent-600 hover:bg-accent-500 text-white rounded-full font-semibold text-lg transition shadow-lg shadow-accent-500/30 whitespace-nowrap">
+                        Get Started Free
+                    </button>
+                </div>
+                <p class="text-sm text-primary-200 mt-4">Start your 14-day free trial. No credit card required.</p>
+            </form>
+
+            <div class="flex flex-wrap justify-center gap-8 text-sm text-primary-200 pt-8 border-t border-primary-800">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    <span>Free 14-day trial</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    <span>Cancel anytime</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    <span>24/7 Support</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 text-slate-400 py-12 border-t border-slate-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div class="col-span-2">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <div class="w-8 h-8 bg-gradient-to-br from-primary-600 to-accent-600 rounded-lg flex items-center justify-center">
+                            <i data-lucide="wallet" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="text-xl font-bold text-white">Budgetwise</span>
+                    </div>
+                    <p class="text-sm max-w-xs">AI-powered financial planning for everyone. Take control of your money with intelligent insights and automated budgeting.</p>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white transition">Features</a></li>
+                        <li><a href="#" class="hover:text-white transition">Pricing</a></li>
+                        <li><a href="#" class="hover:text-white transition">Security</a></li>
+                        <li><a href="#" class="hover:text-white transition">Integrations</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white transition">About</a></li>
+                        <li><a href="#" class="hover:text-white transition">Blog</a></li>
+                        <li><a href="#" class="hover:text-white transition">Careers</a></li>
+                        <li><a href="#" class="hover:text-white transition">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center text-sm">
+                <p>&copy; 2024 Budgetwise. All rights reserved.</p>
+                <div class="flex space-x-6 mt-4 md:mt-0">
+                    <a href="#" class="hover:text-white transition">Privacy</a>
+                    <a href="#" class="hover:text-white transition">Terms</a>
+                    <a href="#" class="hover:text-white transition">Cookies</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Demo Modal -->
+    <div id="demo-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl">
+            <div class="flex justify-between items-center p-4 border-b border-slate-200">
+                <h3 class="font-bold text-lg text-slate-900">Budgetwise Demo</h3>
+                <button onclick="closeDemo()" class="p-2 hover:bg-slate-100 rounded-full transition">
+                    <i data-lucide="x" class="w-6 h-6 text-slate-600"></i>
+                </button>
+            </div>
+            <div class="aspect-video bg-slate-900 flex items-center justify-center relative">
+                <img src="http://static.photos/technology/1024x576/99" alt="Demo Video Placeholder" class="w-full h-full object-cover opacity-80">
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="w-20 h-20 bg-white/20 backdrop-blur rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition">
+                        <i data-lucide="play" class="w-8 h-8 text-white fill-white ml-1"></i>
+                    </div>
+                </div>
+                <div class="absolute bottom-4 left-4 right-4 bg-black/50 backdrop-blur rounded-lg p-4 text-white text-sm">
+                    Demo video from budgetwise.isaac-trinidad.com - See how our AI analyzes your spending patterns in real-time
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Accordion functionality
+        function toggleAccordion(button) {
+            const content = button.nextElementSibling;
+            const icon = button.querySelector('.accordion-icon');
+            
+            // Close all other accordions
+            document.querySelectorAll('.accordion-content').forEach(item => {
+                if (item !== content && item.classList.contains('active')) {
+                    item.classList.remove('active');
+                    item.style.maxHeight = null;
+                    item.previousElementSibling.querySelector('.accordion-icon').style.transform = 'rotate(0deg)';
+                }
+            });
+            
+            // Toggle current accordion
+            content.classList.toggle('active');
+            if (content.classList.contains('active')) {
+                content.style.maxHeight = content.scrollHeight + "px";
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                content.style.maxHeight = null;
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // Demo Modal
+        function playDemo() {
+            document.getElementById('demo-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeDemo() {
+            document.getElementById('demo-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal on outside click
+        document.getElementById('demo-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDemo();
+            }
+        });
+
+        // Email Subscribe Handler
+        function handleSubscribe(e) {
+            e.preventDefault();
+            const email = e.target.querySelector('input[type="email"]').value;
+            alert(`Thanks for subscribing with ${email}! Your 14-day free trial starts now.`);
+            e.target.reset();
+        }
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    // Close mobile menu if open
+                    mobileMenu.classList.add('hidden');
+                }
+            });
+        });
+
+        // Add scroll animation observer
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe all cards and sections for fade-in effect
+        document.querySelectorAll('.pricing-card, .bg-white.p-8').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
