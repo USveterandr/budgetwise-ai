@@ -1,6 +1,6 @@
 name = "budgetwise-api"
 compatibility_date = "2024-11-01"
-pages_build_output_dir = "build/client"
+pages_build_output_dir = "dist"
 
 [[d1_databases]]
 binding = "users"
@@ -17,5 +17,8 @@ binding = "AI"
 [vars]
 JWT_ISSUER = "budgetwise.ai"
 JWT_AUDIENCE = "budgetwise-users"
-JWT_SECRET = "tcfMnf7BBxR8nu4qCME76rB5YHM/RnYShU5OR9qaAY="
-HUBSPOT_TOKEN=""
+HUBSPOT_TOKEN = ""
+
+# WARNING: JWT_SECRET was removed from here because it was exposed in build logs.
+# Add it as a Secret in Cloudflare Dashboard → Pages → Settings → Environment variables.
+# JWT_SECRET should NEVER be in version control.
