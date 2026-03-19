@@ -1,10 +1,6 @@
 name = "budgetwise-api"
 compatibility_date = "2024-11-01"
 pages_build_output_dir = "build/client"
-pages_functions_dir = "functions"
-
-[build]
-command = "npm run pages:build"
 
 [[d1_databases]]
 binding = "users"
